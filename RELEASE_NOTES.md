@@ -1,11 +1,14 @@
-# WinLauncher 1.0.0
+# WinLauncher 1.1.0
 
-The first public release turns Windows apps into a simple native macOS library.
+This update adds Android APKs to the same native macOS app library.
 
 ## Highlights
 
-- Open or drag any `.exe` or `.msi`.
-- Open Windows files directly from Finder.
+- Open or drag `.exe`, `.msi`, or `.apk` files.
+- Open supported Windows and Android files directly from Finder.
+- Discover an installed Android SDK and ARM64 virtual device automatically.
+- Start the Android Emulator, install the APK, detect its package and open it.
+- Keep Android apps in the library for one-click relaunch.
 - Automatic, verified WineForge engine installation.
 - One shared Windows Environment by default.
 - Ubisoft Connect login and Trackmania support through the WineForge CEF/DXMT path.
@@ -21,6 +24,11 @@ The first public release turns Windows apps into a simple native macOS library.
 - Apple Silicon Mac
 - macOS 14 or later
 - Internet connection for the first Windows engine installation
+- Android Studio, Android Emulator, Platform Tools, Build Tools and an ARM64 virtual device for APKs
+
+Android compatibility depends on the APK. Apps requiring a physical device,
+an unavailable native CPU architecture, Google Play installation, DRM, or Play
+Integrity certification may not run in an emulator.
 
 The DMG uses local ad-hoc signing for testing. Public distribution should use a
 Developer ID signature and Apple notarization.

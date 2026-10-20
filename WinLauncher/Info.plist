@@ -33,6 +33,13 @@
             <key>LSHandlerRank</key><string>Default</string>
             <key>CFBundleTypeExtensions</key><array><string>msi</string></array>
         </dict>
+        <dict>
+            <key>CFBundleTypeName</key><string>Android Application Package</string>
+            <key>CFBundleTypeIdentifier</key><string>org.winlauncher.android-package</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Default</string>
+            <key>CFBundleTypeExtensions</key><array><string>apk</string></array>
+        </dict>
     </array>
     <key>UTImportedTypeDeclarations</key>
     <array>
@@ -49,6 +56,13 @@
             <key>UTTypeConformsTo</key><array><string>public.data</string></array>
             <key>UTTypeTagSpecification</key>
             <dict><key>public.filename-extension</key><array><string>msi</string></array></dict>
+        </dict>
+        <dict>
+            <key>UTTypeIdentifier</key><string>org.winlauncher.android-package</string>
+            <key>UTTypeDescription</key><string>Android Application Package</string>
+            <key>UTTypeConformsTo</key><array><string>public.archive</string><string>public.data</string></array>
+            <key>UTTypeTagSpecification</key>
+            <dict><key>public.filename-extension</key><array><string>apk</string></array></dict>
         </dict>
     </array>
     <key>CFBundleName</key>

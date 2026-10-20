@@ -7,6 +7,7 @@ struct SettingsView: View {
         TabView {
             general.tabItem { Label("General", systemImage: "gear") }
             environment.tabItem { Label("Environment", systemImage: "shippingbox") }
+            android.tabItem { Label("Android", systemImage: "app.badge") }
             graphics.tabItem { Label("Graphics", systemImage: "display") }
             compatibility.tabItem { Label("Compatibility", systemImage: "wrench.and.screwdriver") }
             diagnostics.tabItem { Label("Diagnostics", systemImage: "stethoscope") }
@@ -26,16 +27,36 @@ struct SettingsView: View {
                 ))
             }
             Section("Finder") {
-                Button("Make WinLauncher Default for .exe and .msi") {
-                    model.makeDefaultWindowsFileHandler()
+                Button("Make WinLauncher Default for .exe, .msi, and .apk") {
+                    model.makeDefaultSupportedFileHandler()
                 }
-                Text("After this, double-click a Windows application or installer in Finder to open it directly.")
+                Text("After this, double-click a supported Windows or Android file in Finder to open it directly.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Section("About") {
-                LabeledContent("Version", value: "1.0.0")
+                LabeledContent("Version", value: "1.1.0")
                 LabeledContent("Windows engine", value: model.engineInstalled ? model.engineDescription : "Installed automatically")
+                LabeledContent("Android support", value: model.androidSupportDescription)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var android: some View {
+        Form {
+            Section("Android Support") {
+                LabeledContent("Status", value: model.androidSupportDescription)
+                Button("Open Android Studio", action: model.openAndroidStudio)
+                Button("Choose Existing Android SDK…", action: model.chooseAndroidSDK)
+                Text("Install the Android Emulator, Platform Tools, and an ARM64 phone image in Android Studio. WinLauncher then starts the device, installs the APK, and opens it automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Compatibility") {
+                Text("ARM64 and universal APKs work best on Apple Silicon. Apps may reject emulators, require Google Play installation, or depend on device hardware.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

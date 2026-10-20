@@ -1,5 +1,10 @@
 import Foundation
 
+enum ApplicationPlatform: String, Codable, Hashable {
+    case windows
+    case android
+}
+
 struct LibraryApplication: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String
@@ -8,10 +13,16 @@ struct LibraryApplication: Identifiable, Codable, Hashable {
     var sourcePath: String?
     var lastLaunchedAt: Date?
     var environmentID: String
+    var platform: ApplicationPlatform?
+    var packageIdentifier: String?
+
+    var effectivePlatform: ApplicationPlatform { platform ?? .windows }
 
     init(id: UUID = UUID(), name: String, windowsPath: String, sourceFileName: String,
          sourcePath: String? = nil,
-         lastLaunchedAt: Date? = nil, environmentID: String = "default") {
+         lastLaunchedAt: Date? = nil, environmentID: String = "default",
+         platform: ApplicationPlatform = .windows,
+         packageIdentifier: String? = nil) {
         self.id = id
         self.name = name
         self.windowsPath = windowsPath
@@ -19,6 +30,8 @@ struct LibraryApplication: Identifiable, Codable, Hashable {
         self.sourcePath = sourcePath
         self.lastLaunchedAt = lastLaunchedAt
         self.environmentID = environmentID
+        self.platform = platform
+        self.packageIdentifier = packageIdentifier
     }
 }
 
@@ -33,6 +46,8 @@ enum AppOperation: Equatable {
     case installingRuntime
     case preparingEnvironment
     case launching(String)
+    case preparingAndroid
+    case installingAndroidApp
 
     var message: String? {
         switch self {
@@ -41,6 +56,8 @@ enum AppOperation: Equatable {
         case .installingRuntime: "Adding .NET support…"
         case .preparingEnvironment: "Preparing the Windows Environment…"
         case .launching(let name): "Opening \(name)…"
+        case .preparingAndroid: "Starting Android…"
+        case .installingAndroidApp: "Installing Android app…"
         }
     }
 }
@@ -75,6 +92,11 @@ enum WinLauncherError: LocalizedError {
     case applicationFilesMissing
     case compatibilityIssue(String, URL)
     case processFailed(String, Int32, URL)
+    case androidSDKNotInstalled
+    case androidVirtualDeviceMissing
+    case androidEmulatorDidNotStart(URL)
+    case androidInstallFailed(URL)
+    case androidPackageUnknown(URL)
 
     var errorDescription: String? {
         switch self {
@@ -100,6 +122,16 @@ enum WinLauncherError: LocalizedError {
             message
         case .processFailed(let name, let status, _):
             "\(name) stopped with status \(status)."
+        case .androidSDKNotInstalled:
+            "Android Support is not installed. Install Android Studio with the Android Emulator and an ARM64 virtual device, or choose an existing Android SDK in Settings."
+        case .androidVirtualDeviceMissing:
+            "No compatible Android virtual device was found. Create an ARM64 phone in Android Studio’s Device Manager, then try again."
+        case .androidEmulatorDidNotStart:
+            "The Android virtual device did not finish starting. Open the diagnostic log for details."
+        case .androidInstallFailed:
+            "The APK could not be installed. It may target an unsupported Android version or processor architecture."
+        case .androidPackageUnknown:
+            "The APK was installed, but its launchable application could not be identified."
         }
     }
 }

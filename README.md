@@ -1,8 +1,8 @@
 # WinLauncher
 
-Research and design for a native macOS application that runs Windows applications through independently updatable, open-source Wine engines.
+Native macOS application that runs Windows applications through independently updatable Wine engines and launches Android APKs through an installed Android Emulator.
 
-**Status: WinLauncher 1.0.0. The app automatically installs an integrity-checked WineForge 11.18 engine. Ubisoft Connect login and Trackmania have been exercised in the shared Windows Environment on Apple Silicon.**
+**Status: WinLauncher 1.1.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support discovers an installed Android SDK and ARM64 virtual device, then starts the emulator, installs the selected APK and opens its launcher activity.
 
 The first engineering gate is deliberately small: install current Ubisoft Connect on Apple Silicon and display its responsive login UI without CrossOver binaries or D3DMetal. Product implementation follows that result.
 
@@ -49,6 +49,11 @@ Implemented in the MVP:
 - practical graphics, environment, compatibility and diagnostics settings.
 - automatic, checksum-verified Wine Mono installation when a managed .NET executable is opened.
 - preflight detection for Microsoft Store/WinRT bootstrap installers, with a clear compatible path instead of a Wine crash; Minecraft routes only to an open-source Windows-entitlement Bedrock runtime and never to a Google Play launcher.
+- Android `.apk` import, drag-and-drop, Finder file association and one-click relaunch from the same library;
+- automatic discovery and startup of an existing Apple Silicon Android Emulator device;
+- automatic APK package detection, `adb` installation and launcher activity startup.
+
+Android support intentionally does not redistribute Google SDK packages or system images. Install Android Studio, add **Android Emulator**, **Android SDK Platform-Tools**, **Android SDK Build-Tools**, and create an **ARM64** phone in Device Manager. This keeps SDK license acceptance with the user. APKs that require a physical device, a different CPU ABI, installation from Google Play, or a successful Play Integrity verdict may refuse to run.
 
 Not yet implemented or validated:
 

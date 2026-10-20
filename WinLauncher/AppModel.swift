@@ -9,6 +9,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var engineInstalled = false
     @Published private(set) var engineDescription = "Not Installed"
     @Published private(set) var engineSetupMessage = "Windows Support will be downloaded and installed automatically."
+    @Published private(set) var androidSupportDescription = "Not Installed"
     @Published var failure: PresentedFailure?
     @Published var compatibilityHelp: CompatibilityHelp?
     @Published var showingEngineSetup = false
@@ -36,6 +37,7 @@ final class AppModel: ObservableObject {
     private lazy var engineManager = EngineManager(paths: paths, runner: runner)
     private lazy var prefixManager = PrefixManager(paths: paths, runner: runner)
     private lazy var runtimeManager = RuntimeManager(paths: paths, runner: runner, prefixManager: prefixManager)
+    private lazy var androidRuntimeManager = AndroidRuntimeManager(paths: paths, runner: runner)
     private lazy var detector = InstalledApplicationDetector(paths: paths)
     private var engine: WineEngineInstallation?
 
@@ -55,6 +57,7 @@ final class AppModel: ObservableObject {
             applications = try await store.load()
             await refreshInstalledApplications()
             await prepareEngineAutomatically()
+            await refreshAndroidSupport()
         } catch { present(error) }
     }
 
@@ -70,8 +73,23 @@ final class AppModel: ObservableObject {
         Task { await importAndLaunch(url) }
     }
 
+    func chooseApplicationFile() {
+        let panel = NSOpenPanel()
+        panel.title = "Open an App"
+        panel.message = "Choose a Windows application, Windows installer, or Android APK."
+        panel.allowedContentTypes = [
+            UTType(filenameExtension: "exe") ?? .data,
+            UTType(filenameExtension: "msi") ?? .data,
+            UTType(filenameExtension: "apk") ?? .data
+        ]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task { await importAndLaunch(url) }
+    }
+
     func receiveDrop(_ urls: [URL]) {
-        let accepted = urls.filter { ["exe", "msi"].contains($0.pathExtension.lowercased()) }
+        let accepted = urls.filter { ["exe", "msi", "apk"].contains($0.pathExtension.lowercased()) }
         guard !accepted.isEmpty else { return }
         Task {
             for url in accepted { await importAndLaunch(url) }
@@ -93,8 +111,27 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func makeDefaultSupportedFileHandler() {
+        guard let appURL = Bundle.main.bundleURL as URL? else { return }
+        let identifiers = [
+            "org.winlauncher.windows-executable",
+            "org.winlauncher.windows-installer",
+            "org.winlauncher.android-package"
+        ]
+        for identifier in identifiers {
+            let type = UTType(importedAs: identifier, conformingTo: .data)
+            NSWorkspace.shared.setDefaultApplication(at: appURL, toOpen: type) { error in
+                if let error { Task { @MainActor in self.present(error) } }
+            }
+        }
+    }
+
     func importAndLaunch(_ url: URL, bypassCompatibilityCheck: Bool = false) async {
         guard operation == .idle else { return }
+        if url.pathExtension.lowercased() == "apk" {
+            await importAndLaunchAndroid(url)
+            return
+        }
         if !bypassCompatibilityCheck, WindowsExecutableInspector.requiresWindowsRuntime(url) {
             compatibilityHelp = makeWindowsRuntimeHelp(for: url, canTryAnyway: true, logURL: nil)
             return
@@ -129,6 +166,10 @@ final class AppModel: ObservableObject {
 
     func launch(_ application: LibraryApplication) async {
         guard operation == .idle || operation == .preparingEnvironment else { return }
+        if application.effectivePlatform == .android {
+            await launchAndroid(application)
+            return
+        }
         if engine == nil { await prepareEngineAutomatically(installIfNeeded: true) }
         guard let engine else {
             operation = .idle
@@ -199,6 +240,13 @@ final class AppModel: ObservableObject {
     }
 
     func applicationIcon(for application: LibraryApplication) -> NSImage? {
+        if application.effectivePlatform == .android,
+           let sourcePath = application.sourcePath,
+           FileManager.default.fileExists(atPath: sourcePath) {
+            let icon = NSWorkspace.shared.icon(forFile: sourcePath)
+            icon.size = NSSize(width: 96, height: 96)
+            return icon
+        }
         let executableName = (application.sourceFileName as NSString).deletingPathExtension
         if let extracted = paths.extractedIcon(for: executableName, applicationName: application.name),
            let image = NSImage(contentsOf: extracted) {
@@ -273,6 +321,36 @@ final class AppModel: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([paths.prefix.appendingPathComponent("drive_c")])
     }
 
+    func revealFiles(for application: LibraryApplication) {
+        if application.effectivePlatform == .android, let sourcePath = application.sourcePath {
+            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: sourcePath)])
+        } else {
+            revealWindowsFiles()
+        }
+    }
+
+    func chooseAndroidSDK() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Android SDK"
+        panel.message = "Choose the SDK folder that contains emulator and platform-tools."
+        panel.prompt = "Use SDK"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task {
+            await androidRuntimeManager.saveSDKRoot(url)
+            await refreshAndroidSupport()
+        }
+    }
+
+    func openAndroidStudio() {
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.google.android.studio") {
+            NSWorkspace.shared.openApplication(at: appURL, configuration: .init())
+        } else if let url = URL(string: "https://developer.android.com/studio") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     func revealLogs() {
         NSWorkspace.shared.activateFileViewerSelecting([paths.logs])
     }
@@ -286,6 +364,7 @@ final class AppModel: ObservableObject {
         Graphics: \(graphicsMode)
         Synchronization: \(synchronizationEnabled ? "Enabled" : "Disabled")
         macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)
+        Android support: \(androidSupportDescription)
         """
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
@@ -325,10 +404,29 @@ final class AppModel: ObservableObject {
              WinLauncherError.engineFilesBlocked(let url),
              WinLauncherError.compatibilityIssue(_, let url):
             logURL = url
+        case WinLauncherError.androidEmulatorDidNotStart(let url),
+             WinLauncherError.androidInstallFailed(let url),
+             WinLauncherError.androidPackageUnknown(let url):
+            logURL = url
         default:
             logURL = nil
         }
-        failure = PresentedFailure(title: "Windows app couldn’t start", message: error.localizedDescription, logURL: logURL)
+        let androidError: Bool
+        switch error {
+        case WinLauncherError.androidSDKNotInstalled,
+             WinLauncherError.androidVirtualDeviceMissing,
+             WinLauncherError.androidEmulatorDidNotStart,
+             WinLauncherError.androidInstallFailed,
+             WinLauncherError.androidPackageUnknown:
+            androidError = true
+        default:
+            androidError = false
+        }
+        failure = PresentedFailure(
+            title: androidError ? "Android app couldn’t start" : "Windows app couldn’t start",
+            message: error.localizedDescription,
+            logURL: logURL
+        )
     }
 
     private func updateEngineState() {
@@ -349,6 +447,65 @@ final class AppModel: ObservableObject {
         }
         updateEngineState()
         operation = previousOperation == .installingEngine ? .idle : previousOperation
+    }
+
+    private func importAndLaunchAndroid(_ url: URL) async {
+        let standardized = url.standardizedFileURL
+        let existing = applications.first { application in
+            application.effectivePlatform == .android &&
+                application.sourcePath.map { URL(fileURLWithPath: $0).standardizedFileURL == standardized } == true
+        }
+        if let existing {
+            await launchAndroid(existing)
+            return
+        }
+        let application = LibraryApplication(
+            name: url.deletingPathExtension().lastPathComponent,
+            windowsPath: "",
+            sourceFileName: url.lastPathComponent,
+            sourcePath: url.path,
+            platform: .android
+        )
+        applications.append(application)
+        try? await store.save(applications)
+        await launchAndroid(application)
+    }
+
+    private func launchAndroid(_ application: LibraryApplication) async {
+        guard let sourcePath = application.sourcePath,
+              FileManager.default.fileExists(atPath: sourcePath) else {
+            present(WinLauncherError.applicationFilesMissing)
+            return
+        }
+        do {
+            operation = .preparingAndroid
+            let result = try await androidRuntimeManager.launch(
+                apkURL: URL(fileURLWithPath: sourcePath),
+                knownPackage: application.packageIdentifier
+            )
+            if let index = applications.firstIndex(where: { $0.id == application.id }) {
+                applications[index].packageIdentifier = result.packageIdentifier
+                applications[index].lastLaunchedAt = Date()
+                try await store.save(applications)
+            }
+            androidSupportDescription = "Ready"
+            operation = .idle
+        } catch {
+            operation = .idle
+            await refreshAndroidSupport()
+            present(error)
+        }
+    }
+
+    private func refreshAndroidSupport() async {
+        do {
+            let runtime = try await androidRuntimeManager.resolve()
+            androidSupportDescription = "Ready · \(runtime.virtualDeviceName)"
+        } catch WinLauncherError.androidVirtualDeviceMissing {
+            androidSupportDescription = "SDK installed · Device required"
+        } catch {
+            androidSupportDescription = "Not Installed"
+        }
     }
 
     private func launchArguments(for application: LibraryApplication) -> [String] {

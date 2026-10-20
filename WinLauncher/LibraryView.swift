@@ -16,11 +16,11 @@ struct LibraryView: View {
                     library
                 }
             }
-            .navigationTitle("Windows Apps")
+            .navigationTitle("Apps")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: model.chooseWindowsFile) {
-                        Label("Open Windows App", systemImage: "plus")
+                    Button(action: model.chooseApplicationFile) {
+                        Label("Open App", systemImage: "plus")
                     }
                     .disabled(model.operation != .idle)
                 }
@@ -55,16 +55,16 @@ struct LibraryView: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.tint)
             VStack(spacing: 8) {
-                Text("Run Windows apps on your Mac.")
+                Text("Run Windows and Android apps on your Mac.")
                     .font(.largeTitle.weight(.semibold))
-                Text("Open an application or installer. Everything uses the same Windows Environment by default.")
+                Text("Open an .exe, .msi, or .apk. WinLauncher prepares the appropriate environment automatically.")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 520)
             }
             dropArea
                 .frame(maxWidth: 560, minHeight: 150)
-            Button("Open Windows App", action: model.chooseWindowsFile)
+            Button("Open App", action: model.chooseApplicationFile)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(model.operation != .idle)
@@ -90,9 +90,9 @@ struct LibraryView: View {
         VStack(spacing: 10) {
             Image(systemName: "arrow.down.app")
                 .font(.system(size: 29, weight: .regular))
-            Text("Drop an .exe or .msi here")
+            Text("Drop an .exe, .msi, or .apk here")
                 .font(.headline)
-            Text("Uses Default Windows Environment")
+            Text("The correct environment is selected automatically")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -106,7 +106,7 @@ struct LibraryView: View {
         }
         .dropDestination(for: URL.self) { urls, _ in
             model.receiveDrop(urls)
-            return urls.contains { ["exe", "msi"].contains($0.pathExtension.lowercased()) }
+            return urls.contains { ["exe", "msi", "apk"].contains($0.pathExtension.lowercased()) }
         } isTargeted: { dropTargeted = $0 }
         .animation(.easeOut(duration: 0.15), value: dropTargeted)
     }
@@ -193,14 +193,18 @@ private struct ApplicationCard: View {
         .disabled(model.operation != .idle)
         .contextMenu {
             Button("Run") { Task { await model.launch(application) } }
-            Button("Open C: Drive", action: model.revealWindowsFiles)
+            Button(application.effectivePlatform == .android ? "Show APK in Finder" : "Open C: Drive") {
+                model.revealFiles(for: application)
+            }
             Divider()
             Button("Remove from Library", role: .destructive) { model.remove(application) }
         }
     }
 
     private var lastOpenedText: String {
-        guard let date = application.lastLaunchedAt else { return "Not opened yet" }
+        guard let date = application.lastLaunchedAt else {
+            return application.effectivePlatform == .android ? "Android · Not opened yet" : "Windows · Not opened yet"
+        }
         return "Opened \(date.formatted(.relative(presentation: .named)))"
     }
 }
@@ -216,6 +220,7 @@ private struct ApplicationArtwork: View {
         if name.contains("epic") { return "bolt.fill" }
         if name.contains("battle") { return "sparkles" }
         if name.contains("trackmania") { return "flag.checkered" }
+        if application.effectivePlatform == .android { return "app.badge.fill" }
         return "face.smiling.fill"
     }
 

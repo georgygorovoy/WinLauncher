@@ -20,6 +20,7 @@
 		A1000000000000000000000E /* InstalledApplicationDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* InstalledApplicationDetector.swift */; };
 		A1000000000000000000000F /* RuntimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* RuntimeManager.swift */; };
 		A10000000000000000000010 /* WindowsExecutableInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* WindowsExecutableInspector.swift */; };
+		A10000000000000000000011 /* AndroidRuntimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* AndroidRuntimeManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		B1000000000000000000000E /* InstalledApplicationDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstalledApplicationDetector.swift; sourceTree = "<group>"; };
 		B1000000000000000000000F /* RuntimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeManager.swift; sourceTree = "<group>"; };
 		B10000000000000000000010 /* WindowsExecutableInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsExecutableInspector.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* AndroidRuntimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidRuntimeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,6 +73,7 @@
 				B1000000000000000000000E /* InstalledApplicationDetector.swift */,
 				B1000000000000000000000F /* RuntimeManager.swift */,
 				B10000000000000000000010 /* WindowsExecutableInspector.swift */,
+				B10000000000000000000011 /* AndroidRuntimeManager.swift */,
 				B1000000000000000000000C /* Info.plist */,
 			);
 			path = WinLauncher;
@@ -142,6 +145,7 @@
 				A1000000000000000000000E /* InstalledApplicationDetector.swift in Sources */,
 				A1000000000000000000000F /* RuntimeManager.swift in Sources */,
 				A10000000000000000000010 /* WindowsExecutableInspector.swift in Sources */,
+				A10000000000000000000011 /* AndroidRuntimeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,12 +159,12 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -172,12 +176,12 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -15,7 +15,7 @@ struct WinLauncherApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .newItem) {
-                Button("Open Windows App…") { model.chooseWindowsFile() }
+                Button("Open App…") { model.chooseApplicationFile() }
                     .keyboardShortcut("o")
             }
         }
