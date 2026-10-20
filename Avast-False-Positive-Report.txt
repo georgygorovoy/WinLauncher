@@ -1,0 +1,28 @@
+Subject: False positive: open-source Wine 11 runtime DLLs detected as Win32:SuspBehav-B [Heur]
+
+Product: Avast for macOS
+Detection: Win32:SuspBehav-B [Heur]
+Previously displayed Alert IDs: d22626352f87, 057f14c018fe
+Example affected files: sti.dll, mscoree.dll
+
+The files are built-in DLLs from an open-source Wine 11.16 runtime used to run
+Windows applications on Apple Silicon Macs. Avast quarantines the DLLs while
+the verified runtime archive is extracted, leaving the Wine installation
+incomplete.
+
+Upstream release:
+https://github.com/frankea/Whisky/releases/tag/v4.6.4-beta.1
+
+Exact archive:
+https://github.com/frankea/Whisky/releases/download/v4.6.4-beta.1/Libraries.tar.gz
+
+Archive size: 481348675 bytes
+SHA-256: c8e6a10dfeb54fc16d3dd3382ee2e9d2cec3eb1f5641613cad8b07903818cb12
+
+Source provenance from the upstream release:
+https://github.com/frankea/winecx-gptk
+Runtime source commit: 50a54af
+Wine base: Wine 11.16
+
+Please analyze and correct the false-positive signature for the Wine built-in
+PE DLLs. No exclusion or security-disable workaround is requested.

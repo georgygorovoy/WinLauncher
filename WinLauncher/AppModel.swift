@@ -1,0 +1,454 @@
+import AppKit
+import Foundation
+import UniformTypeIdentifiers
+
+@MainActor
+final class AppModel: ObservableObject {
+    @Published private(set) var applications: [LibraryApplication] = []
+    @Published private(set) var operation: AppOperation = .idle
+    @Published private(set) var engineInstalled = false
+    @Published private(set) var engineDescription = "Not Installed"
+    @Published private(set) var engineSetupMessage = "Windows Support will be downloaded and installed automatically."
+    @Published var failure: PresentedFailure?
+    @Published var compatibilityHelp: CompatibilityHelp?
+    @Published var showingEngineSetup = false
+    @Published var advancedMode = false
+
+    @Published var graphicsMode: String {
+        didSet { UserDefaults.standard.set(graphicsMode, forKey: "graphicsMode") }
+    }
+    @Published var synchronizationEnabled: Bool {
+        didSet { UserDefaults.standard.set(synchronizationEnabled, forKey: "synchronizationEnabled") }
+    }
+    @Published var allowHomeFolder: Bool {
+        didSet { UserDefaults.standard.set(allowHomeFolder, forKey: "allowHomeFolder") }
+    }
+    @Published var diagnosticLogging: Bool {
+        didSet { UserDefaults.standard.set(diagnosticLogging, forKey: "diagnosticLogging") }
+    }
+    @Published var customEnvironmentVariables: String {
+        didSet { UserDefaults.standard.set(customEnvironmentVariables, forKey: "customEnvironmentVariables") }
+    }
+
+    private let paths = AppPaths()
+    private let runner = ProcessRunner()
+    private lazy var store = LibraryStore(paths: paths)
+    private lazy var engineManager = EngineManager(paths: paths, runner: runner)
+    private lazy var prefixManager = PrefixManager(paths: paths, runner: runner)
+    private lazy var runtimeManager = RuntimeManager(paths: paths, runner: runner, prefixManager: prefixManager)
+    private lazy var detector = InstalledApplicationDetector(paths: paths)
+    private var engine: WineEngineInstallation?
+
+    init() {
+        let defaults = UserDefaults.standard
+        graphicsMode = defaults.string(forKey: "graphicsMode") ?? "Automatic"
+        synchronizationEnabled = defaults.object(forKey: "synchronizationEnabled") == nil || defaults.bool(forKey: "synchronizationEnabled")
+        allowHomeFolder = defaults.bool(forKey: "allowHomeFolder")
+        diagnosticLogging = defaults.bool(forKey: "diagnosticLogging")
+        customEnvironmentVariables = defaults.string(forKey: "customEnvironmentVariables") ?? ""
+        advancedMode = defaults.bool(forKey: "advancedMode")
+    }
+
+    func start() async {
+        do {
+            try paths.createBaseDirectories()
+            applications = try await store.load()
+            await refreshInstalledApplications()
+            await prepareEngineAutomatically()
+        } catch { present(error) }
+    }
+
+    func chooseWindowsFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [
+            UTType(filenameExtension: "exe") ?? .data,
+            UTType(filenameExtension: "msi") ?? .data
+        ]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task { await importAndLaunch(url) }
+    }
+
+    func receiveDrop(_ urls: [URL]) {
+        let accepted = urls.filter { ["exe", "msi"].contains($0.pathExtension.lowercased()) }
+        guard !accepted.isEmpty else { return }
+        Task {
+            for url in accepted { await importAndLaunch(url) }
+        }
+    }
+
+    func makeDefaultWindowsFileHandler() {
+        guard let appURL = Bundle.main.bundleURL as URL? else { return }
+        let types = [
+            UTType(importedAs: "org.winlauncher.windows-executable", conformingTo: .data),
+            UTType(importedAs: "org.winlauncher.windows-installer", conformingTo: .data)
+        ]
+        for type in types {
+            NSWorkspace.shared.setDefaultApplication(at: appURL, toOpen: type) { error in
+                if let error {
+                    Task { @MainActor in self.present(error) }
+                }
+            }
+        }
+    }
+
+    func importAndLaunch(_ url: URL, bypassCompatibilityCheck: Bool = false) async {
+        guard operation == .idle else { return }
+        if !bypassCompatibilityCheck, WindowsExecutableInspector.requiresWindowsRuntime(url) {
+            compatibilityHelp = makeWindowsRuntimeHelp(for: url, canTryAnyway: true, logURL: nil)
+            return
+        }
+        if engine == nil { await prepareEngineAutomatically(installIfNeeded: true) }
+        guard let engine else {
+            showingEngineSetup = true
+            return
+        }
+        do {
+            operation = .preparingEnvironment
+            try await prefixManager.prepareIfNeeded(engine: engine)
+            let installer = isInstaller(url)
+            let imported = installer ? try await prefixManager.importExecutable(url) : nil
+            let application = LibraryApplication(
+                name: url.deletingPathExtension().lastPathComponent,
+                windowsPath: imported?.windowsPath ?? "X:\\\(url.lastPathComponent)",
+                sourceFileName: url.lastPathComponent,
+                sourcePath: installer ? nil : url.path
+            )
+            if !installer {
+                applications.append(application)
+                try await store.save(applications)
+            }
+            await launch(application)
+            if installer { await refreshInstalledApplications() }
+        } catch {
+            operation = .idle
+            present(error)
+        }
+    }
+
+    func launch(_ application: LibraryApplication) async {
+        guard operation == .idle || operation == .preparingEnvironment else { return }
+        if engine == nil { await prepareEngineAutomatically(installIfNeeded: true) }
+        guard let engine else {
+            operation = .idle
+            showingEngineSetup = true
+            return
+        }
+        do {
+            operation = .launching(application.name)
+            try await prefixManager.prepareIfNeeded(engine: engine)
+            var launchApplication = application
+            if let sourcePath = application.sourcePath {
+                launchApplication.windowsPath = try await prefixManager.mapApplicationFolder(
+                    for: URL(fileURLWithPath: sourcePath)
+                )
+            } else if !isInstallerName(application.sourceFileName),
+                      application.windowsPath.contains("\\users\\Public\\WinLauncher") {
+                throw WinLauncherError.applicationFilesMissing
+            }
+            if let executableURL = executableURL(for: launchApplication),
+               WindowsExecutableInspector.isManaged(executableURL) {
+                operation = .installingRuntime
+                try await runtimeManager.ensureMono(engine: engine)
+                operation = .launching(application.name)
+            }
+            let log = paths.logs.appendingPathComponent("run-\(application.id.uuidString)-\(Int(Date().timeIntervalSince1970)).log")
+            let result = try await runner.run(
+                executable: engine.wineURL,
+                arguments: launchArguments(for: launchApplication),
+                environment: await prefixManager.wineEnvironment(engine: engine),
+                logURL: log
+            )
+            guard result.terminationStatus == 0 else {
+                if isWindowsRuntimeIssue(in: result.logURL) {
+                    operation = .idle
+                    compatibilityHelp = makeWindowsRuntimeHelp(
+                        for: executableURL(for: launchApplication),
+                        displayName: launchApplication.sourceFileName,
+                        canTryAnyway: false,
+                        logURL: result.logURL
+                    )
+                    return
+                }
+                if let issue = compatibilityIssue(in: result.logURL) { throw issue }
+                throw WinLauncherError.processFailed(application.name, result.terminationStatus, result.logURL)
+            }
+            if let index = applications.firstIndex(where: { $0.id == application.id }) {
+                applications[index].lastLaunchedAt = Date()
+                try await store.save(applications)
+            }
+            operation = .idle
+        } catch {
+            operation = .idle
+            present(error)
+        }
+    }
+
+    func remove(_ application: LibraryApplication) {
+        applications.removeAll { $0.id == application.id }
+        Task {
+            do { try await store.save(applications) }
+            catch { present(error) }
+        }
+    }
+
+    func setAdvancedMode(_ enabled: Bool) {
+        advancedMode = enabled
+        UserDefaults.standard.set(enabled, forKey: "advancedMode")
+    }
+
+    func applicationIcon(for application: LibraryApplication) -> NSImage? {
+        let executableName = (application.sourceFileName as NSString).deletingPathExtension
+        if let extracted = paths.extractedIcon(for: executableName, applicationName: application.name),
+           let image = NSImage(contentsOf: extracted) {
+            return image
+        }
+        let url: URL?
+        if let sourcePath = application.sourcePath {
+            url = URL(fileURLWithPath: sourcePath)
+        } else {
+            url = paths.hostURL(forWindowsPath: application.windowsPath)
+        }
+        guard let url, FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        let generic = NSWorkspace.shared.icon(forFileType: "exe")
+        if icon.tiffRepresentation == generic.tiffRepresentation { return nil }
+        icon.size = NSSize(width: 96, height: 96)
+        return icon
+    }
+
+    func stopWindowsApps() {
+        guard let engine else { return }
+        Task { try? await prefixManager.stop(engine: engine) }
+    }
+
+    func repairEnvironment() {
+        guard let engine, operation == .idle else { return }
+        Task {
+            do {
+                operation = .preparingEnvironment
+                try await prefixManager.repair(engine: engine)
+                operation = .idle
+            } catch {
+                operation = .idle
+                present(error)
+            }
+        }
+    }
+
+    func runWindowsTool(_ tool: String) {
+        guard let engine, operation == .idle else { return }
+        Task {
+            do { try await prefixManager.runTool([tool], engine: engine) }
+            catch { present(error) }
+        }
+    }
+
+    func installLocalEngine() async {
+        await prepareEngineAutomatically(installIfNeeded: true)
+        if engineInstalled { showingEngineSetup = false }
+    }
+
+    func chooseWineEngine() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose Wine Engine"
+        panel.message = "Choose Wine Stable.app, another Wine app, or the wine executable."
+        panel.prompt = "Use Wine"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.treatsFilePackagesAsDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task {
+            do {
+                engine = try await engineManager.select(url)
+                updateEngineState()
+                showingEngineSetup = false
+            } catch { present(error) }
+        }
+    }
+
+    func revealWindowsFiles() {
+        NSWorkspace.shared.activateFileViewerSelecting([paths.prefix.appendingPathComponent("drive_c")])
+    }
+
+    func revealLogs() {
+        NSWorkspace.shared.activateFileViewerSelecting([paths.logs])
+    }
+
+    func copyDiagnosticReport() {
+        let report = """
+        WinLauncher diagnostic report
+        Engine: \(engineDescription)
+        Shared environment: \(paths.prefix.path)
+        Library applications: \(applications.count)
+        Graphics: \(graphicsMode)
+        Synchronization: \(synchronizationEnabled ? "Enabled" : "Disabled")
+        macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(report, forType: .string)
+    }
+
+    func dismissCompatibilityHelp() {
+        compatibilityHelp = nil
+    }
+
+    func useRecommendedAlternative() {
+        guard let help = compatibilityHelp else { return }
+        compatibilityHelp = nil
+        if let url = help.recommendedURL {
+            NSWorkspace.shared.open(url)
+        } else {
+            DispatchQueue.main.async { self.chooseWindowsFile() }
+        }
+    }
+
+    func tryCompatibilityFileAnyway() {
+        guard let url = compatibilityHelp?.sourceURL else { return }
+        compatibilityHelp = nil
+        Task { await importAndLaunch(url, bypassCompatibilityCheck: true) }
+    }
+
+    func revealCompatibilityLog() {
+        guard let log = compatibilityHelp?.logURL else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([log])
+    }
+
+    private func present(_ error: Error) {
+        let logURL: URL?
+        switch error {
+        case WinLauncherError.processFailed(_, _, let url),
+             WinLauncherError.environmentInitializationFailed(let url),
+             WinLauncherError.engineInstallationFailed(let url),
+             WinLauncherError.engineFilesBlocked(let url),
+             WinLauncherError.compatibilityIssue(_, let url):
+            logURL = url
+        default:
+            logURL = nil
+        }
+        failure = PresentedFailure(title: "Windows app couldn’t start", message: error.localizedDescription, logURL: logURL)
+    }
+
+    private func updateEngineState() {
+        engineInstalled = engine != nil
+        engineDescription = engine.map { "\($0.name) · \($0.version)" } ?? "Not Installed"
+    }
+
+    private func prepareEngineAutomatically(installIfNeeded: Bool = false) async {
+        guard engine == nil else { return }
+        let previousOperation = operation
+        operation = .installingEngine
+        do {
+            engine = installIfNeeded ? try await engineManager.resolveOrInstall() : await engineManager.resolve()
+            engineSetupMessage = "Windows Support is ready."
+        } catch {
+            engineSetupMessage = error.localizedDescription
+            present(error)
+        }
+        updateEngineState()
+        operation = previousOperation == .installingEngine ? .idle : previousOperation
+    }
+
+    private func launchArguments(for application: LibraryApplication) -> [String] {
+        if (application.sourceFileName as NSString).pathExtension.lowercased() == "msi" {
+            return ["msiexec", "/i", application.windowsPath]
+        }
+        return [application.windowsPath]
+    }
+
+    private func executableURL(for application: LibraryApplication) -> URL? {
+        if let sourcePath = application.sourcePath { return URL(fileURLWithPath: sourcePath) }
+        return paths.hostURL(forWindowsPath: application.windowsPath)
+    }
+
+    private func compatibilityIssue(in logURL: URL) -> WinLauncherError? {
+        guard let data = try? Data(contentsOf: logURL),
+              let log = String(data: data.suffix(256_000), encoding: .utf8) else { return nil }
+        if log.contains("Windows.Foundation.UniversalApiContract") ||
+           log.contains("Windows.ApplicationModel.Store") {
+            return .compatibilityIssue(
+                "This installer requires Microsoft Store components that Wine cannot currently provide. Look for the app's standalone desktop installer instead. For Minecraft, use the native macOS launcher or the legacy Windows 7/8 launcher.",
+                logURL
+            )
+        }
+        if log.contains("CLRRuntimeInfo_GetRuntimeHost Wine Mono is not installed") ||
+           log.contains("mscoree.dll not found") {
+            return .compatibilityIssue(
+                ".NET support could not be prepared. Try Repair Environment, then open the app again.",
+                logURL
+            )
+        }
+        return nil
+    }
+
+    private func isWindowsRuntimeIssue(in logURL: URL) -> Bool {
+        guard let data = try? Data(contentsOf: logURL),
+              let log = String(data: data.suffix(256_000), encoding: .utf8) else { return false }
+        return log.contains("Windows.Foundation.UniversalApiContract") ||
+            log.contains("Windows.ApplicationModel.Store") ||
+            log.contains("Microsoft.WindowsAppRuntime") ||
+            log.contains("Add-AppxPackage")
+    }
+
+    private func makeWindowsRuntimeHelp(
+        for sourceURL: URL?,
+        displayName: String? = nil,
+        canTryAnyway: Bool,
+        logURL: URL?
+    ) -> CompatibilityHelp {
+        let name = (displayName ?? sourceURL?.lastPathComponent ?? "").lowercased()
+        if name.contains("minecraftinstaller") || name == "minecraft.exe" {
+            let bedrockApp = URL(fileURLWithPath: "/Applications/Bedrock for Mac.app")
+            let bedrockInstalled = FileManager.default.fileExists(atPath: bedrockApp.path)
+            return CompatibilityHelp(
+                title: bedrockInstalled ? "Windows Bedrock is ready" : "Windows Bedrock support is required",
+                message: bedrockInstalled
+                    ? "Open Bedrock using the Microsoft account that owns Minecraft for Windows. This uses the Windows game and does not require a Google Play purchase."
+                    : "The official Store launcher cannot run in Wine. The open-source Windows Bedrock runtime signs in to Microsoft, verifies your Minecraft for Windows purchase, and downloads the owned Windows game without Google Play.",
+                sourceURL: sourceURL,
+                recommendedURL: bedrockInstalled
+                    ? bedrockApp
+                    : URL(string: "https://github.com/1JRobertson/bedrock-mac"),
+                recommendedTitle: bedrockInstalled ? "Open Windows Bedrock" : "View Windows Bedrock Setup",
+                canTryAnyway: canTryAnyway,
+                logURL: logURL
+            )
+        }
+        return CompatibilityHelp(
+            title: "This installer needs Microsoft Store",
+            message: "It depends on Windows package services that Wine cannot currently provide. Download the vendor’s standalone desktop .exe or .msi, then open that file in WinLauncher.",
+            sourceURL: sourceURL,
+            recommendedURL: nil,
+            recommendedTitle: "Choose Another Installer",
+            canTryAnyway: canTryAnyway,
+            logURL: logURL
+        )
+    }
+
+    private func refreshInstalledApplications() async {
+        let detected = await detector.detect()
+        var changed = false
+        for item in detected where !applications.contains(where: {
+            $0.windowsPath.caseInsensitiveCompare(item.windowsPath) == .orderedSame
+        }) {
+            applications.append(LibraryApplication(
+                name: item.name,
+                windowsPath: item.windowsPath,
+                sourceFileName: item.windowsPath.split(separator: "\\").last.map(String.init) ?? item.name
+            ))
+            changed = true
+        }
+        if changed { try? await store.save(applications) }
+    }
+
+    private func isInstaller(_ url: URL) -> Bool {
+        url.pathExtension.lowercased() == "msi" || isInstallerName(url.lastPathComponent)
+    }
+
+    private func isInstallerName(_ name: String) -> Bool {
+        let value = name.lowercased()
+        return value.contains("setup") || value.contains("installer") || value.contains("install_")
+    }
+}
