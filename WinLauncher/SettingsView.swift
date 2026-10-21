@@ -8,12 +8,17 @@ struct SettingsView: View {
             general.tabItem { Label("General", systemImage: "gear") }
             environment.tabItem { Label("Environment", systemImage: "shippingbox") }
             android.tabItem { Label("Android", systemImage: "app.badge") }
+            xbox.tabItem { Label("Xbox Games", systemImage: "gamecontroller") }
             graphics.tabItem { Label("Graphics", systemImage: "display") }
             compatibility.tabItem { Label("Compatibility", systemImage: "wrench.and.screwdriver") }
             diagnostics.tabItem { Label("Diagnostics", systemImage: "stethoscope") }
         }
         .sheet(isPresented: $model.showingAndroidSetup) {
             AndroidSetupView()
+                .environmentObject(model)
+        }
+        .sheet(isPresented: $model.showingXboxSetup) {
+            XboxSetupView()
                 .environmentObject(model)
         }
     }
@@ -39,9 +44,10 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             Section("About") {
-                LabeledContent("Version", value: "1.1.0")
+                LabeledContent("Version", value: appVersion)
                 LabeledContent("Windows engine", value: model.engineInstalled ? model.engineDescription : "Installed automatically")
                 LabeledContent("Android support", value: model.androidSupportDescription)
+                LabeledContent("Xbox Games Support", value: model.xboxSetupMessage)
             }
         }
         .formStyle(.grouped)
@@ -81,6 +87,36 @@ struct SettingsView: View {
             Section("File Access") {
                 Toggle("Allow access to my Home folder as drive H:", isOn: $model.allowHomeFolder)
                 Text("Off by default. WinLauncher only maps the folder containing an app you explicitly open.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var xbox: some View {
+        Form {
+            Section("Minecraft for Windows") {
+                LabeledContent("Status", value: model.xboxSetupMessage)
+                if model.xboxGamePrepared && model.xboxRuntimeAvailable {
+                    Button("Play Minecraft") {
+                        Task { await model.installMinecraftSupport() }
+                    }
+                    .disabled(model.operation != .idle)
+                } else if model.xboxGamePrepared {
+                    Button("Show Downloaded Game", action: model.revealMinecraftFiles)
+                } else {
+                    Button("Set Up Xbox Games Support", action: model.showXboxSetup)
+                        .disabled(model.operation != .idle)
+                }
+                Button("View Xbox Games Support Details", action: model.showXboxSetup)
+                    .disabled(model.operation != .idle)
+                Text("Uses a separate open-source helper for Microsoft sign-in, ownership verification, and the official Windows game download.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Privacy") {
+                Text("Microsoft tokens are stored in macOS Keychain. WinLauncher does not receive or log your password or account tokens.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -163,5 +199,9 @@ struct SettingsView: View {
         case "Compatibility": "Uses Wine's built-in renderer for apps that do not work with acceleration."
         default: "Selects the best available renderer for the current engine."
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
     }
 }

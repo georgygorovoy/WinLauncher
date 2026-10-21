@@ -1,0 +1,88 @@
+{
+  "built_as_bottle": true,
+  "poured_from_bottle": true,
+  "compiler": "clang",
+  "runtime_dependencies": [
+    {
+      "full_name": "ca-certificates",
+      "version": "2026-10-20",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "2026-10-20",
+      "declared_directly": true,
+      "compatibility_version": 1
+    },
+    {
+      "full_name": "mpdecimal",
+      "version": "4.0.1",
+      "revision": 0,
+      "bottle_rebuild": 1,
+      "pkg_version": "4.0.1",
+      "declared_directly": true,
+      "compatibility_version": 1
+    },
+    {
+      "full_name": "openssl@4",
+      "version": "4.0.3",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "4.0.3",
+      "declared_directly": true
+    },
+    {
+      "full_name": "readline",
+      "version": "8.3.6",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "8.3.6",
+      "declared_directly": false,
+      "compatibility_version": 1
+    },
+    {
+      "full_name": "sqlite",
+      "version": "3.54.1",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "3.54.1",
+      "declared_directly": true,
+      "compatibility_version": 1
+    },
+    {
+      "full_name": "xz",
+      "version": "5.8.4",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "5.8.4",
+      "declared_directly": true,
+      "compatibility_version": 1
+    },
+    {
+      "full_name": "lz4",
+      "version": "1.10.0",
+      "revision": 0,
+      "bottle_rebuild": 3,
+      "pkg_version": "1.10.0",
+      "declared_directly": false
+    },
+    {
+      "full_name": "zstd",
+      "version": "1.5.7",
+      "revision": 1,
+      "bottle_rebuild": 0,
+      "pkg_version": "1.5.7_1",
+      "declared_directly": true,
+      "compatibility_version": 1
+    }
+  ],
+  "source": {
+    "spec": "stable",
+    "versions": {
+      "stable": "3.14.8",
+      "head": null,
+      "version_scheme": 0,
+      "compatibility_version": null
+    },
+    "tap_git_head": null,
+    "tap": "homebrew/core"
+  }
+}

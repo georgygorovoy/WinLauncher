@@ -1,0 +1,13 @@
+/* ------------------------------------------------------------------------
+
+   unicodedata -- Provides access to the Unicode database.
+
+   The current version number is reported in the unidata_version constant.
+
+   Written by Marc-Andre Lemburg (mal@lemburg.com).
+   Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
+   Modified by Martin v. Löwis (martin@v.loewis.de)
+
+   Copyright (c) Corporation for National Research Initiatives.
+
+   ------------------------------------------------------------------------ */

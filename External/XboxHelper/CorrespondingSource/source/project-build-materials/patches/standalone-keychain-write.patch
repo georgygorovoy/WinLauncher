@@ -1,0 +1,10 @@
+diff --git a/crates/xodus-cli/Cargo.toml b/crates/xodus-cli/Cargo.toml
+--- a/crates/xodus-cli/Cargo.toml
++++ b/crates/xodus-cli/Cargo.toml
+@@ -38,3 +38,6 @@ nix = "0.31.3"
+ 
+ [features]
+ tokio_console = ["dep:console-subscriber"]
++
++[target.'cfg(target_os = "macos")'.dependencies]
++security-framework = "=3.7.0"

@@ -1,0 +1,350 @@
+diff --git a/dlls/xgameruntime/GDKComponent/System/XUser.c b/dlls/xgameruntime/GDKComponent/System/XUser.c
+index fce6eaa..23e1468 100644
+--- a/dlls/xgameruntime/GDKComponent/System/XUser.c
++++ b/dlls/xgameruntime/GDKComponent/System/XUser.c
+@@ -198,6 +198,11 @@ struct XUser
+     struct endpoint *endpoints;
+     UINT32 policiesLen;
+     struct policy *policies;
++    HSTRING msaDeviceRps;
++    HSTRING xboxDeviceToken;
++    ULONGLONG xboxDeviceExpiry;
++    HSTRING xboxTitleToken;
++    ULONGLONG xboxTitleExpiry;
+ };
+ 
+ static SRWLOCK registered_users_lock = SRWLOCK_INIT;
+@@ -321,6 +326,9 @@ static ULONG WINAPI user_Release( IUser *iface )
+         if (impl->refreshToken) WindowsDeleteString( impl->refreshToken );
+         if (impl->userToken) WindowsDeleteString( impl->userToken );
+         if (impl->xstsToken) WindowsDeleteString( impl->xstsToken );
++        if (impl->msaDeviceRps) WindowsDeleteString( impl->msaDeviceRps );
++        if (impl->xboxDeviceToken) WindowsDeleteString( impl->xboxDeviceToken );
++        if (impl->xboxTitleToken) WindowsDeleteString( impl->xboxTitleToken );
+         if (impl->xboxPrivileges) WindowsDeleteString( impl->xboxPrivileges );
+         free( impl->xstsRelyingParty );
+         if (impl->publicGamerpic) WindowsDeleteString( impl->publicGamerpic );
+@@ -506,7 +514,7 @@ static HRESULT user_refresh_access_token( struct XUser *impl )
+     {
+         IAsyncOperation_IMsaTokenResponse *operation = NULL;
+         IMsaTokenResponse *response = NULL;
+-        const char *access = NULL;
++        const char *access = NULL, *device_rps = NULL;
+         HSTRING replacement = NULL;
+         DWORD status;
+         HRESULT hr;
+@@ -525,8 +533,15 @@ static HRESULT user_refresh_access_token( struct XUser *impl )
+         if (FAILED(hr = MultiByteToHSTRING( access, strlen( access ), &replacement ))) goto cleanup;
+         if (impl->accessToken) WindowsDeleteString( impl->accessToken );
+         impl->accessToken = replacement;
++        replacement=NULL;
++        if (FAILED(hr=IMsaTokenResponse_get_DeviceRps(response,&device_rps))) goto cleanup;
++        if (!device_rps || !*device_rps) { hr=E_ACCESSDENIED;goto cleanup; }
++        if (FAILED(hr=MultiByteToHSTRING(device_rps,strlen(device_rps),&replacement))) goto cleanup;
++        if (impl->msaDeviceRps) WindowsDeleteString(impl->msaDeviceRps);
++        impl->msaDeviceRps=replacement;
+ 
+     cleanup:
++        if (device_rps) {memset((void*)device_rps,0,strlen(device_rps));free((void*)device_rps);}
+         if (access) { memset( (void *)access, 0, strlen( access ) ); free( (void *)access ); }
+         if (response) IMsaTokenResponse_Release( response );
+         if (operation) IAsyncOperation_IMsaTokenResponse_Release( operation );
+@@ -610,6 +625,108 @@ cleanup:
+     return hr;
+ }
+ 
++
++/* Authentication requests bind the genuine device/title tokens to this user's
++ * generated proof key. Never log request bodies, tokens or signatures. */
++static HRESULT user_auth_post( struct XUser *impl, const WCHAR *host, const WCHAR *path,
++                               char *body, UCHAR **response, SIZE_T *response_size )
++{
++    BYTE signature[76] = {0};
++    FILETIME timestamp;
++    ULONGLONG ticks;
++    char path_utf8[128], encoded[105] = {0};
++    WCHAR headers[256];
++    BYTE *data, *ptr;
++    SIZE_T len, body_len = min( strlen(body), 0x2000 );
++    HRESULT hr;
++    if (!WideCharToMultiByte(CP_UTF8,0,path,-1,path_utf8,sizeof(path_utf8),NULL,NULL)) return E_INVALIDARG;
++    len = 14 + 5 + strlen(path_utf8) + 1 + 1 + body_len + 1;
++    if (!(data = calloc(1,len))) return E_OUTOFMEMORY;
++    data[3] = signature[3] = 1;
++    GetSystemTimeAsFileTime(&timestamp);
++    ticks = ((ULONGLONG)timestamp.dwHighDateTime << 32) | timestamp.dwLowDateTime;
++    for (unsigned i=0;i<8;i++) data[5+i] = signature[4+i] = ticks >> (56-8*i);
++    ptr=data+14;
++    memcpy(ptr,"POST",4);ptr+=5;
++    memcpy(ptr,path_utf8,strlen(path_utf8));ptr+=strlen(path_utf8)+2;
++    memcpy(ptr,body,body_len);
++    hr=IUser_SignData(&impl->IUser_iface,len,data,64,signature+12);
++    memset(data,0,len);free(data);
++    if(FAILED(hr)) return hr;
++    if(FAILED(hr=encode_base64(76,signature,104,encoded,TRUE))) return hr;
++    swprintf(headers,ARRAY_SIZE(headers),L"Content-Type: application/json\r\nX-Xbl-Contract-Version: 1\r\nSignature: %S\r\n",encoded);
++    hr=http_request(L"POST",host,path,body,headers,ACCEPT_JSON,response,response_size);
++    memset(signature,0,sizeof(signature));memset(encoded,0,sizeof(encoded));memset(headers,0,sizeof(headers));
++    return hr;
++}
++
++static char *user_token_utf8( HSTRING token )
++{
++    const WCHAR *wide=WindowsGetStringRawBuffer(token,NULL);
++    int len=WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,wide,-1,NULL,0,NULL,NULL);
++    char *text;
++    if(!len || !(text=malloc(len))) return NULL;
++    if(!WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,wide,-1,text,len,NULL,NULL)) { free(text);return NULL; }
++    return text;
++}
++
++static HRESULT user_ensure_device_title( struct XUser *impl )
++{
++    GUID id;
++    char device_id[40], *body=NULL, *access=NULL, *device=NULL;
++    UCHAR *response=NULL; SIZE_T response_size=0, body_size=0;
++    IJsonObject *object=NULL;
++    HSTRING replacement=NULL;
++    ULONGLONG expiry;
++    HRESULT hr=S_OK;
++    if(!impl->xboxDeviceToken || impl->xboxDeviceExpiry <= xuser_current_time()+3000000000ULL)
++    {
++        if (!(access=user_token_utf8(impl->msaDeviceRps))) {hr=E_ACCESSDENIED;goto cleanup;}
++        body_size=strlen(access)+1024;
++        if(!(body=calloc(1,body_size))) {hr=E_OUTOFMEMORY;goto cleanup;}
++        snprintf(body,body_size,"{\"RelyingParty\":\"http://auth.xboxlive.com\",\"TokenType\":\"JWT\",\"Properties\":{\"AuthMethod\":\"RPS\",\"RpsTicket\":\"%s\",\"SiteName\":\"user.auth.xboxlive.com\",\"Version\":\"10.0.19045\",\"ProofKey\":%.*s}}",access,(int)(PROOF_KEY_SIZE),impl->proofKey);
++        hr=user_auth_post(impl,L"device.auth.xboxlive.com",L"/device/authenticate",body,&response,&response_size);
++        TRACE("Device authentication status %#lx.\n",hr);
++        if(FAILED(hr)) goto cleanup;
++        if(FAILED(hr=parse_json((char*)response,response_size,&object))) goto cleanup;
++        if(FAILED(hr=get_json_string(object,L"Token",&replacement))) goto cleanup;
++        if(!WindowsGetStringLen(replacement)) {hr=E_UNEXPECTED;goto cleanup;}
++        if(FAILED(hr=user_read_token_expiry(object,&expiry))) goto cleanup;
++        if(impl->xboxDeviceToken) WindowsDeleteString(impl->xboxDeviceToken);
++        impl->xboxDeviceToken=replacement;replacement=NULL;impl->xboxDeviceExpiry=expiry;
++        if(impl->xboxTitleToken) WindowsDeleteString(impl->xboxTitleToken);
++        impl->xboxTitleToken=NULL;impl->xboxTitleExpiry=0;
++        IJsonObject_Release(object);object=NULL;
++        memset(response,0,response_size);free(response);response=NULL;
++        memset(body,0,body_size);free(body);body=NULL;
++        memset(access,0,strlen(access));free(access);access=NULL;
++    }
++    if(!impl->xboxTitleToken || impl->xboxTitleExpiry <= xuser_current_time()+3000000000ULL)
++    {
++        if(!(access=user_token_utf8(impl->accessToken)) || !(device=user_token_utf8(impl->xboxDeviceToken))) {hr=E_OUTOFMEMORY;goto cleanup;}
++        body_size=strlen(access)+strlen(device)+1024;
++        if(!(body=calloc(1,body_size))) {hr=E_OUTOFMEMORY;goto cleanup;}
++        snprintf(body,body_size,"{\"RelyingParty\":\"http://auth.xboxlive.com\",\"TokenType\":\"JWT\",\"Properties\":{\"DeviceToken\":\"%s\",\"TitleId\":%lu,\"ProofKey\":%.*s}}",device,titleId,(int)(PROOF_KEY_SIZE),impl->proofKey);
++        hr=user_auth_post(impl,L"title.auth.xboxlive.com",L"/title/authenticate",body,&response,&response_size);
++        TRACE("Title authentication status %#lx.\n",hr);
++        if(FAILED(hr)) goto cleanup;
++        if(FAILED(hr=parse_json((char*)response,response_size,&object))) goto cleanup;
++        if(FAILED(hr=get_json_string(object,L"Token",&replacement))) goto cleanup;
++        if(!WindowsGetStringLen(replacement)) {hr=E_UNEXPECTED;goto cleanup;}
++        if(FAILED(hr=user_read_token_expiry(object,&expiry))) goto cleanup;
++        if(impl->xboxTitleToken) WindowsDeleteString(impl->xboxTitleToken);
++        impl->xboxTitleToken=replacement;replacement=NULL;impl->xboxTitleExpiry=expiry;
++    }
++cleanup:
++    if(replacement) WindowsDeleteString(replacement);
++    if(object) IJsonObject_Release(object);
++    if(response) {memset(response,0,response_size);free(response);}
++    if(body) {memset(body,0,body_size);free(body);}
++    if(access) {memset(access,0,strlen(access));free(access);}
++    if(device) {memset(device,0,strlen(device));free(device);}
++    return hr;
++}
++
+ static HRESULT user_request_xsts_token( struct XUser *impl, const char *relyingParty )
+ {
+     static const char prefix[] = "{\"TokenType\":\"JWT\",\"RelyingParty\":\"";
+@@ -625,7 +742,7 @@ static HRESULT user_request_xsts_token( struct XUser *impl, const char *relyingP
+     XUserAgeGroup ageGroup = XUserAgeGroup_Unknown;
+     ULONGLONG tokenExpiry = 0;
+     UINT32 tokenLen, wTokenLen;
+-    char *body = NULL, *newRelyingParty = NULL, *token;
++    char *body = NULL, *newRelyingParty = NULL, *token, *deviceToken = NULL, *titleToken = NULL;
+     IJsonArray *array = NULL;
+     UCHAR *buffer = NULL;
+     const WCHAR *wToken;
+@@ -635,10 +752,12 @@ static HRESULT user_request_xsts_token( struct XUser *impl, const char *relyingP
+ 
+     TRACE( "impl %p, relyingParty %s.\n", impl, debugstr_a( relyingParty ) );
+ 
++    if (FAILED(hr = user_ensure_device_title(impl))) goto cleanup;
++    if (!(deviceToken = user_token_utf8(impl->xboxDeviceToken)) || !(titleToken = user_token_utf8(impl->xboxTitleToken))) { hr = E_OUTOFMEMORY; goto cleanup; }
+     wToken = WindowsGetStringRawBuffer( impl->userToken, &wTokenLen );
+     if (!(tokenLen = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, wToken, wTokenLen, NULL, 0, NULL, NULL ))) goto error;
+     if (!(body = calloc( strlen( prefix ) + strlen( relyingParty ) + strlen( properties ) +
+-            PROOF_KEY_SIZE + strlen( userTokens ) + tokenLen + strlen( "\"]}}" ) + 1, sizeof(char) )))
++            PROOF_KEY_SIZE + strlen( userTokens ) + tokenLen + strlen(deviceToken) + strlen(titleToken) + 128, sizeof(char) )))
+     {
+         hr = E_OUTOFMEMORY;
+         goto cleanup;
+@@ -651,9 +770,13 @@ static HRESULT user_request_xsts_token( struct XUser *impl, const char *relyingP
+     strcat( body, userTokens );
+     token = body + strlen( body );
+     if (!WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, wToken, wTokenLen, token, tokenLen, NULL, NULL )) goto error;
+-    strcat( body, "\"]}}" );
++    strcat( body, "\"],\"DeviceToken\":\"" );
++    strcat( body, deviceToken );
++    strcat( body, "\",\"TitleToken\":\"" );
++    strcat( body, titleToken );
++    strcat( body, "\"}}" );
+ 
+-    if (FAILED(hr = http_request( L"POST", L"xsts.auth.xboxlive.com", L"/xsts/authorize", body, CT_JSON, ACCEPT_JSON, &buffer, &bufferSize ))) goto cleanup;
++    if (FAILED(hr = user_auth_post( impl, L"xsts.auth.xboxlive.com", L"/xsts/authorize", body, &buffer, &bufferSize ))) goto cleanup;
+     if (FAILED(hr = parse_json( (char *)buffer, bufferSize, &object ))) goto cleanup;
+     if (FAILED(hr = get_json_string( object, L"Token", &newToken ))) goto cleanup;
+     if (!WindowsGetStringLen( newToken )) { hr = E_UNEXPECTED; goto cleanup; }
+@@ -1071,7 +1194,7 @@ cleanup:
+     return hr;
+ }
+ 
+-static HRESULT LoadMsaUser( const char *access_token, XUserHandle *user )
++static HRESULT LoadMsaUser( const char *access_token, const char *device_rps, XUserHandle *user )
+ {
+     XUserHandle impl;
+     HRESULT hr;
+@@ -1084,6 +1207,8 @@ static HRESULT LoadMsaUser( const char *access_token, XUserHandle *user )
+     impl->ref = 1;
+ 
+     impl->usesXodus = TRUE;
++    if (!device_rps || !*device_rps) { hr=E_ACCESSDENIED; goto error; }
++    if (FAILED(hr=MultiByteToHSTRING(device_rps,strlen(device_rps),&impl->msaDeviceRps))) goto error;
+     if (FAILED(hr = MultiByteToHSTRING( access_token, strlen( access_token ), &impl->accessToken )))
+         goto error;
+     if (FAILED(hr = finish_user_load( impl ))) goto error;
+@@ -1251,7 +1376,7 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+             {
+                 IAsyncOperation_IMsaTokenResponse *operation = NULL;
+                 IMsaTokenResponse *response = NULL;
+-                const char *access_token = NULL;
++                const char *access_token = NULL, *device_rps = NULL;
+                 DWORD async;
+ 
+                 if (context->options & XUserAddOptions_AddDefaultUserSilently ||
+@@ -1275,10 +1400,13 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+                         WARN( "Xodus MSA operation failed, hr %#lx.\n", hr );
+                     else if (FAILED(hr = IMsaTokenResponse_get_Token( response, &access_token )))
+                         WARN( "Xodus MSA result failed, hr %#lx.\n", hr );
+-                    else if (FAILED(hr = LoadMsaUser( access_token, &context->user )))
++                    else if (FAILED(hr = IMsaTokenResponse_get_DeviceRps(response,&device_rps)))
++                        WARN("Xodus device token unavailable, hr %#lx.\n",hr);
++                    else if (FAILED(hr = LoadMsaUser( access_token, device_rps, &context->user )))
+                         WARN( "Xodus user initialization failed, hr %#lx.\n", hr );
+ 
+-                    free( (void *)access_token );
++                    if (access_token) {memset((void*)access_token,0,strlen(access_token));free((void*)access_token);}
++                    if (device_rps) {memset((void*)device_rps,0,strlen(device_rps));free((void*)device_rps);}
+                     if (response) IMsaTokenResponse_Release( response );
+                     if (operation) IAsyncOperation_IMsaTokenResponse_Release( operation );
+                     goto complete;
+diff --git a/dlls/xgameruntime/xodusprovider.idl b/dlls/xgameruntime/xodusprovider.idl
+index 8841454..ae746bc 100644
+--- a/dlls/xgameruntime/xodusprovider.idl
++++ b/dlls/xgameruntime/xodusprovider.idl
+@@ -128,6 +128,7 @@ namespace Xodus
+     {
+         [propget] HRESULT Token( [out, retval] const char **out );
+         [propget] HRESULT Expiry( [out, retval] Windows.Foundation.DateTime *out );
++        [propget] HRESULT DeviceRps( [out, retval] const char **out );
+     }
+ 
+     [
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/Structs.h b/dlls/xgameruntime/GDKComponent/Xodus/Structs.h
+index 6cc80df..4688166 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/Structs.h
++++ b/dlls/xgameruntime/GDKComponent/Xodus/Structs.h
+@@ -96,7 +96,7 @@ struct MsaTokenResponse :
+ {
+ public:
+     MsaTokenResponse() = default;
+-    MsaTokenResponse( const char *token ) : token(token) {};
++    MsaTokenResponse( const char *token, const char *device ) : token(token), device(device) {};
+     virtual ~MsaTokenResponse() = default;
+ 
+     MsaTokenResponse(
+@@ -114,12 +114,14 @@ public:
+     /* IMsaTokenResponse Methods */
+     HRESULT WINAPI get_Token( const char **out );
+     HRESULT WINAPI get_Expiry( ABI::Windows::Foundation::DateTime *out );
++    HRESULT WINAPI get_DeviceRps( const char **out ) override;
+ 
+ private:
+     ABI::Windows::Foundation::DateTime Expiry;
+     HSTRING Token;
+     std::atomic_long ref{ 1 };
+     const char *token = NULL;
++    const char *device = NULL;
+ };
+ 
+ struct MsaTokenRequestContext
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/Structs.cpp b/dlls/xgameruntime/GDKComponent/Xodus/Structs.cpp
+index 1fb0000..08fb238 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/Structs.cpp
++++ b/dlls/xgameruntime/GDKComponent/Xodus/Structs.cpp
+@@ -222,7 +222,8 @@ MsaTokenResponse::Release() noexcept
+ 
+     if ( !curr )
+     {
+-        if (token) free( const_cast<char *>(token) );
++        if (token) { memset(const_cast<char *>(token),0,strlen(token)); free( const_cast<char *>(token) ); }
++        if (device) { memset(const_cast<char *>(device),0,strlen(device)); free( const_cast<char *>(device) ); }
+         delete this;
+     }
+ 
+@@ -243,4 +244,9 @@ MsaTokenResponse::get_Expiry( ABI::Windows::Foundation::DateTime *out )
+     TRACE( "iface %p, out %p\n", this, out );
+     *out = Expiry;
+     return S_OK;
+-}
+\ No newline at end of file
++}
++HRESULT WINAPI MsaTokenResponse::get_DeviceRps( const char **out )
++{
++    *out = device ? strdup(device) : nullptr;
++    return *out ? S_OK : E_FAIL;
++}
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp b/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
+index 17ae000..8d109e4 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
++++ b/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
+@@ -149,7 +149,7 @@ public:
+     FromMsaTokenResponseXml( LPCSTR xml_string, IMsaTokenResponse **response ) override
+     {
+         xmlNodePtr child, root;
+-        char *token = nullptr;
++        char *token = nullptr, *device = nullptr;
+         xmlDocPtr doc;
+ 
+         TRACE( "MSA response received, output %p.\n", response );
+@@ -163,19 +163,22 @@ public:
+ 
+         if (!strcmp( reinterpret_cast<const char *>(root->name), "MSATokenResponse" ))
+             for (child = root->children; child != nullptr; child = child->next)
+-                if (child->type == XML_ELEMENT_NODE && !strcmp( reinterpret_cast<const char *>(child->name), "Token" ))
+-                {
+-                    token = reinterpret_cast<char *>(xmlNodeGetContent( child ));
+-                    break;
+-                }
++            {
++                if (child->type != XML_ELEMENT_NODE) continue;
++                if (!strcmp(reinterpret_cast<const char *>(child->name), "Token") && !token)
++                    token = reinterpret_cast<char *>(xmlNodeGetContent(child));
++                if (!strcmp(reinterpret_cast<const char *>(child->name), "DeviceRps") && !device)
++                    device = reinterpret_cast<char *>(xmlNodeGetContent(child));
++            }
+ 
+         if (!token || !*token)
+         {
+             xmlFree( token );
++            xmlFree( device );
+             xmlFreeDoc( doc );
+             return E_FAIL;
+         }
+-        *response = new MsaTokenResponse( token );
++        *response = new MsaTokenResponse( token, device );
+         xmlFreeDoc( doc );
+         return S_OK;
+     }

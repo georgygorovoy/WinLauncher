@@ -1,0 +1,10 @@
+#
+# Secret Labs' Regular Expression Engine
+#
+# convert template to internal format
+#
+# Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
+#
+# See the __init__.py file for information on usage and redistribution.
+#
+

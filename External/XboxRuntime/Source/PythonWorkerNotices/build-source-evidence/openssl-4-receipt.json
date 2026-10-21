@@ -1,0 +1,27 @@
+{
+  "built_as_bottle": true,
+  "poured_from_bottle": true,
+  "compiler": "clang",
+  "runtime_dependencies": [
+    {
+      "full_name": "ca-certificates",
+      "version": "2026-10-20",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "2026-10-20",
+      "declared_directly": true,
+      "compatibility_version": 1
+    }
+  ],
+  "source": {
+    "spec": "stable",
+    "versions": {
+      "stable": "4.0.3",
+      "head": null,
+      "version_scheme": 0,
+      "compatibility_version": null
+    },
+    "tap_git_head": null,
+    "tap": "homebrew/core"
+  }
+}

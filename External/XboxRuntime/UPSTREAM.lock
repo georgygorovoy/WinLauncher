@@ -1,0 +1,7 @@
+bedrock_mac_repository=https://github.com/1JRobertson/bedrock-mac.git
+bedrock_mac_commit=4b42c46131fd5b53cae7588773cac2d601471c2f
+winegdk_repository=https://github.com/Sightem/WineGDK.git
+winegdk_commit=b5d23b074cfd5e28e79acceaaefaf41a26ce6272
+dxmt_repository=https://github.com/3Shain/dxmt.git
+dxmt_commit=589adb780354b461645b29999cefaf533594ee99
+dxmt_version=v0.80

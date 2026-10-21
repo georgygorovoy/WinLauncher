@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\WindowsRuntime\ActivatableClassId\Windows.ApplicationModel.DataTransfer.DataTransferManager]
+"DllPath"="C:\\windows\\system32\\twinapi.appcore.dll"
+"ThreadingModel"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\WindowsRuntime\ActivatableClassId\Windows.ApplicationModel.Core.CoreApplication]
+"DllPath"="C:\\windows\\system32\\twinapi.appcore.dll"
+"ThreadingModel"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\WindowsRuntime\ActivatableClassId\Windows.UI.Text.Core.CoreTextServicesManager]
+"DllPath"="C:\\windows\\system32\\windows.ui.core.textinput.dll"
+"ThreadingModel"=dword:00000000

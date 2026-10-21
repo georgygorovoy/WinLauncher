@@ -1,0 +1,17 @@
+{
+  "built_as_bottle": true,
+  "poured_from_bottle": true,
+  "compiler": "clang",
+  "runtime_dependencies": [],
+  "source": {
+    "spec": "stable",
+    "versions": {
+      "stable": "5.8.4",
+      "head": null,
+      "version_scheme": 1,
+      "compatibility_version": null
+    },
+    "tap_git_head": null,
+    "tap": "homebrew/core"
+  }
+}

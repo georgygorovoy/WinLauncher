@@ -2,7 +2,7 @@
 
 Native macOS application that runs Windows applications through independently updatable Wine engines and launches Android APKs through an installed Android Emulator.
 
-**Current release: WinLauncher 1.1.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java, then starts the emulator, installs the selected APK and opens its launcher activity.
+**Current release candidate: WinLauncher 1.2.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java. Version 1.2 adds Xbox Games Support for Minecraft for Windows: a separately built GPL worker handles Microsoft sign-in, ownership verification, the official owned-game download, WineGDK/DXMT setup, and launch.
 
 The first engineering gate is deliberately small: install current Ubisoft Connect on Apple Silicon and display its responsive login UI without CrossOver binaries or D3DMetal. Product implementation follows that result.
 
@@ -52,6 +52,10 @@ Implemented in the MVP:
 - Android `.apk` import, drag-and-drop, Finder file association and one-click relaunch from the same library;
 - automatic installation or discovery and startup of an Apple Silicon Android Emulator device;
 - automatic APK package detection, `adb` installation and launcher activity startup.
+- native Minecraft installer detection and Microsoft sign-in through a pinned, separately executed Xodus helper;
+- SHA-256 verification of the helper, macOS Keychain token storage and corresponding GPL source materials;
+- a bundled, replaceable WineGDK 11.8 and DXMT 0.80 player runtime for one-click Minecraft for Windows launch;
+- a dedicated Xbox Games environment, automatic GameInput setup, and source-built WinRT file-picker compatibility.
 
 Android Studio is not required. After the user accepts Google's Android SDK License Agreement, WinLauncher downloads `adb`, the native Apple Silicon emulator, and one Android 11 ARM64 AOSP image directly from Google's SDK repository. The download is about 985 MB and uses about 2.5–3 GB after installation. Disk images are stored sparsely and emulator snapshots stay disabled to avoid wasting space. APKs that require a physical device, a different CPU ABI, installation from Google Play, or a successful Play Integrity verdict may refuse to run.
 
@@ -61,6 +65,9 @@ Not yet implemented or validated:
 - user-selectable graphics modes and remotely updated compatibility profiles;
 - robust process-tree supervision and environment repair;
 - Steam → Trackmania → Ubisoft launcher-chain validation and broader game compatibility testing;
-- Developer ID signing, notarization and release DMG packaging.
+- Developer ID signing and notarization for public distribution;
+- wider Minecraft qualification across clean Macs, game updates, multiplayer, controllers, and world import/export.
+
+Minecraft for Windows support requires macOS 15 or later, Rosetta 2, an Internet connection for initial sign-in, and a Microsoft account that owns the game. The game is downloaded directly for the signed-in owner and is never included in WinLauncher.
 
 See [Xcode setup and run instructions](docs/RUN-XCODE.md). The earlier `WinLauncher-Test.dmg` is an obsolete local experiment and should not be used for further testing.

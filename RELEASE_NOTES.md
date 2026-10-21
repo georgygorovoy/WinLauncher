@@ -1,36 +1,37 @@
-# WinLauncher 1.1.0
+# WinLauncher 1.2.0
 
-This update adds Android APKs to the same native macOS app library.
+This release candidate adds the first native Xbox Games Support path for
+Minecraft for Windows.
 
 ## Highlights
 
-- Open or drag `.exe`, `.msi`, or `.apk` files.
-- Open supported Windows and Android files directly from Finder.
-- Install a minimal Android runtime automatically without Android Studio or Java.
-- Verify every Android runtime archive against Google's published SHA-1 checksum.
-- Start the Android Emulator, install the APK, detect its package and open it.
-- Keep Android apps in the library for one-click relaunch.
-- Automatic, verified WineForge engine installation.
-- New native macOS application icon created with Apple Icon Composer.
-- One shared Windows Environment by default.
-- Ubisoft Connect login and Trackmania support through the WineForge CEF/DXMT path.
-- Real application icons when Wine can extract them, with polished generated artwork as a fallback.
-- Automatic, Performance and Compatibility graphics modes.
-- Environment repair, Windows tools, custom environment variables and useful diagnostics.
-- Automatic, integrity-checked Wine Mono support for managed .NET applications.
-- Clear guidance when an installer depends on unsupported Microsoft Store/WinRT components.
-- Microsoft Store bootstrap installers are recognized before launch. Minecraft routes to the Windows-entitlement Bedrock runtime, which uses the user's Microsoft purchase without requiring Google Play.
+- Recognizes `MinecraftInstaller.exe`, `MinecraftLauncher.exe`, and `Minecraft.exe` automatically.
+- Opens Xbox Games Support inside WinLauncher instead of sending the user to GitHub.
+- Uses a separate pinned GPL helper for Microsoft sign-in and ownership verification.
+- Stores Microsoft account tokens in macOS Keychain and refreshes them through Xbox services.
+- Downloads and verifies the official Minecraft for Windows package owned by the signed-in account.
+- Verifies the embedded helper against a fixed SHA-256 digest before execution.
+- Includes GPL notices and exact corresponding-source materials for the helper build.
+- Includes the verified license set and component/source inventory for the frozen Python worker.
+- Includes a pinned WineGDK 11.8 and DXMT 0.80 player runtime built from source.
+- Automatically prepares a dedicated Xbox Games environment and launches Minecraft for Windows.
+- Installs the required Microsoft GameInput component after verifying its official payload.
+- Includes a source-built WinRT file-picker bridge and verifies it before changing the environment.
+- Adds an Xbox Games section to Settings and diagnostics.
+- Retains Windows EXE/MSI, Android APK, Finder integration, WineForge and shared-environment support from 1.1.
+
+## Preview limitations
+
+Minecraft launch is implemented and has passed a local Apple Silicon launch test.
+This is still preview support: game updates, multiplayer, controllers, world
+import/export, and clean-machine installs need wider testing before a stable claim.
 
 ## Requirements
 
 - Apple Silicon Mac
-- macOS 14 or later
-- Internet connection for the first Windows engine installation
-- About 3 GB free space for optional Android Support
-
-Android compatibility depends on the APK. Apps requiring a physical device,
-an unavailable native CPU architecture, Google Play installation, DRM, or Play
-Integrity certification may not run in an emulator.
+- macOS 15 or later for Minecraft for Windows support
+- Rosetta 2 for Minecraft for Windows support
+- Internet connection for Windows Support, Android Support, or Xbox sign-in/download
 
 The DMG uses local ad-hoc signing for testing. Public distribution should use a
 Developer ID signature and Apple notarization.

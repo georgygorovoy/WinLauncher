@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "profile": "release-heap-input-reuse-memory-v1",
+  "validation": "Pinned source reconstruction recipe; historical local evidence is recorded separately in docs/RELEASE.md",
+  "upstream": {
+    "winegdk": {
+      "url": "https://github.com/Sightem/WineGDK.git",
+      "commit": "b5d23b074cfd5e28e79acceaaefaf41a26ce6272"
+    },
+    "dxmt": {
+      "url": "https://github.com/3Shain/dxmt.git",
+      "commit": "589adb780354b461645b29999cefaf533594ee99"
+    }
+  },
+  "retained": [
+    "WineGDK compatibility, Store callback, privileges, Realms, token renewal and device/title auth",
+    "48-byte process heap reuse",
+    "DXMT shared buffers, packed constants and input-layout reuse",
+    "Unix display/output autorelease pools and ColorSync releases",
+    "Source-built WinRT PNG and world file picker compatibility"
+  ],
+  "excluded": [
+    "exact-game refmove",
+    "frame slab",
+    "frame pacing",
+    "metrics HUD",
+    "exact-current",
+    "clone recurrence",
+    "binding recurrence",
+    "constant buffer borrowing",
+    "C++ finish-thread autorelease pool"
+  ],
+  "source_files": {
+    "patches/winegdk-macos-local.patch": "a2c895c945441969338c469c55e8e5a85e82b1193eab3f30090745c4f9a30b07",
+    "patches/minecraft-store-callback.patch": "1f80789746d3516458fcea73b05ea8eba1ddfc01eb6f3a38273467e5be1974ce",
+    "patches/experimental-wine-heap-reuse.patch": "0999590811dad880eb1a9153443ada7f90c65dfb8e9db4974b1a9a4364b17890",
+    "patches/standalone-dxmt-shared-buffers.patch": "7528c1e85920944af3b5a0a0480d51ce940255d6e8c403e4cfa3db7bcfc70694",
+    "patches/standalone-dxmt-packed-constants.patch": "6de4f8df54b50f434da8a07a630e41cd90a05f244be7aff6658b9b8ba835c03b",
+    "patches/standalone-dxmt-input-layout-reuse.patch": "9bdc5fc30ce83e7c52f07d892c8ba7ba52b1fd9475bc4018dd5ef633d035a19f",
+    "patches/standalone-dxmt-memory-lifetime.patch": "6d291277db19a7edda3f3d8e5ef57a81382152e6e3a13ccd8aef4bddd075f671",
+    "standalone-dxmt-display-trace.c": "d678921fcf0165981e085ef6d2df60b7d79ead17f6af53333ad830cb48e6070a",
+    "patches/standalone-wine-dxmt-abi.patch": "ef509d6c3e2124385cdf056d69bd2b34444fb48f569499bf11a12d5f6238c5fe",
+    "patches/standalone-wine-idl-list.patch": "814a975ebe0c1d48f61de232f05e03755450e98d6cc94e99d4f09e774a2dd058",
+    "patches/standalone-wine-storage-linkage.patch": "9048fc6070059ddf874f14767021d625e4bc5363792c262f6426a767308d12f7",
+    "patches/standalone-wine-user-privileges.patch": "2de07b531a17a8535f05e47009be33ba351dced48b8398412860ee2f0d221aed",
+    "patches/standalone-wine-xuser-realms.patch": "f07ba43c6c13190d974bb8e84621f01766a7c03c9818928808ee507a68390477",
+    "patches/standalone-wine-xuser-token-refresh.patch": "d7694c51561f0620f1df4cb5f1ab418be338be70cbfe3beaba24254a0265fdd4",
+    "patches/standalone-wine-xuser-z-device-auth.patch": "26668fdc4b56f5eacc4a92ecbf9904884923cc09d343b5ee31f314c1ebbcf79f",
+    "native-dependencies.lock.json": "decd9132c5c8038d8ef6f26af89066f0e4c73b09d0308f0b1c2d3f98c2c711bd",
+    "build-standalone-wine.sh": "971656e3b3a698410a8e34179e54b0263d304e7db7443a907ffe9bfbf84de37b",
+    "verify-wine-source.py": "694f6ac69c24b928d86891dfe6c4872c8a3dc2adef49a153f943e6a0ee17ba5c",
+    "standalone-pickers.py": "d2083ef94dd3183a397692b46c285478aebb0dab1a8389e9d968bf39a2111bae",
+    "file-pickers/build.sh": "b7cdc035e626dd2b6f33967cd97f028f79a67bcd496c629fe74e4b7dc61d46ac",
+    "file-pickers/pickers.c": "1a5b7acf11a54e68da7304c2f9ed53ce76231723bbb2c63a2289da4b0cc24611",
+    "file-pickers/ids.h": "bb7abdd17907d65b53377e37c060e2ae0d163215083a1c79ef01e2aa355eef94",
+    "file-pickers/pickers.spec": "9d1b11a9e8593a4f441bd54e837cee8501af423a4a0f56f45c75e3c4d9d7f5ec",
+    "file-pickers/README.md": "02ae71676430a0bda7e31d97c3761d1026cc42f6118a96956add99ea16d37440",
+    "file-pickers/check-windows.cmd": "9a08f3b71009d793c54b253867338bef34b2a28d1ffad5ce8c7d9a6b1cd1637a",
+    "tests/file-picker-contract.c": "8eff36decbac196f98848702d2ac0613d58d965ba989d51ff6959709c72ac03a"
+  },
+  "wine_standalone_patches": [
+    "standalone-wine-dxmt-abi.patch",
+    "standalone-wine-idl-list.patch",
+    "standalone-wine-storage-linkage.patch",
+    "standalone-wine-user-privileges.patch",
+    "standalone-wine-xuser-realms.patch",
+    "standalone-wine-xuser-token-refresh.patch",
+    "standalone-wine-xuser-z-device-auth.patch"
+  ],
+  "toolchain": {
+    "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20251216/llvm-mingw-20251216-ucrt-macos-universal.tar.xz",
+    "sha256": "38bb5e48ec3e0ce95fb901f4efff0bd6ffa966d1b32539a6510af816a959d160",
+    "directory": "llvm-mingw-20251216-ucrt-macos-universal",
+    "llvm_version": "21.1.8"
+  },
+  "build_python_packages": {
+    "meson": "1.10.0",
+    "ninja": "1.13.2"
+  },
+  "native_dependencies": {
+    "required": "source-built x86_64 prefix with dependency-manifest.json, matching include/ headers and lib/ closure",
+    "binary_archive_fallback_allowed": false,
+    "status": "Pinned source build and receipts required for every reconstruction; historical local evidence is recorded separately in docs/RELEASE.md",
+    "source_lock_sha256": "decd9132c5c8038d8ef6f26af89066f0e4c73b09d0308f0b1c2d3f98c2c711bd",
+    "source_recipe": "build-native-dependencies.py"
+  },
+  "external_prerequisites": [
+    "Apple Silicon macOS build host, Apple Command Line Tools and Rosetta",
+    "Homebrew /opt/homebrew LLVM, Bison and protobuf (host versions must be recorded)",
+    "Rust toolchain 1.98.0",
+    "Python 3.12+ for source tools; matching venv Meson/Ninja versions",
+    "Source-built dependency manifest with source archive pins, build commands, tool versions and file hashes"
+  ],
+  "limits": [
+    "Host SDK/compiler changes can alter bytes; this recipe targets reconstructible functionality, not byte-identical outputs",
+    "The pinned upstream DXMT binary still supplies its shader compiler and Metal shader library; source commit/notices must accompany distribution",
+    "Native dependency source-build completion and validation remain required",
+    "Graphics probes are separate from gameplay, clean M1, multiplayer and stability gates"
+  ]
+}

@@ -1,0 +1,4 @@
+# Copyright (C) 2001 Python Software Foundation
+# Author: Ben Gertzfield, Barry Warsaw
+# Contact: email-sig@python.org
+

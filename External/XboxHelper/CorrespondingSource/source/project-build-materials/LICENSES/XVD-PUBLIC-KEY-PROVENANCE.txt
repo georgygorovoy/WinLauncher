@@ -1,0 +1,21 @@
+Production XVD public verification key
+
+XVD-GreenGamesPublicKey.rsa is a 539-byte RSA4096 PUBLIC key blob used only
+to verify Microsoft production XVD signatures. It contains no private key,
+account credential, game content, or decryption key.
+SHA256: 183f0ae05431e4ad91554e88946967c872997227dbe6c85116f5fd2fd2d1229e
+
+Source: Microsoft's public GDK April 2026 Update 5 v2604.5.7903 release:
+https://github.com/microsoft/GDK/releases/tag/April-2026-Update-5-v2604.5.7903
+GDK_2604.5.7903.zip / Installers/GamingServices.appxbundle /
+GamingServicesTcui-Package_35.117.1001.0_x64.appx / xsapi.dll
+DLL SHA256: eb4ab3795b9838b89b9b144412648b9f7826cbdbc1cdc226c518987317ad1940
+Key file offset: 238368 (inside signed .rdata).
+
+On 2026-10-07, the source DLL was independently rehashed and the public
+blob matched the above fingerprint. Its PKCS#7 signature, current Microsoft
+Windows -> Microsoft Windows Production PCA 2011 -> Microsoft Root Certificate
+Authority 2010 chain, and signed CRLs were verified. Signed PE SHA256:
+ae3d96624db6fca1f94717c9e1a4cbc0b7f94338ab70f3f1caa13fd3073016ac
+This records provenance, not Windows policy/RFC3161 timestamp validation or
+a license grant for the source DLL. The DLL is not distributed here.

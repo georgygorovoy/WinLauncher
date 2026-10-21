@@ -1,0 +1,67 @@
+--- a/dlls/xgameruntime/GDKComponent/System/XStore.c
++++ b/dlls/xgameruntime/GDKComponent/System/XStore.c
+@@ -13,7 +13,7 @@
+ extern unixlib_handle_t unixhandle;
+ extern HRESULT WINAPI QueryApiImpl(const GUID *, REFIID, void **);
+ char gdkStoreId[13];
+-static const char token_identity, products_identity, collections_identity, purchase_identity, associated_identity;
++static const char token_identity, products_identity, collections_identity, purchase_identity, associated_identity, game_license_identity;
+ struct store_context { struct store_context *next; ULONG_PTR id; LONG refs; char binding[37], parent[13]; };
+ static SRWLOCK context_lock = SRWLOCK_INIT;
+ static struct store_context *contexts;
+@@ -287,6 +287,22 @@
+     return begin_operation(op,async,identity);
+ }
+ static HRESULT WINAPI associated(IXStoreImpl *i,XStoreContextHandle h,UINT32 kind,UINT32 max,XAsyncBlock *a) { return unsupported_async(h,a,&products_identity); }
++/* The launch license is real, but this runtime does not yet expose its
++ * XStoreGameLicense representation. Complete the request with an error on the
++ * caller's queue; never manufacture a license or leave its callback pending. */
++static HRESULT WINAPI game_license_async(IXStoreImpl *i,XStoreContextHandle h,XAsyncBlock *a)
++{
++    HRESULT hr;
++    TRACE("Game license query async=%p queue=%p.\n",a,a?a->queue:NULL);
++    hr=unsupported_async(h,a,&game_license_identity);
++    TRACE("Game license query begin hr=%#lx.\n",hr);
++    return hr;
++}
++static HRESULT WINAPI game_license_result(IXStoreImpl *i,XAsyncBlock *a,void *license)
++{
++    if(!license) return E_POINTER;
++    return get_result(a,0,NULL,&game_license_identity);
++}
+ static HRESULT WINAPI products_result(IXStoreImpl *i,XAsyncBlock *a,XStoreProductQueryHandle *out) { if(!out) return E_POINTER; *out=NULL; return get_result(a,0,NULL,&products_identity); }
+ static HRESULT WINAPI enumerate(IXStoreImpl *i,XStoreProductQueryHandle h,void *ctx,XStoreProductQueryCallback *cb) { return E_HANDLE; }
+ static BOOLEAN WINAPI false_handle(IXStoreImpl *i,void *h) { return FALSE; }
+@@ -300,7 +316,7 @@
+ static HRESULT WINAPI associated_result(IXStoreImpl *i,XAsyncBlock *a) { return get_result(a,0,NULL,&associated_identity); }
+ static void WINAPI unregister_unsupported(IXStoreImpl *i,void *h,UINT64 token,BOOLEAN wait) { }
+ /* Remaining Win64 HRESULT slots ignore arguments and cannot grant ownership. */
+-static HRESULT WINAPI unsupported(IXStoreImpl *i) { return E_NOTIMPL; }
++static HRESULT WINAPI unsupported(IXStoreImpl *i) { TRACE("Unsupported Store call from %p.\n", __builtin_return_address(0)); return E_NOTIMPL; }
+ 
+ static const IXStoreImplVtbl store_vtable = {
+     .QueryInterface = store_qi,
+@@ -331,8 +347,8 @@
+     .Reserved25 = unsupported,
+     .Reserved26 = unsupported,
+     .Reserved27 = unsupported,
+-    .Reserved28 = unsupported,
+-    .Reserved29 = unsupported,
++    .XStoreQueryGameLicenseAsync = game_license_async,
++    .XStoreQueryGameLicenseResult = game_license_result,
+     .Reserved30 = unsupported,
+     .Reserved31 = unsupported,
+     .Reserved32 = unsupported,
+--- a/dlls/xgameruntime/GDKComponent/System/XStore.h
++++ b/dlls/xgameruntime/GDKComponent/System/XStore.h
+@@ -42,8 +42,8 @@
+     HRESULT (WINAPI *Reserved25)(IXStoreImpl *); /* 25 */
+     HRESULT (WINAPI *Reserved26)(IXStoreImpl *); /* 26 */
+     HRESULT (WINAPI *Reserved27)(IXStoreImpl *); /* 27 */
+-    HRESULT (WINAPI *Reserved28)(IXStoreImpl *); /* 28 */
+-    HRESULT (WINAPI *Reserved29)(IXStoreImpl *); /* 29 */
++    HRESULT (WINAPI *XStoreQueryGameLicenseAsync)(IXStoreImpl *, XStoreContextHandle, XAsyncBlock *); /* 28 */
++    HRESULT (WINAPI *XStoreQueryGameLicenseResult)(IXStoreImpl *, XAsyncBlock *, void *); /* 29 */
+     HRESULT (WINAPI *Reserved30)(IXStoreImpl *); /* 30 */
+     HRESULT (WINAPI *Reserved31)(IXStoreImpl *); /* 31 */
+     HRESULT (WINAPI *Reserved32)(IXStoreImpl *); /* 32 */

@@ -1,0 +1,16 @@
+/* SHA3 module
+ *
+ * This module provides an interface to the SHA3 algorithm
+ *
+ * See below for information about the original code this module was
+ * based upon. Additional work performed by:
+ *
+ *  Andrew Kuchling (amk@amk.ca)
+ *  Greg Stein (gstein@lyra.org)
+ *  Trevor Perrin (trevp@trevp.net)
+ *  Gregory P. Smith (greg@krypto.org)
+ *
+ * Copyright (C) 2012-2022  Christian Heimes (christian@python.org)
+ * Licensed to PSF under a Contributor Agreement.
+ *
+ */

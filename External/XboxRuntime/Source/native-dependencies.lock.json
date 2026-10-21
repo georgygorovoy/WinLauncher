@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "architecture": "x86_64",
+  "minimum_macos": "15.0",
+  "acquisition": "Pinned source bytes from upstream HTTPS; no independent signature claim",
+  "features": {
+    "gnutls": "TLS with Nettle/GMP, libtasn1, libunistring, system zlib; no PKCS11, IDNA, certificate brotli/zstd compression, tools or NLS",
+    "freetype": "Core font rasterization + system zlib; optional bzip2, PNG color glyph, HarfBuzz, WOFF2/Brotli and SVG integrations disabled; game/font validation required"
+  },
+  "components": [
+    {
+      "archive": "gmp-6.3.0.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz",
+      "sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+      "name": "gmp",
+      "source_dir": "gmp-6.3.0",
+      "configure": [
+        "--disable-cxx"
+      ]
+    },
+    {
+      "archive": "nettle-3.10.2.tar.gz",
+      "url": "https://ftp.gnu.org/gnu/nettle/nettle-3.10.2.tar.gz",
+      "sha256": "fe9ff51cb1f2abb5e65a6b8c10a92da0ab5ab6eaf26e7fc2b675c45f1fb519b5",
+      "name": "nettle",
+      "source_dir": "nettle-3.10.2",
+      "configure": [
+        "--disable-documentation",
+        "--disable-openssl"
+      ]
+    },
+    {
+      "archive": "libtasn1-4.21.0.tar.gz",
+      "url": "https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.21.0.tar.gz",
+      "sha256": "1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87",
+      "name": "libtasn1",
+      "source_dir": "libtasn1-4.21.0",
+      "configure": [
+        "--disable-doc"
+      ]
+    },
+    {
+      "archive": "libunistring-1.4.2.tar.xz",
+      "url": "https://ftp.gnu.org/gnu/libunistring/libunistring-1.4.2.tar.xz",
+      "sha256": "5b46e74377ed7409c5b75e7a96f95377b095623b689d8522620927964a41499c",
+      "name": "libunistring",
+      "source_dir": "libunistring-1.4.2",
+      "configure": []
+    },
+    {
+      "archive": "gnutls-3.8.13.tar.xz",
+      "url": "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.13.tar.xz",
+      "sha256": "ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e",
+      "name": "gnutls",
+      "source_dir": "gnutls-3.8.13",
+      "configure": [
+        "--disable-doc",
+        "--disable-tools",
+        "--disable-tests",
+        "--disable-cxx",
+        "--disable-libdane",
+        "--disable-nls",
+        "--without-p11-kit",
+        "--without-idn",
+        "--without-brotli",
+        "--without-zstd",
+        "--with-zlib=link",
+        "--with-default-trust-store-file=/etc/ssl/cert.pem"
+      ]
+    },
+    {
+      "archive": "freetype-2.14.3.tar.xz",
+      "url": "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz",
+      "sha256": "36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f",
+      "name": "freetype",
+      "source_dir": "freetype-2.14.3",
+      "configure": [
+        "--with-zlib=yes",
+        "--with-bzip2=no",
+        "--with-png=no",
+        "--with-harfbuzz=no",
+        "--with-brotli=no",
+        "--with-librsvg=no"
+      ]
+    }
+  ]
+}

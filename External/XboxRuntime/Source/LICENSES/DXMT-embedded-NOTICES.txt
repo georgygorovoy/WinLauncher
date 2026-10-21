@@ -1,0 +1,33 @@
+Additional notices embedded in DXMT source revision
+589adb780354b461645b29999cefaf533594ee99 (v0.80).
+The source-only package does not redistribute DXMT object code or these source files.
+
+libs/DXBCParser/BlobContainer.h, BlobContainer.cpp, DXBCUtils.h, DXBCUtils.cpp,
+ShaderBinary.h, ShaderBinary.cpp, and d3d12tokenizedprogramformat.hpp:
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+src/util/util_svector.hpp:
+
+/*
+ * Original source: https://github.com/doitsujin/dxbc-spirv/blob/main/util/util_small_vector.h
+ * MIT License, Copyright (c) 2025 Philip Rebohle
+ */
+
+src/util/com/com_guid.hpp:
+
+/*
+ * This file is part of DXMT, Copyright (c) 2023 Feifan He
+ *
+ * Derived from a part of DXVK (originally under zlib License),
+ * Copyright (c) 2017 Philip Rebohle
+ * Copyright (c) 2019 Joshua Ashton
+ *
+ * See <https://github.com/doitsujin/dxvk/blob/master/LICENSE>
+ */
+
+// constexpr GUID parsing
+// Original version is written by Alexander Bessonov
+// \see https://gist.github.com/AlexBAV/b58e92d7632bae5d6f5947be455f796f
+// Licensed under the MIT license.

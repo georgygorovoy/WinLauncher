@@ -1,0 +1,49 @@
+--- a/dlls/xgameruntime/GDKComponent/System/XUser.c
++++ b/dlls/xgameruntime/GDKComponent/System/XUser.c
+@@ -243,10 +243,15 @@
+             ascii_equal_i( host + host_length - pattern_length, pattern, pattern_length );
+ }
+ 
++#include "XUserRealms.h"
++
+ static const char *user_GetRelyingParty( struct XUser *impl, const URL_COMPONENTSA *url )
+ {
+     const struct endpoint *best = NULL;
++    const char *realms = xuser_realms_relying_party( url );
+     SIZE_T best_score = 0;
++
++    if (realms) return realms;
+ 
+     for (UINT32 i = 0; i < impl->endpointsLen; ++i)
+     {
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XUserRealms.h
+@@ -0,0 +1,28 @@
++/* Realms uses its original XSTS audience after moving the HTTPS API host.
++ * SPDX-License-Identifier: LGPL-2.1-or-later
++ */
++#ifndef __WINE_XUSER_REALMS_H
++#define __WINE_XUSER_REALMS_H
++
++static const char *xuser_realms_relying_party( const URL_COMPONENTSA *url )
++{
++    static const char *const hosts[] = {
++        "pocket.realms.minecraft.net",
++        "bedrock.frontend.realms.minecraft-services.net",
++        "bedrock.frontendlegacy.realms.minecraft-services.net"
++    };
++    SIZE_T i;
++
++    if (!url || url->nScheme != INTERNET_SCHEME_HTTPS ||
++            url->nPort != INTERNET_DEFAULT_HTTPS_PORT || !url->lpszHostName) return NULL;
++
++    /* Use the parsed host and exact length: never match a URL substring or a
++     * wildcard suffix, which could select this audience for another service. */
++    for (i = 0; i < sizeof(hosts) / sizeof(hosts[0]); ++i)
++        if (url->dwHostNameLength == strlen( hosts[i] ) &&
++                !_strnicmp( url->lpszHostName, hosts[i], url->dwHostNameLength ))
++            return "https://pocket.realms.minecraft.net/";
++    return NULL;
++}
++
++#endif

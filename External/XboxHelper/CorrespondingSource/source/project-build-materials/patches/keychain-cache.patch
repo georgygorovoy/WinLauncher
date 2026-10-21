@@ -1,0 +1,145 @@
+diff --git a/crates/xodus/src/tokens/backend.rs b/crates/xodus/src/tokens/backend.rs
+index 7e8aec0..f8c13fa 100644
+--- a/crates/xodus/src/tokens/backend.rs
++++ b/crates/xodus/src/tokens/backend.rs
+@@ -1,5 +1,7 @@
+ mod keychain;
+ mod memory;
++mod cached;
+ 
+ pub use keychain::KeychainBackend;
+ pub use memory::MemoryBackend;
++pub use cached::CachedBackend;
+diff --git a/crates/xodus/src/tokens/backend/keychain.rs b/crates/xodus/src/tokens/backend/keychain.rs
+index 6aa6cde..72e5b23 100644
+--- a/crates/xodus/src/tokens/backend/keychain.rs
++++ b/crates/xodus/src/tokens/backend/keychain.rs
+@@ -5,6 +5,7 @@ pub struct KeychainBackend;
+ impl TokenBackend for KeychainBackend {
+     fn get(&self, key: &str) -> Result<Option<Vec<u8>>, TokenStoreError> {
+         let entry = crate::secrets::get_entry(key)?;
++        eprintln!("Keychain: requesting saved sign-in entry ({key})");
+         match entry.get_secret() {
+             Ok(bytes) => Ok(Some(bytes)),
+             Err(keyring_core::Error::NoEntry) => Ok(None),
+diff --git a/crates/xodus/src/tokens/manager.rs b/crates/xodus/src/tokens/manager.rs
+index aeb9897..450318c 100644
+--- a/crates/xodus/src/tokens/manager.rs
++++ b/crates/xodus/src/tokens/manager.rs
+@@ -4,7 +4,7 @@ use std::time::Instant;
+ 
+ use crate::models::secrets::{Device, Token, TokenStore, User};
+ use crate::models::xbox::XstsResponse;
+-use crate::tokens::backend::{KeychainBackend, MemoryBackend};
++use crate::tokens::backend::{CachedBackend, KeychainBackend, MemoryBackend};
+ use crate::tokens::store::{ExpiringTokenBackend, TokenBackend, TokenStoreError};
+ 
+ mod keys {
+@@ -41,7 +41,7 @@ impl TokenManager {
+     /// wiring for both `xodus-cli` and `xodus-service` today.
+     pub fn with_keychain_and_memory() -> Self {
+         Self::new(
+-            Arc::new(KeychainBackend),
++            Arc::new(CachedBackend::new(KeychainBackend)),
+             Arc::new(MemoryBackend::default()),
+         )
+     }
+--- /dev/null
++++ b/crates/xodus/src/tokens/backend/cached.rs
+@@ -0,0 +1,96 @@
++use std::collections::HashMap;
++use std::sync::Mutex;
++use crate::tokens::store::{TokenBackend, TokenStoreError};
++
++/// Keep authorized reads in this process, rather than asking macOS for access
++/// on every request. Updates still persist in Keychain. Restart to switch accounts.
++pub struct CachedBackend<B> {
++    backing: B,
++    values: Mutex<HashMap<String, Option<Vec<u8>>>>,
++}
++
++impl<B> CachedBackend<B> {
++    pub fn new(backing: B) -> Self {
++        Self { backing, values: Mutex::new(HashMap::new()) }
++    }
++}
++
++impl<B: TokenBackend> TokenBackend for CachedBackend<B> {
++    fn get(&self, key: &str) -> Result<Option<Vec<u8>>, TokenStoreError> {
++        let mut values = self.values.lock().unwrap();
++        if let Some(value) = values.get(key) { return Ok(value.clone()); }
++        let value = self.backing.get(key)?;
++        values.insert(key.to_owned(), value.clone());
++        Ok(value)
++    }
++
++    fn set(&self, key: &str, value: &[u8]) -> Result<(), TokenStoreError> {
++        let mut values = self.values.lock().unwrap();
++        if values.get(key).is_some_and(|old| old.as_deref() == Some(value)) { return Ok(()); }
++        self.backing.set(key, value)?;
++        values.insert(key.to_owned(), Some(value.to_vec()));
++        Ok(())
++    }
++
++    fn remove(&self, key: &str) -> Result<(), TokenStoreError> {
++        let mut values = self.values.lock().unwrap();
++        self.backing.remove(key)?;
++        values.insert(key.to_owned(), None);
++        Ok(())
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::tokens::backend::MemoryBackend;
++    use std::sync::{Arc, atomic::{AtomicUsize, AtomicBool, Ordering}};
++
++    #[derive(Default)]
++    struct Backing { memory: MemoryBackend, reads: AtomicUsize, fail_write: AtomicBool }
++    impl TokenBackend for Backing {
++        fn get(&self, key: &str) -> Result<Option<Vec<u8>>, TokenStoreError> {
++            self.reads.fetch_add(1, Ordering::SeqCst);
++            self.memory.get(key)
++        }
++        fn set(&self, key: &str, value: &[u8]) -> Result<(), TokenStoreError> {
++            if self.fail_write.load(Ordering::SeqCst) { return Err(TokenStoreError::NotFound); }
++            self.memory.set(key, value)
++        }
++        fn remove(&self, key: &str) -> Result<(), TokenStoreError> { self.memory.remove(key) }
++    }
++
++    #[test]
++    fn concurrent_reads_only_access_keychain_once() {
++        let backing = Backing::default();
++        backing.memory.set("test", b"example").unwrap();
++        let cache = Arc::new(CachedBackend::new(backing));
++        let handles: Vec<_> = (0..8).map(|_| {
++            let cache = cache.clone();
++            std::thread::spawn(move || {
++                for _ in 0..20 { assert_eq!(cache.get("test").unwrap(), Some(b"example".to_vec())); }
++            })
++        }).collect();
++        for handle in handles { handle.join().unwrap(); }
++        assert_eq!(cache.backing.reads.load(Ordering::SeqCst), 1);
++    }
++
++    #[test]
++    fn writes_and_removal_stay_consistent_and_errors_do_not_replace_cache() {
++        let cache = CachedBackend::new(Backing::default());
++        assert_eq!(cache.get("test").unwrap(), None);
++        assert_eq!(cache.get("test").unwrap(), None);
++        assert_eq!(cache.backing.reads.load(Ordering::SeqCst), 1);
++        cache.set("test", b"old").unwrap();
++        assert_eq!(cache.get("test").unwrap(), Some(b"old".to_vec()));
++        cache.backing.fail_write.store(true, Ordering::SeqCst);
++        assert!(cache.set("test", b"new").is_err());
++        assert_eq!(cache.get("test").unwrap(), Some(b"old".to_vec()));
++        cache.backing.fail_write.store(false, Ordering::SeqCst);
++        cache.set("test", b"new").unwrap();
++        assert_eq!(cache.backing.memory.get("test").unwrap(), Some(b"new".to_vec()));
++        cache.remove("test").unwrap();
++        assert_eq!(cache.get("test").unwrap(), None);
++        assert_eq!(cache.backing.memory.get("test").unwrap(), None);
++    }
++}

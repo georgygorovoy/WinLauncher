@@ -1,0 +1,35 @@
+{
+  "built_as_bottle": true,
+  "poured_from_bottle": true,
+  "compiler": "clang",
+  "runtime_dependencies": [
+    {
+      "full_name": "lz4",
+      "version": "1.10.0",
+      "revision": 0,
+      "bottle_rebuild": 3,
+      "pkg_version": "1.10.0",
+      "declared_directly": true
+    },
+    {
+      "full_name": "xz",
+      "version": "5.8.4",
+      "revision": 0,
+      "bottle_rebuild": 0,
+      "pkg_version": "5.8.4",
+      "declared_directly": true,
+      "compatibility_version": 1
+    }
+  ],
+  "source": {
+    "spec": "stable",
+    "versions": {
+      "stable": "1.5.7",
+      "head": null,
+      "version_scheme": 0,
+      "compatibility_version": null
+    },
+    "tap_git_head": null,
+    "tap": "homebrew/core"
+  }
+}

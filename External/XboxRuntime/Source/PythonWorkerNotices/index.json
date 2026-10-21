@@ -1,0 +1,4592 @@
+{
+  "schema": 1,
+  "status": "notice-materials-ready-pending-packager-integration-and-review",
+  "target": "Frozen worker identified by file hashes, not directory name",
+  "worker_sha256": "860a33eedf7f2b03e52b7b1e27d56b80ce4463e7368e653fd4d90ec337814a73",
+  "python_version": "3.14.8_3",
+  "pyinstaller_version": "6.22.3",
+  "toc_sha256": {
+    "COLLECT-00.toc": "aaa948cdf500179eb343af42c88d8ad03cbd98ebae80386a7a0dfe640bd410b4",
+    "Analysis-00.toc": "601e06851425fd8f8b0ade019075bc3f85d4294bf9dd5c0f0a2e45a0910bf459",
+    "PKG-00.toc": "5e87df7dccaa2c5850d599c6746062d7893941a832bd00be4257c851659d5c1b",
+    "PYZ-00.toc": "e1aaabaf53a65a8e2eca3672a1125ae5a260fd1b540e4beba7512c9d1627b762"
+  },
+  "binary_inventory": [
+    {
+      "path": "BedrockWorker",
+      "type": "EXECUTABLE",
+      "sha256": "860a33eedf7f2b03e52b7b1e27d56b80ce4463e7368e653fd4d90ec337814a73",
+      "toc_source_sha256": "860a33eedf7f2b03e52b7b1e27d56b80ce4463e7368e653fd4d90ec337814a73",
+      "text_section_sha256": "dc5a78f88d99fd557a01379375d91c34f90f7a5da010821753f0f8eab0fcf507",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib",
+        "/usr/lib/libz.1.dylib"
+      ],
+      "component": "PyInstaller bootloader + project worker"
+    },
+    {
+      "path": "_internal/Python.framework/Versions/3.14/Python",
+      "type": "BINARY",
+      "sha256": "c47f8ee8da30f42c20c1a41f2e56286f18c545ea50d0a198e60c7e5f900b0395",
+      "toc_source_sha256": "8080519336a88d3c556aaafae8f6d2842caf6e74a402b2ccd7ab029fe079dc22",
+      "text_section_sha256": "7375477aadc348fa1a0599c80e5f126e6c33b39a3d097daa65144a97457596e4",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/Python",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/Python"
+    },
+    {
+      "path": "_internal/libcrypto.4.dylib",
+      "type": "BINARY",
+      "sha256": "941e427d363f484e5a638ca0d5d7ac6ebd40a38aebf674792063b384d474c9e6",
+      "toc_source_sha256": "eb4e14b7f6ef10df40a60f7a078920c44e6b24be23f76eb1f657142becfeb4e7",
+      "text_section_sha256": "f7649996b1079f451f1f73547a96c64c820f154cddf6738439bc8cf2f35ae196",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libcrypto.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "openssl@4",
+      "component_version": "4.0.3",
+      "source_relative_to_component": "lib/libcrypto.4.dylib"
+    },
+    {
+      "path": "_internal/liblzma.5.dylib",
+      "type": "BINARY",
+      "sha256": "60ff6730f47bd78dc6386eabd93645ec95b966fadb7b6946789f1f628da500ff",
+      "toc_source_sha256": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09",
+      "text_section_sha256": "10f8facb859c753bd5b4b8663468bb92fda007fdaf786e7c4274c8dc7576f096",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/liblzma.5.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "xz",
+      "component_version": "5.8.4",
+      "source_relative_to_component": "lib/liblzma.5.dylib"
+    },
+    {
+      "path": "_internal/libmpdec.4.dylib",
+      "type": "BINARY",
+      "sha256": "e3d8a22a863b00e3f9e22ce42645704db0fd7b7853695dc751ea43300159aa7f",
+      "toc_source_sha256": "b836ea4adbb4e27065a9a3265a26434e590f696b3789cf3d590b2a0bdf652e7e",
+      "text_section_sha256": "934cd06e6356ef9131ff1b9cbcf8f75ce7aed35dc6ff5aa10817cc6711523b8f",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libmpdec.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "mpdecimal",
+      "component_version": "4.0.1",
+      "source_relative_to_component": "lib/libmpdec.4.0.1.dylib"
+    },
+    {
+      "path": "_internal/libssl.4.dylib",
+      "type": "BINARY",
+      "sha256": "ee9d60deded72021d3116e7eb76e6d0687e2cc19c129a3709efbf5e4a307c300",
+      "toc_source_sha256": "d223211e5bc6bfa664a8e066024d026f95f5b571c7b17376312344710d142aa7",
+      "text_section_sha256": "d4e1d12b7d170f4cad8cb22acc0bf69eff574d36c55e82f114247d976213987a",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libssl.4.dylib",
+        "@rpath/libcrypto.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "openssl@4",
+      "component_version": "4.0.3",
+      "source_relative_to_component": "lib/libssl.4.dylib"
+    },
+    {
+      "path": "_internal/libzstd.1.dylib",
+      "type": "BINARY",
+      "sha256": "bc8511cbce035082d78729c54a320ca16ce48f4a7ad3ccad2b934c9396849264",
+      "toc_source_sha256": "f07bd1a16d06bc648ba2111516487cb6156abacbcc14f995228fcd82fc5dc2d1",
+      "text_section_sha256": "f09bc9a36aa2173e08717e8d02df7f20690f6c815170a51117fa540ee7eff654",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libzstd.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "zstd",
+      "component_version": "1.5.7_1",
+      "source_relative_to_component": "lib/libzstd.1.5.7.dylib"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_bisect.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "7e555d082b8545053e3970b4bd10b681312ad78f3e18f6f80b257e8c7e6a772e",
+      "toc_source_sha256": "9f6c0bbe2feb88d6d4e6c84023af4ebaafe43271b41cbb512d3a0ecf162f4f60",
+      "text_section_sha256": "e1437af5a5dd01d3e213cd0203350c557bd018e9d38a6b8798e8daa0b41c4746",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_bisect.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_blake2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "a4152f45a5a6a0d82f7a14c116c1fa00948d613591dd7deba56062d054176868",
+      "toc_source_sha256": "81fbac5b7bba8375a414db334f0890b61d7f7a64fdfc7300adc9276b7e02b3a9",
+      "text_section_sha256": "bc472c0793177f743ffcd75bc84e5b4999103c1e2ee572f51f2022e29f60d1c9",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_blake2.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_bz2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "f3d8ac34689b5358ef05758cefda36032781d32c0e9cc537f4f50d22e82041e2",
+      "toc_source_sha256": "f429a451efef8e0bd4de6dba140c4081e57eafad00411a38d5c3c33f38c0950a",
+      "text_section_sha256": "4592c5fa1bf284ed49464c437c6da7a96aef93dff8fd9fd6e41628ebfd2177e3",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libbz2.1.0.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_bz2.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_cn.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "1dcd19ab232582ae592698a01d953f80e05b12d396b1c4629e158f469480a6f8",
+      "toc_source_sha256": "d547d2430d2d5ebdb719037c4e87c1c1fff09b1d296a784a232055c1b99b0552",
+      "text_section_sha256": "664e43688351b69ca4c3f239900932027110b870245fdf9de8d2057f1f6ecb5e",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_cn.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_hk.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "c7ea4b402524e11aa2b93ac8f29a8870cd2d164cb0ab328f983a62256aa8fb37",
+      "toc_source_sha256": "8d48b24ac9cf0f8ce5c58861cb59794a065f8660dbbc297c02c4507f2525690b",
+      "text_section_sha256": "db31701c29d94f36c77f1fb16ab5ade41a0478997705c56a9dac314371bc8f96",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_hk.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_iso2022.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "a56335993a743e3e7e744df35c2de4aff2de9e606223d3f87c7653c0c228e0e0",
+      "toc_source_sha256": "79422f0127ead57b6aedd21855fbdd05a1cdffa8bc4c712e3515454d4e482509",
+      "text_section_sha256": "708a5b219c77630d1a0c83671a2384f6ec0b10ddd9b36407f31b91259e90b4f9",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_iso2022.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_jp.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "b81ba4249a9e3b1481cc756e31f86df6728c02df81334506f1a24d0adb5316ea",
+      "toc_source_sha256": "3192917a5ada8c0abaed01651a4ac84799573ce9e41d89f678e2156ec0bda34a",
+      "text_section_sha256": "5cd4b586b0e4725f291961fcc20e8c456f2b6d61c9b73e14b97a3fb3b0c04f68",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_jp.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_kr.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "9bc53da57959428724fa232b61fb83a2bf3ce2b60ed7c2d0f8a488dd14180671",
+      "toc_source_sha256": "c9b112162d4b4b60e65102f5b406f8f69a6665feef7fb49584d6e8ef8b82c9bf",
+      "text_section_sha256": "9e8ff34111dbfad875826cb947344412aadf75fd40df92cc0ec51d716c0c41bf",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_kr.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_codecs_tw.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "b08174022f3c45c26cacb17a32bf0be2db68e65d30eaa3a3734e43824d83f923",
+      "toc_source_sha256": "63f2b7cc1315f535d80afed698bd126195c64cde65afe20470e6043134471e76",
+      "text_section_sha256": "f43d489302cd2be57719aac328046d6f5e467a5d23b199315759160c7ffd64be",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_codecs_tw.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_csv.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "25b5af374c173b5d262cb14439118eed830a67c38531e496949579d705d3b616",
+      "toc_source_sha256": "c97f21e4f644a32d6a71099c1196c3f40c239ef2abba08c5f2a5a38208d7ae88",
+      "text_section_sha256": "c0dfc7f0d4d577113656d980776df9e60a9ccaf5d2010a246ed5cbf9bbe8f190",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_csv.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_ctypes.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "e2b55c5a7bf232741a726d1bfe5bead70075ef743e1eb2862193d73665df6aec",
+      "toc_source_sha256": "44ef75b0b2403bdd7a2bf65ef0c516ffb01b405dd79b6407e1bf0e6f95a2af3a",
+      "text_section_sha256": "0fa7c2a2f9baae90e212db0b40f7c92c94b1aefb5101adff45e2758e0dae04dc",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libffi.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_ctypes.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_decimal.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "a4b890d271ba8000bf42dade9d7acb2e10573d816a28d2f4b0ded3a5b0c1770f",
+      "toc_source_sha256": "f9bcce10f69ce4360d35af8145f8de627f66cb3b76a4c4ba16af2698c38b2cbd",
+      "text_section_sha256": "f6fc1ca0d977a2276564a206cdd20d330a0ef31186e72adbbfeb97d82bb02e72",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libmpdec.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_decimal.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_elementtree.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "e985ecb40b92b888ac0f911e3ce83805d0df8cdf878fbafb8ec1e5e6d74a6a10",
+      "toc_source_sha256": "09588733904abcc3fd68a1197e84e4bf5441e37a5edc4f30719b87133cd52ff0",
+      "text_section_sha256": "706e66c11cdece169bd717094f550eb079dd226660974668e0ead4ee0c7fd82e",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_elementtree.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_hashlib.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "02222e151fdf2b05a349428f9c1ba7c583e284ce876928194be259c14d712e0a",
+      "toc_source_sha256": "065678f223cb72ca4bd19d67d7ad1f8adaef559a919d085bdc1e542abd58cad7",
+      "text_section_sha256": "d2d60c46c421e61900f270b8468e5b15a98fa843ab0477411259177ee7b5163b",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libcrypto.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_hashlib.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_heapq.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "0e985f372cc0f75d7014aa11fe0c3fe7f6bd2f703ba56c956e100ebf32c81594",
+      "toc_source_sha256": "4c4d28d5e6cb87bf13d52a1ad994ec9f445ff3b59e11aad8cd1ec48f1e047b99",
+      "text_section_sha256": "5ee86af39bd5e682c68d42621f4cdda6ac86c44be8a93c085ab84048b4dcd61e",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_heapq.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_json.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "ec0e520a5eb8c2075906b7452c9c1c735b3a916fda268dd588ae5aefe855944a",
+      "toc_source_sha256": "0842d197f955864b038aae85fa7d264a00f1eb4a94234fc9868cad8776d798bf",
+      "text_section_sha256": "5867f45900db893ffb75b1c282251c907fccb7925c2fdb190286339ce63bd017",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_json.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_lzma.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "f808929389193fae6a6a3868876bc1ad7e5f928c2028c6422e57333e0655ae12",
+      "toc_source_sha256": "17f349745d952d39e4747be3bded0ab47af5d16534106abb24a79e1c779fb593",
+      "text_section_sha256": "5cfcf217c8e724f89b9ac34b8f2997f7e700a057062eafc231cb230a0508adea",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/liblzma.5.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_lzma.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_md5.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "8b551a71d8d6cf3ff70435c912c27900483b4827dcd0444f186cb15ba8aa3de9",
+      "toc_source_sha256": "22d92c7ef9a2bfd5b7c9fd0a0fe3ebb18e0427e900c5738da6556572ed8b18c8",
+      "text_section_sha256": "1d42f07fd51e20783b08c52f0819daaf0056decf1baead0fe823d93b4e438317",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_md5.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_multibytecodec.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "9a035ffd8c4b90e3b9a8322f2d810964ae9b0102b19213d957d5f1bab26493a9",
+      "toc_source_sha256": "66701cae4f5f545983047dda7c2a5d517dea0c1880cdbf5fc2a91f50f772a5a2",
+      "text_section_sha256": "17599288a893840c27ff74a0ddc1c78d213a96118d00d0e7e50175e75f450894",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_multibytecodec.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_pickle.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "09500da255589f330c50e78edc23355918145b8ab2dea2d9008d3d80c76d8eef",
+      "toc_source_sha256": "353183ed2c09eb4b969716c4cddc5390e3e5b9a3a195cf46cb94dcd92fbe8359",
+      "text_section_sha256": "04db1c5dba220c9d0257caea58ec560ac4fa6a2d5b6401e59a2ae70ed9e3519d",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_pickle.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_posixsubprocess.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "998de9e9335e16295af34176f5c2995c9fb12ebe5cafc536019e11b164c70794",
+      "toc_source_sha256": "a75d3577267410c583cf04989b571a38d99fe6512310f4006e22350876238e75",
+      "text_section_sha256": "389eea3c377de24224742c2be3d0d172a3d8fdb84a16f5eaab1ce2d17d398ef8",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_posixsubprocess.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_random.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "238f31153246e8bff0e7bced096a9acd9e29c82ff56d833ce72e4f5d4d04fd21",
+      "toc_source_sha256": "a39b2ce7d28cc393b2ea43a70bae50ee040e19fb19edd302182ec6546f8079d4",
+      "text_section_sha256": "8224177ff6632b175deca7dc10f27ec5c95cdf45c1b73746c3ed75a79c65f762",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_random.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_scproxy.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "b3c78c36ec6a20ee3fd4db467870b09dc2626633df5098bdff8ec057d6df1df1",
+      "toc_source_sha256": "44d8416915126d519ec8ab52d145dcb17b2bbb5b7590365633dff80a98efd277",
+      "text_section_sha256": "fa548d7496fa51a4d80f9ad6e0206a2113649de19d873f5fca01c6307a727b61",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_scproxy.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_sha1.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "ca9fcc91f6868759d82c9dbf0a5e5d7531f53f421bae6b880805d57a5872939f",
+      "toc_source_sha256": "6b2dedcb582969960262dcc8c259422351e2452998f6271231ed074fe92341cd",
+      "text_section_sha256": "712f03761bcc6aaf4404e570b8b7928645225740803b24de41e689de9f0dfd0c",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_sha1.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_sha2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "51693d94c475d33587ed3248fb3cf4a91af23568fa4821ba6446b49904f628a0",
+      "toc_source_sha256": "de2d41fb0711c6f18dc48e818942b04d0bd4d16862a883f3654f44c9fa1590c2",
+      "text_section_sha256": "9cb09e323a8731b2712f010969d649dfe07730d38483b30b366bdffbee19f516",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_sha2.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_sha3.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "ee018d3466677bf1af798d00d08c1e0309813a8cd397ffd77046ae0ab12ae4f2",
+      "toc_source_sha256": "f13193fceac2742a3ec009f537b80e84cc90c822f8f7df590b51b96c6aa30447",
+      "text_section_sha256": "34f69fdbf3536b4d9eca019659f7c33914bccf6bac00b7e177e1dfc5a203af73",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_sha3.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_socket.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "480e1dc88ea57bf9a889b8afe17975f09d3508d61a0f2d70d3a4bfc951fc1a68",
+      "toc_source_sha256": "6227de7ef657172d8704fbbc9f97847aa32b5ef61d0641dad93b42b608b22b25",
+      "text_section_sha256": "b86962a0ad2de86eddaa0b07e22f1fc66b4143e663b484ed78dece15f7410d5b",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_socket.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_ssl.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "08f58e7d35b4b5b3cff90f51423365a48c68f46cbc80c1cc0ad81250a9ddf52a",
+      "toc_source_sha256": "d95b8a7bb309c7b93753360898e29f1435839faf8901e9a8f92c03f7284a46bf",
+      "text_section_sha256": "5f7830000f67eb001973a612611c155a46e9a3b91f130bc3035cf353279f5cfe",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libssl.4.dylib",
+        "@rpath/libcrypto.4.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_ssl.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_statistics.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "ac68db3f9b48543b2614f1cdb87f00649735137a894d87e4e057f5fecfa6dfdd",
+      "toc_source_sha256": "db9364e9b0261901d2e609d9c01d30876b88eae0f30a8edc891dd67b489c0b25",
+      "text_section_sha256": "3f43da78053aa7915c7ac1e2b0cadbd74be0ecf680d4b303f5426d5d4d4a6623",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_statistics.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_struct.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "852823860162021f76f54860e115d7b5aa63e9a7c7caf1c424996c6108758c31",
+      "toc_source_sha256": "9c17544a2a41fcb18de4ceb7137687d610adaf7a0e74a6c0f7443e23e2cab488",
+      "text_section_sha256": "3a50c3c565cd836d804f6f8fba628a50245c228712e46702e00997220d0f2e44",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_struct.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_uuid.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "cc04a337d2b9da3764fbd58e5477820a0293624d902a91f3745a26bd02ffa663",
+      "toc_source_sha256": "4b3cc6b0b50945cf2362a295aa13ea720e6beb377ebba8b4f9f630420d3c4740",
+      "text_section_sha256": "b49c75347812dded06874af1746162dea3322d79c8808ca9a30cabeac3ee41ce",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_uuid.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/_zstd.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "edd0867858febc2962d72486cac9a259b596d43bd012aa6def6737813dd0f2a7",
+      "toc_source_sha256": "48fed250af04e31c8eb1e76a163258da1ae25d7b8a42865eb121d854d29631f4",
+      "text_section_sha256": "faf1a8e5debdb55d394ece838584fdf226d280a42d77112be3cba1446f7d0f0d",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "@rpath/libzstd.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/_zstd.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/array.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "0bc75c5c250c9c29b8b174074a31ddbd3bd70ff7c667f9bc8cad97aa261cffa3",
+      "toc_source_sha256": "c01a85581a716bca84971637ea56a14ea1cb610b3bb6f698b94e4392718ed951",
+      "text_section_sha256": "4ff0474f6a9acac8dcb108ba8dc6964f2aaf6bdf1a1575ba2baffb4503081589",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/array.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/binascii.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "676c5b41a47b84c075d30567daab088d09ac87d4250b191e87cf49205dd52d37",
+      "toc_source_sha256": "35cf670d41995767e096d54e99bad35225ec316bfa365aca8a2d5b7d79568d3d",
+      "text_section_sha256": "83e6334b0ba02a500a7c9106caf2d3f46b965c774d0c1ec5c0804f155fab408f",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libz.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/binascii.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/fcntl.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "b839165dab2eac524302e7002b81da04f8b805eb6672058e66f5832d04aaa7d3",
+      "toc_source_sha256": "7b25bc09518e2a9cb7ab5555de3fdf1876c4d63b573e3e2715be753fdca22b06",
+      "text_section_sha256": "be4e9b69295eab9f3fbc39e4ad32937b8855284ce539aa8ebda79a6a8864fcc5",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/fcntl.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/grp.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "5d1d6b930e631beb9773b0e8fd92f75ff0b048df6b27ba694110f6fbaf95e0e5",
+      "toc_source_sha256": "6622e9c8afbee811a6b8d43789dddf6a39d11fc3c2109f6296251470e51953b3",
+      "text_section_sha256": "e6b3bd191731576df0a3cb37a784130ff08eb2511475f0f5ccfc052cc931d713",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/grp.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/math.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "3501a96377f33580a14c89c6f02963953b1da9c30fe997e35b9adc173fda1e58",
+      "toc_source_sha256": "61df281591b451a78a08d797e0e34ee285a700838e3135040e0b0dc55d409025",
+      "text_section_sha256": "11a31c56193c8cf8c7d0a492fd49f4ccdc3880d7ccfc77f3536d4cb15772a643",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/math.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "f2d507ea59cec5bb094c83df64c2099e276f70d106f3a97bcf580443658b9f6a",
+      "toc_source_sha256": "7711dfc963fc3752448f8f02ba6749fee9e208731968c00fe1c46fabbafcb0b6",
+      "text_section_sha256": "70ce3c5524427ce8d4e76a5b9f14f9c302fc7b20f825f27de8730df39a3a08bd",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libexpat.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/pyexpat.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/resource.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "85f4c84fc197ef3e8afb89d3128cc93068a340609b74ec993546b9870432f624",
+      "toc_source_sha256": "e553921abd45409c21f04a06366e89d60fc69c664c29c54517522ef8281494ab",
+      "text_section_sha256": "084c8178e445f05a32f3a0aa5e782a45c18e3ffa6c0ee66cffdb09e62fff0f4e",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/resource.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/select.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "1ee05d7757c0c711d76369e745d610642d00100a7b28c8d21fec35de62fa590c",
+      "toc_source_sha256": "930bcdc8118450758e4b49c4e479fe037e4218c99590547b2047ec5c45344fde",
+      "text_section_sha256": "b189d04ac8960c89b7968d16f57d2a5c23318266c74bcdeb3609800be1f107d6",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/select.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/unicodedata.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "6c56c0076533c894de83d1e0d359a9019850afeacf9c240fe96ac5e29656a404",
+      "toc_source_sha256": "62d614020c1077cfc7c8b0a2a07ce61ba80b875ace603fe0ec6f2964a8716b1a",
+      "text_section_sha256": "85dbb0a4c4dac98782c94eca3e2d3847b95a4dbf7472d4667493e07d40c58d82",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/unicodedata.cpython-314-darwin.so"
+    },
+    {
+      "path": "_internal/python3.14/lib-dynload/zlib.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "sha256": "96953f6a1c17a4b43034d998a57ed37ae670ed8794cb3234bf49c8507119182e",
+      "toc_source_sha256": "e4de600f58975f92989604cbb2b4769fea3303f8a8bf696e99af527d5e3ab601",
+      "text_section_sha256": "ff9afe293edebd05878139a5eaf4ef4700e551bbbb97968f87725ea90d891202",
+      "source_text_section_matches": true,
+      "native_loads": [
+        "/usr/lib/libz.1.dylib",
+        "/usr/lib/libSystem.B.dylib"
+      ],
+      "component": "python@3.14",
+      "component_version": "3.14.8_3",
+      "source_relative_to_component": "Frameworks/Python.framework/Versions/3.14/lib/python3.14/lib-dynload/zlib.cpython-314-darwin.so"
+    }
+  ],
+  "module_inventory": [
+    {
+      "module": "__future__",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/__future__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_aix_support",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_aix_support.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_ast_unparse",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_ast_unparse.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_collections_abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_collections_abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_colorize",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_colorize.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_compat_pickle",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_compat_pickle.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_opcode_metadata",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_opcode_metadata.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_osx_support",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_osx_support.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_py_abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_py_abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_py_warnings",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_py_warnings.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_pydatetime",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_pydatetime.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_pydecimal",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_pydecimal.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_strptime",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_strptime.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_sysconfigdata__darwin_darwin",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_sysconfigdata__darwin_darwin.py",
+      "source_status": "generated or modified installer source; exact installed source retained",
+      "installed_source": {
+        "path": "build-source-evidence/installed-python/Lib/_sysconfigdata__darwin_darwin.py",
+        "sha256": "736923fa7b949c4d75b30b8f897ea1fbfbdd5419dd0deac57a6b949b930a3e02",
+        "bytes": 55223
+      }
+    },
+    {
+      "module": "_threading_local",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_threading_local.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "_weakrefset",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/_weakrefset.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "annotationlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/annotationlib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "argparse",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/argparse.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ast",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ast.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "base64",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/base64.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "bisect",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/bisect.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "bz2",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/bz2.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "calendar",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/calendar.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "codecs",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/codecs.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "codeop",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/codeop.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "collections",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/collections/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "compression",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/compression/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "compression._common",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/compression/_common/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "compression._common._streams",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/compression/_common/_streams.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "compression.zstd",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/compression/zstd/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "compression.zstd._zstdfile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/compression/zstd/_zstdfile.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "contextlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/contextlib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "contextvars",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/contextvars.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "copy",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/copy.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "copyreg",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/copyreg.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "csv",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/csv.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ctypes",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ctypes/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ctypes._endian",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ctypes/_endian.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ctypes._layout",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ctypes/_layout.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "dataclasses",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/dataclasses.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "datetime",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/datetime.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "decimal",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/decimal.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "difflib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/difflib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "dis",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/dis.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email._encoded_words",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/_encoded_words.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email._header_value_parser",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/_header_value_parser.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email._parseaddr",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/_parseaddr.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email._policybase",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/_policybase.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.base64mime",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/base64mime.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.charset",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/charset.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.contentmanager",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/contentmanager.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.encoders",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/encoders.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.errors",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/errors.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.feedparser",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/feedparser.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.generator",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/generator.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.header",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/header.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.headerregistry",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/headerregistry.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.iterators",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/iterators.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.message",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/message.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.parser",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/parser.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.policy",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/policy.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.quoprimime",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/quoprimime.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "email.utils",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/email/utils.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings._win_cp_codecs",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/_win_cp_codecs.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.aliases",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/aliases.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.ascii",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/ascii.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.base64_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/base64_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.big5",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/big5.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.big5hkscs",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/big5hkscs.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.bz2_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/bz2_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.charmap",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/charmap.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp037",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp037.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1006",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1006.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1026",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1026.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1125",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1125.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1140",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1140.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1250",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1250.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1251",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1251.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1252",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1252.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1253",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1253.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1254",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1254.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1255",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1255.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1256",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1256.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1257",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1257.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp1258",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp1258.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp273",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp273.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp424",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp424.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp437",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp437.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp500",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp500.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp720",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp720.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp737",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp737.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp775",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp775.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp850",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp850.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp852",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp852.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp855",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp855.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp856",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp856.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp857",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp857.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp858",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp858.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp860",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp860.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp861",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp861.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp862",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp862.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp863",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp863.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp864",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp864.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp865",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp865.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp866",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp866.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp869",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp869.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp874",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp874.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp875",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp875.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp932",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp932.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp949",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp949.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.cp950",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/cp950.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.euc_jis_2004",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/euc_jis_2004.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.euc_jisx0213",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/euc_jisx0213.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.euc_jp",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/euc_jp.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.euc_kr",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/euc_kr.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.gb18030",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/gb18030.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.gb2312",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/gb2312.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.gbk",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/gbk.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.hex_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/hex_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.hp_roman8",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/hp_roman8.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.hz",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/hz.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.idna",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/idna.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp_1",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp_1.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp_2",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp_2.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp_2004",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp_2004.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp_3",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp_3.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_jp_ext",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_jp_ext.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso2022_kr",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso2022_kr.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_1",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_1.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_10",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_10.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_11",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_11.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_13",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_13.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_14",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_14.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_15",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_15.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_16",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_16.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_2",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_2.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_3",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_3.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_4",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_4.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_5",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_5.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_6",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_6.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_7",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_7.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_8",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_8.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.iso8859_9",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/iso8859_9.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.johab",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/johab.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.koi8_r",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/koi8_r.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.koi8_t",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/koi8_t.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.koi8_u",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/koi8_u.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.kz1048",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/kz1048.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.latin_1",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/latin_1.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_arabic",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_arabic.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_croatian",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_croatian.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_cyrillic",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_cyrillic.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_farsi",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_farsi.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_greek",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_greek.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_iceland",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_iceland.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_latin2",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_latin2.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_roman",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_roman.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_romanian",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_romanian.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mac_turkish",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mac_turkish.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.mbcs",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/mbcs.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.oem",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/oem.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.palmos",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/palmos.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.ptcp154",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/ptcp154.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.punycode",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/punycode.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.quopri_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/quopri_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.raw_unicode_escape",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/raw_unicode_escape.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.rot_13",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/rot_13.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.shift_jis",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/shift_jis.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.shift_jis_2004",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/shift_jis_2004.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.shift_jisx0213",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/shift_jisx0213.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.tis_620",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/tis_620.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.undefined",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/undefined.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.unicode_escape",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/unicode_escape.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_16",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_16.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_16_be",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_16_be.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_16_le",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_16_le.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_32",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_32.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_32_be",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_32_be.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_32_le",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_32_le.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_7",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_7.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_8",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_8.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.utf_8_sig",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/utf_8_sig.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.uu_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/uu_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "encodings.zlib_codec",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/encodings/zlib_codec.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "enum",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/enum.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "fnmatch",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/fnmatch.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "fractions",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/fractions.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ftplib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ftplib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "functools",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/functools.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "genericpath",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/genericpath.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "getopt",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/getopt.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "gettext",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/gettext.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "glob",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/glob.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "gzip",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/gzip.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "hashlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/hashlib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "heapq",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/heapq.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "http",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/http/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "http.client",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/http/client.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "http.cookiejar",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/http/cookiejar.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib._abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/_abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib._bootstrap",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/_bootstrap.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib._bootstrap_external",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/_bootstrap_external.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.machinery",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/machinery.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._adapters",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_adapters.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._collections",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_collections.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._functools",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_functools.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._itertools",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_itertools.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._meta",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_meta.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.metadata._text",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/metadata/_text.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.readers",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/readers.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources._adapters",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/_adapters.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources._common",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/_common.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources._functional",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/_functional.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources._itertools",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/_itertools.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources.abc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/abc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.resources.readers",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/resources/readers.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "importlib.util",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/importlib/util.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "inspect",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/inspect.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "io",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/io.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ipaddress",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ipaddress.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "json",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/json/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "json.decoder",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/json/decoder.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "json.encoder",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/json/encoder.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "json.scanner",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/json/scanner.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "keyword",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/keyword.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "linecache",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/linecache.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "locale",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/locale.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "logging",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/logging/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "lzma",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/lzma.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "mimetypes",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/mimetypes.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "netrc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/netrc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ntpath",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ntpath.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "numbers",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/numbers.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "opcode",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/opcode.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "operator",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/operator.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "os",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/os.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pathlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/pathlib/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pathlib._os",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/pathlib/_os.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pickle",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/pickle.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pkgutil",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/pkgutil.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "platform",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/platform.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "plistlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/plistlib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "posixpath",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/posixpath.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pprint",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/pprint.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "py_compile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/py_compile.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "pyi_rth_inspect",
+      "type": "PYSOURCE",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/hooks/rthooks/pyi_rth_inspect.py"
+    },
+    {
+      "module": "pyi_rth_pkgutil",
+      "type": "PYSOURCE",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/hooks/rthooks/pyi_rth_pkgutil.py"
+    },
+    {
+      "module": "pyiboot01_bootstrap",
+      "type": "PYSOURCE",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/loader/pyiboot01_bootstrap.py"
+    },
+    {
+      "module": "pyimod01_archive",
+      "type": "PYMODULE",
+      "toc_representation": "PyInstaller-generated local pyc; source association by module name",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/loader/pyimod01_archive.py"
+    },
+    {
+      "module": "pyimod02_importers",
+      "type": "PYMODULE",
+      "toc_representation": "PyInstaller-generated local pyc; source association by module name",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/loader/pyimod02_importers.py"
+    },
+    {
+      "module": "pyimod03_ctypes",
+      "type": "PYMODULE",
+      "toc_representation": "PyInstaller-generated local pyc; source association by module name",
+      "component": "PyInstaller",
+      "source_member": "PyInstaller/loader/pyimod03_ctypes.py"
+    },
+    {
+      "module": "python3.14/lib-dynload/_bisect.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_bisectmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_blake2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/blake2module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_bz2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_bz2module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_cn.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_cn.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_hk.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_hk.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_iso2022.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_iso2022.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_jp.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_jp.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_kr.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_kr.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_codecs_tw.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/_codecs_tw.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_csv.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_csv.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_ctypes.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_ctypes/_ctypes.c",
+        "Modules/_ctypes/callbacks.c",
+        "Modules/_ctypes/callproc.c",
+        "Modules/_ctypes/stgdict.c",
+        "Modules/_ctypes/cfield.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_decimal.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_decimal/_decimal.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_elementtree.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_elementtree.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_hashlib.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_hashopenssl.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_heapq.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_heapqmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_json.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_json.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_lzma.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_lzmamodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_md5.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/md5module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_multibytecodec.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/cjkcodecs/multibytecodec.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_pickle.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_pickle.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_posixsubprocess.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_posixsubprocess.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_random.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_randommodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_scproxy.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_scproxy.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_sha1.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/sha1module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_sha2.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/sha2module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_sha3.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/sha3module.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_socket.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/socketmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_ssl.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_ssl.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_statistics.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_statisticsmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_struct.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_struct.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_uuid.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_uuidmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/_zstd.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/_zstd/_zstdmodule.c",
+        "Modules/_zstd/zstddict.c",
+        "Modules/_zstd/compressor.c",
+        "Modules/_zstd/decompressor.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/array.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/arraymodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/binascii.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/binascii.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/fcntl.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/fcntlmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/grp.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/grpmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/math.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/mathmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/pyexpat.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/pyexpat.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/resource.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/resource.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/select.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/selectmodule.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/unicodedata.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/unicodedata.c"
+      ]
+    },
+    {
+      "module": "python3.14/lib-dynload/zlib.cpython-314-darwin.so",
+      "type": "EXTENSION",
+      "component": "CPython",
+      "source_members": [
+        "Modules/zlibmodule.c"
+      ]
+    },
+    {
+      "module": "quopri",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/quopri.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "random",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/random.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "re",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/re/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "re._casefix",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/re/_casefix.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "re._compiler",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/re/_compiler.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "re._constants",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/re/_constants.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "re._parser",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/re/_parser.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "reprlib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/reprlib.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "runpy",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/runpy.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "selectors",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/selectors.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "setup",
+      "type": "PYSOURCE",
+      "component": "project application code",
+      "license_scope": "project GPL license and source supplied separately"
+    },
+    {
+      "module": "shutil",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/shutil.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "signal",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/signal.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "socket",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/socket.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "sre_compile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/sre_compile.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "sre_constants",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/sre_constants.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "sre_parse",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/sre_parse.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "ssl",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/ssl.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "stat",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/stat.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "statistics",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/statistics.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "string",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/string/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "stringprep",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/stringprep.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "struct",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/struct.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "struct",
+      "type": "PYMODULE",
+      "toc_representation": "PyInstaller-generated local pyc; source association by module name",
+      "component": "CPython",
+      "source_member": "Lib/struct.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "subprocess",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/subprocess.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "sysconfig",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/sysconfig/__init__.py",
+      "source_matches_upstream": false,
+      "installed_source": {
+        "path": "build-source-evidence/installed-python/Lib/sysconfig/__init__.py",
+        "sha256": "d5ec49f0273b662e73a54d6c9b768e998266198b34f3625ee7211859d0fbea06",
+        "bytes": 29764
+      }
+    },
+    {
+      "module": "tarfile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/tarfile.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "tempfile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/tempfile.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "textwrap",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/textwrap.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "threading",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/threading.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "token",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/token.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "tokenize",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/tokenize.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "traceback",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/traceback.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "tracemalloc",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/tracemalloc.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "types",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/types.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "typing",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/typing.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "urllib",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/urllib/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "urllib.error",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/urllib/error.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "urllib.parse",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/urllib/parse.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "urllib.request",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/urllib/request.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "urllib.response",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/urllib/response.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "uuid",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/uuid.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "warnings",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/warnings.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "weakref",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/weakref.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.etree",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/etree/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.etree.ElementInclude",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/etree/ElementInclude.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.etree.ElementPath",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/etree/ElementPath.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.etree.ElementTree",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/etree/ElementTree.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.etree.cElementTree",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/etree/cElementTree.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.parsers",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/parsers/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.parsers.expat",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/parsers/expat.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax._exceptions",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/_exceptions.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax.expatreader",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/expatreader.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax.handler",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/handler.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax.saxutils",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/saxutils.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "xml.sax.xmlreader",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/xml/sax/xmlreader.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "zipfile",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/zipfile/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "zipfile._path",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/zipfile/_path/__init__.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "zipfile._path.glob",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/zipfile/_path/glob.py",
+      "source_matches_upstream": true
+    },
+    {
+      "module": "zipimport",
+      "type": "PYMODULE",
+      "component": "CPython",
+      "source_member": "Lib/zipimport.py",
+      "source_matches_upstream": true
+    }
+  ],
+  "source_archives": [
+    {
+      "component": "mpdecimal",
+      "version": "4.0.1",
+      "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+      "sha256": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+      "filename": "mpdecimal-4.0.1.tar.gz"
+    },
+    {
+      "component": "openssl@4",
+      "version": "4.0.3",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-4.0.3/openssl-4.0.3.tar.gz",
+      "sha256": "325b5c806167c13b40b1ffeadfe0248197c00eccc4cf123ec1e28d2d2fd216d9",
+      "filename": "openssl-4-4.0.3.tar.gz"
+    },
+    {
+      "component": "python@3.14",
+      "version": "3.14.8_3",
+      "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+      "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+      "filename": "python-3.14-3.14.8_3.tar.gz"
+    },
+    {
+      "component": "xz",
+      "version": "5.8.4",
+      "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+      "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+      "filename": "xz-5.8.4.tar.gz"
+    },
+    {
+      "component": "zstd",
+      "version": "1.5.7_1",
+      "url": "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
+      "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3",
+      "filename": "zstd-1.5.7_1.tar.gz"
+    },
+    {
+      "component": "pyinstaller",
+      "version": "6.22.3",
+      "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+      "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+      "filename": "pyinstaller-6.22.3.tar.gz"
+    }
+  ],
+  "license_files": [
+    {
+      "path": "licenses/mpdecimal/COPYRIGHT.txt",
+      "sha256": "dba079e24a0286052f9f36a5e0b4f6cc95bc83ada657eb26bef8c0b6473f6512",
+      "bytes": 1285,
+      "component": "mpdecimal",
+      "source_member": "COPYRIGHT.txt",
+      "source_archive": {
+        "component": "mpdecimal",
+        "version": "4.0.1",
+        "url": "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+        "sha256": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+        "filename": "mpdecimal-4.0.1.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/openssl-4/LICENSE.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+      "bytes": 10175,
+      "component": "openssl@4",
+      "source_member": "LICENSE.txt",
+      "source_archive": {
+        "component": "openssl@4",
+        "version": "4.0.3",
+        "url": "https://github.com/openssl/openssl/releases/download/openssl-4.0.3/openssl-4.0.3.tar.gz",
+        "sha256": "325b5c806167c13b40b1ffeadfe0248197c00eccc4cf123ec1e28d2d2fd216d9",
+        "filename": "openssl-4-4.0.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/python-3.14/LICENSE",
+      "sha256": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
+      "bytes": 13804,
+      "component": "python@3.14",
+      "source_member": "LICENSE",
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/xz/COPYING",
+      "sha256": "616a3ad264ce29b8f1cb97e53037b139d406899ca8d1f799651e17bfa09830b8",
+      "bytes": 3119,
+      "component": "xz",
+      "source_member": "COPYING",
+      "source_archive": {
+        "component": "xz",
+        "version": "5.8.4",
+        "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+        "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+        "filename": "xz-5.8.4.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/xz/COPYING.0BSD",
+      "sha256": "0b01625d853911cd0e2e088dcfb743261034a091bb379246cb25a14cc4c74bf1",
+      "bytes": 607,
+      "component": "xz",
+      "source_member": "COPYING.0BSD",
+      "source_archive": {
+        "component": "xz",
+        "version": "5.8.4",
+        "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+        "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+        "filename": "xz-5.8.4.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/xz/COPYING.GPLv2",
+      "sha256": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+      "bytes": 17984,
+      "component": "xz",
+      "source_member": "COPYING.GPLv2",
+      "source_archive": {
+        "component": "xz",
+        "version": "5.8.4",
+        "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+        "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+        "filename": "xz-5.8.4.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/xz/COPYING.GPLv3",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "bytes": 35149,
+      "component": "xz",
+      "source_member": "COPYING.GPLv3",
+      "source_archive": {
+        "component": "xz",
+        "version": "5.8.4",
+        "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+        "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+        "filename": "xz-5.8.4.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/xz/COPYING.LGPLv2.1",
+      "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+      "bytes": 26419,
+      "component": "xz",
+      "source_member": "COPYING.LGPLv2.1",
+      "source_archive": {
+        "component": "xz",
+        "version": "5.8.4",
+        "url": "https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.gz",
+        "sha256": "0014c7886930454fe8bd4228665b51af55eeae560ea135c9c4cd33f55b2591d9",
+        "filename": "xz-5.8.4.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/zstd/COPYING",
+      "sha256": "f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505",
+      "bytes": 18091,
+      "component": "zstd",
+      "source_member": "COPYING",
+      "source_archive": {
+        "component": "zstd",
+        "version": "1.5.7_1",
+        "url": "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
+        "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3",
+        "filename": "zstd-1.5.7_1.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/zstd/LICENSE",
+      "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+      "bytes": 1549,
+      "component": "zstd",
+      "source_member": "LICENSE",
+      "source_archive": {
+        "component": "zstd",
+        "version": "1.5.7_1",
+        "url": "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
+        "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3",
+        "filename": "zstd-1.5.7_1.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/COPYING.txt",
+      "sha256": "0598064c7d2718e38d7914a7d08343b2fa008e3bea9ebba2aa7a6ffa5900dd64",
+      "bytes": 32604,
+      "component": "pyinstaller",
+      "source_member": "COPYING.txt",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/Doc-license.rst.txt",
+      "sha256": "cd6f471c0bfdb099efefc25ddff9b3df8bf62e10428987f1f05e6f2f9e35d563",
+      "bytes": 60039,
+      "component": "CPython embedded/history",
+      "source_member": "Doc/license.rst",
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/Doc-copyright.rst.txt",
+      "sha256": "f2c1d094466270ed41fc4dd2904d91b34d58cbb5033403b2de5cc153aba8e608",
+      "bytes": 446,
+      "component": "CPython embedded/history",
+      "source_member": "Doc/copyright.rst",
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-f9d4eb53637e0530.txt",
+      "sha256": "f9d4eb53637e0530eb78867513e7464fcf6bc60988c2c1361c9beef173d1f146",
+      "bytes": 473,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/hooks/rthooks/pyi_rth_inspect.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-ae5a78652acfeba2.txt",
+      "sha256": "ae5a78652acfeba2ef3de84842a6be0103834956bc9e788a0c54d20805d0331e",
+      "bytes": 896,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/hooks/rthooks/pyi_rth_pkgutil.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-60292131b02128ae.txt",
+      "sha256": "60292131b02128ae44428d65fb6a08e6d36707cb86fe3ac6eda66e9789a23ab4",
+      "bytes": 509,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/loader/pyiboot01_bootstrap.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-1c7527504198c27b.txt",
+      "sha256": "1c7527504198c27b87bd416b3e37982bfd038e9ad2819ce018d597869393281f",
+      "bytes": 795,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/loader/pyimod01_archive.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-0877a8f7ef61a3fb.txt",
+      "sha256": "0877a8f7ef61a3fbea88c0e3ae97150f2115d481024b52e0cb90bab7e7b94995",
+      "bytes": 507,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/loader/pyimod02_importers.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/PyInstaller/embedded-33cd55da6723a3d9.txt",
+      "sha256": "33cd55da6723a3d90956ee7893e5a7352386dd3eda889b23a97461e2b4dd10d0",
+      "bytes": 408,
+      "component": "PyInstaller runtime",
+      "source_member": "PyInstaller/loader/pyimod03_ctypes.py",
+      "source_archive": {
+        "component": "pyinstaller",
+        "version": "6.22.3",
+        "url": "https://files.pythonhosted.org/packages/63/41/f90302845945abd4ed647933ff5ee7c6ac93983187be67f897b6cb613331/pyinstaller-6.22.3.tar.gz",
+        "sha256": "05eb2f5615503e72939a7224d68b4aff572c6b0438ee4a17d0a4b481f399362d",
+        "filename": "pyinstaller-6.22.3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-9c539f023f58cf16.txt",
+      "sha256": "9c539f023f58cf16211c185ffdbd513c962b5837590d31b3548c97d59017909a",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Include/internal/mimalloc/mimalloc.h",
+        "Include/internal/mimalloc/mimalloc/internal.h",
+        "Include/internal/mimalloc/mimalloc/prim.h",
+        "Include/internal/mimalloc/mimalloc/track.h",
+        "Include/internal/mimalloc/mimalloc/types.h",
+        "Objects/mimalloc/os.c",
+        "Objects/mimalloc/prim/osx/prim.c",
+        "Objects/mimalloc/prim/prim.c",
+        "Objects/mimalloc/prim/unix/prim.c",
+        "Objects/mimalloc/prim/wasi/prim.c",
+        "Objects/mimalloc/prim/windows/prim.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-3c80c260904ec7df.txt",
+      "sha256": "3c80c260904ec7dfac2596c4a6c7708fc2e74921a9de220f7c9418651744d6e6",
+      "bytes": 406,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Include/internal/mimalloc/mimalloc/atomic.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-327c85a576074892.txt",
+      "sha256": "327c85a576074892913b4c66adb703f3155fa3838598673958a5d276ec08cece",
+      "bytes": 101,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/_collections_abc.py",
+        "Lib/abc.py",
+        "Lib/numbers.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-e93dd4177c883d6e.txt",
+      "sha256": "e93dd4177c883d6ea73483d6fbb5fd626cf26a9820332fbbee6ea89a5eb15a61",
+      "bytes": 622,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/_pydecimal.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-419339a096e19123.txt",
+      "sha256": "419339a096e191232b72253ee2a82abab1f091f6756b84bec8a33dee959cb234",
+      "bytes": 104,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/__init__.py",
+        "Lib/email/encoders.py",
+        "Lib/email/errors.py",
+        "Lib/email/generator.py",
+        "Lib/email/iterators.py",
+        "Lib/email/message.py",
+        "Lib/email/utils.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-b0315ecc99f0231e.txt",
+      "sha256": "b0315ecc99f0231e8dc6680a3781ae58604fc8e27d29117455099318ba1fb135",
+      "bytes": 81,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/_parseaddr.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-da36e62555e1cf34.txt",
+      "sha256": "da36e62555e1cf343ebe55e53df53eb5bc49f2902596cf1d3b999d35d8238e7c",
+      "bytes": 106,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/base64mime.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-bfff5af4f4f74431.txt",
+      "sha256": "bfff5af4f4f74431aba2effd1907102352065d11fd24b43b9b3de821d057d745",
+      "bytes": 120,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/charset.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-740017b31fb1e860.txt",
+      "sha256": "740017b31fb1e860ca568434fa0c8c630c8ec5cc9a5e50f013a6af1b72889ddf",
+      "bytes": 119,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/feedparser.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-7dc489ee31d98190.txt",
+      "sha256": "7dc489ee31d9819022f39b823ca5869c69e9ab0f5cdbc69648a9e417fe731dfa",
+      "bytes": 120,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/header.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-b18b9950f4bb5e86.txt",
+      "sha256": "b18b9950f4bb5e861be1db31e908f4d5a4b84409f61ff00fdbe8bdad34226f68",
+      "bytes": 136,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/parser.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-bb2bc42e296db308.txt",
+      "sha256": "bb2bc42e296db308cc2768bf32432a62eb9bcca57864e34ff13fa5ebb5660b4e",
+      "bytes": 106,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/email/quoprimime.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-935d8cf3cab099e4.txt",
+      "sha256": "935d8cf3cab099e455f95a3dd19db2380471e6fdc040fbb0ee220dc201dc07ab",
+      "bytes": 365,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/functools.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-6435f79522c36bdf.txt",
+      "sha256": "6435f79522c36bdffe6178283fedba30dff0fcc4722e30ea6e8281109d08e009",
+      "bytes": 118,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/hashlib.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-0c2aaa7a517e58c3.txt",
+      "sha256": "0c2aaa7a517e58c37ef2b7ac344bb3de8c7977ef16082b64573ead74c45d4e73",
+      "bytes": 80,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/ipaddress.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-1729a117180adeae.txt",
+      "sha256": "1729a117180adeaef2a652f1a3fcbd05ff89687d8951414424ce897ae5da53b4",
+      "bytes": 987,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/logging/__init__.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-57a4b370f67d524f.txt",
+      "sha256": "57a4b370f67d524f8a5b9af25e37572da69f094606a0879febe8b3b77a7f3ebb",
+      "bytes": 500,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/re/__init__.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-057cc21c3f81db54.txt",
+      "sha256": "057cc21c3f81db54fb9b831622c02d365ebdd6594664627853e881a325ee9beb",
+      "bytes": 229,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/re/_compiler.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-df9a51fb11776037.txt",
+      "sha256": "df9a51fb1177603754f9e20eec34a79b8ecb42253c236690face0f2c5ba1290d",
+      "bytes": 300,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/re/_constants.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-c6fb68acb452a4d9.txt",
+      "sha256": "c6fb68acb452a4d905c694f21af815b36b70e5ea0af6608c028464a332835cac",
+      "bytes": 244,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/re/_parser.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-3432192139c28e7c.txt",
+      "sha256": "3432192139c28e7caa8faafdcd0e80c8d22fc29e7aebf5087840d2c7add4eee3",
+      "bytes": 235,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/subprocess.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-13d8bece0ca98d87.txt",
+      "sha256": "13d8bece0ca98d87a405d27f47fa4844fc657d473fa79b35d86ea423456df967",
+      "bytes": 1368,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/tarfile.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-9a62afff85fc6e12.txt",
+      "sha256": "9a62afff85fc6e123112725ef26d1fba63cd757a1747a32d1a2fbf56c0e24c3b",
+      "bytes": 135,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/textwrap.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-608045f9c98a7a8b.txt",
+      "sha256": "608045f9c98a7a8b0605255cc3ba1877eb8fb268c826f8dd29fd3e2c5e67c560",
+      "bytes": 1918,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/xml/etree/ElementInclude.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-4fdb148098b8c02b.txt",
+      "sha256": "4fdb148098b8c02be51fe811f4049fa66ed606f7fb5e7a6f027eed4393a85bf1",
+      "bytes": 2319,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/xml/etree/ElementPath.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-f7542330ef684262.txt",
+      "sha256": "f7542330ef684262e47b18267fd89331e7b1279994adbb98f036b71d45030b31",
+      "bytes": 1735,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/xml/etree/ElementTree.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-91950edfb196c105.txt",
+      "sha256": "91950edfb196c105d93886f8af7ea3c0a79e06a6b63be3e5a4ea09804e8672a6",
+      "bytes": 1605,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Lib/xml/etree/__init__.py"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-34a6c0fb516b4106.txt",
+      "sha256": "34a6c0fb516b410694da3306de858bb4f7a6cfff3309f915605c7afe01275960",
+      "bytes": 1358,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_decimal/_decimal.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-a519b5ee66730d7b.txt",
+      "sha256": "a519b5ee66730d7b2822086262942a04e806a39fe33d55c03447335adc6b1578",
+      "bytes": 489,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_elementtree.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-912ad428ca5f4b18.txt",
+      "sha256": "912ad428ca5f4b181100446204776c71c53552a265e13413d769ef6671204993",
+      "bytes": 1206,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_hacl/Hacl_HMAC.c",
+        "Modules/_hacl/Hacl_HMAC.h",
+        "Modules/_hacl/Hacl_Hash_Blake2b.c",
+        "Modules/_hacl/Hacl_Hash_Blake2b.h",
+        "Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c",
+        "Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h",
+        "Modules/_hacl/Hacl_Hash_Blake2s.c",
+        "Modules/_hacl/Hacl_Hash_Blake2s.h",
+        "Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c",
+        "Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h",
+        "Modules/_hacl/Hacl_Hash_MD5.c",
+        "Modules/_hacl/Hacl_Hash_MD5.h",
+        "Modules/_hacl/Hacl_Hash_SHA1.c",
+        "Modules/_hacl/Hacl_Hash_SHA1.h",
+        "Modules/_hacl/Hacl_Hash_SHA2.c",
+        "Modules/_hacl/Hacl_Hash_SHA2.h",
+        "Modules/_hacl/Hacl_Hash_SHA3.c",
+        "Modules/_hacl/Hacl_Hash_SHA3.h",
+        "Modules/_hacl/Hacl_Streaming_HMAC.c",
+        "Modules/_hacl/Hacl_Streaming_HMAC.h",
+        "Modules/_hacl/Hacl_Streaming_Types.h",
+        "Modules/_hacl/internal/Hacl_HMAC.h",
+        "Modules/_hacl/internal/Hacl_Hash_Blake2b.h",
+        "Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h",
+        "Modules/_hacl/internal/Hacl_Hash_Blake2s.h",
+        "Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h",
+        "Modules/_hacl/internal/Hacl_Hash_MD5.h",
+        "Modules/_hacl/internal/Hacl_Hash_SHA1.h",
+        "Modules/_hacl/internal/Hacl_Hash_SHA2.h",
+        "Modules/_hacl/internal/Hacl_Hash_SHA3.h",
+        "Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h",
+        "Modules/_hacl/internal/Hacl_Streaming_HMAC.h",
+        "Modules/_hacl/internal/Hacl_Streaming_Types.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-61a13be08b5d0a1f.txt",
+      "sha256": "61a13be08b5d0a1fe57de4edf53651658180d3ad3361d5984886a5dc7e4b12b3",
+      "bytes": 125,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_hacl/include/krml/FStar_UInt128_Verified.h",
+        "Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-22934ce5b6c29f93.txt",
+      "sha256": "22934ce5b6c29f9309702605b886ad3c8b5c04a6a4b9d6510a4de21084de641b",
+      "bytes": 124,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h",
+        "Modules/_hacl/include/krml/internal/compat.h",
+        "Modules/_hacl/include/krml/internal/target.h",
+        "Modules/_hacl/include/krml/internal/types.h",
+        "Modules/_hacl/include/krml/lowstar_endianness.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-a39c05af5aa9fdb1.txt",
+      "sha256": "a39c05af5aa9fdb1589c7ab5e79ad7183cd326f6fa36044e0984d36ed42f94eb",
+      "bytes": 265,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_hashopenssl.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-d454ad6ba0513da7.txt",
+      "sha256": "d454ad6ba0513da75bcf70b613a66c9a305c22f46300dcd94e2de8df9a643efe",
+      "bytes": 2815,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/_randommodule.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-9cad926fdc1d6a1d.txt",
+      "sha256": "9cad926fdc1d6a1d319bca2df7c816d99b5b55f2c36616b97225d004a09ff3d9",
+      "bytes": 3491,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/binascii.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-f9a1873f4aeb5361.txt",
+      "sha256": "f9a1873f4aeb5361aacca7346505f8c80de38b1c325e3a46cefb402be3008430",
+      "bytes": 482,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/blake2module.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-a3ea489b9b7d7779.txt",
+      "sha256": "a3ea489b9b7d7779e369b3b0d35276d75ceac25327bc44dc997d8f9d5bbe28d5",
+      "bytes": 332,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/md5module.c",
+        "Modules/sha1module.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-a1dd1ed8e59ad72d.txt",
+      "sha256": "a1dd1ed8e59ad72d0d5b3b15204e4baf05b05ff1bd91be73f37611806d9f9d29",
+      "bytes": 1519,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/selectmodule.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-b5e67b9062ab7adc.txt",
+      "sha256": "b5e67b9062ab7adc7a05feeb9976ee165dac118607bf1697aba813151ae5c2c6",
+      "bytes": 378,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/sha2module.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-40a01d7306ebf33f.txt",
+      "sha256": "40a01d7306ebf33f7483ad7aa8096bc4b6bc54aa3f84f050e06a6e1064deaad9",
+      "bytes": 465,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/sha3module.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-0adf9cf5a8f472bc.txt",
+      "sha256": "0adf9cf5a8f472bcf3a314260e11b93541b0ccd9b0d49e2bf67636277f10aeb7",
+      "bytes": 531,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Modules/unicodedata.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-4da3a041a99f06f3.txt",
+      "sha256": "4da3a041a99f06f35d5315666d667215989069705815370797849ac31193fe9c",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/alloc-aligned.c",
+        "Objects/mimalloc/alloc-override.c",
+        "Objects/mimalloc/alloc-posix.c",
+        "Objects/mimalloc/options.c",
+        "Objects/mimalloc/stats.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-9a385e80e0858024.txt",
+      "sha256": "9a385e80e0858024e431a7caf2d483edd8492f489c5460cf96aa5473bb5854a7",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/alloc.c",
+        "Objects/mimalloc/init.c",
+        "Objects/mimalloc/prim/osx/alloc-override-zone.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-33883b4541c3fee7.txt",
+      "sha256": "33883b4541c3fee743ab5c4bb898bdb9218faeeb1c47235c4fbabc486bef0022",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/arena.c",
+        "Objects/mimalloc/segment-map.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-328619ae7073960e.txt",
+      "sha256": "328619ae7073960e7017ec860b86a9f8ae1d1dfbb29da5179b0adc4f4d6a2b0b",
+      "bytes": 406,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/bitmap.c",
+        "Objects/mimalloc/bitmap.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-b8e97a8f97a87734.txt",
+      "sha256": "b8e97a8f97a87734d7915cc236246a058fa8da48b7f1f402b8187f639f1c2bae",
+      "bytes": 406,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/heap.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-954defc4f1aaec4f.txt",
+      "sha256": "954defc4f1aaec4f32235a864c2bc0b1638c596c5ba47ae55b76c5e9cef7e75c",
+      "bytes": 406,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/page-queue.c",
+        "Objects/mimalloc/page.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-a2b5f1d1933e6c20.txt",
+      "sha256": "a2b5f1d1933e6c2065884c7bb74ed01c4d3ffe6983c80ff59e4c9ed2b0a291b0",
+      "bytes": 15300,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/prim/windows/etw.h"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-1e6a8703ee950def.txt",
+      "sha256": "1e6a8703ee950defade268ddf0508e980ff6d6e5a79a5600cd4d9f3abf06cf39",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/random.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/CPython/embedded-40154cfb99f39cf2.txt",
+      "sha256": "40154cfb99f39cf2ae977d2128342b57c6609f16f122cf8ca8b9d083f780614d",
+      "bytes": 407,
+      "component": "CPython embedded code",
+      "source_members": [
+        "Objects/mimalloc/segment.c",
+        "Objects/mimalloc/static.c"
+      ],
+      "source_archive": {
+        "component": "python@3.14",
+        "version": "3.14.8_3",
+        "url": "https://www.python.org/ftp/python/3.14.8/Python-3.14.8.tgz",
+        "sha256": "a65b20a728f169f4e66ae143f40b1bd3d33c38d770251663f627c9767b79b210",
+        "filename": "python-3.14-3.14.8_3.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/zstd/xxhash-copyright.txt",
+      "sha256": "c2840bd10d1cd7a5f5fcff83b1317f18ce45f6f6df243d575a27048ee3aaf190",
+      "bytes": 412,
+      "component": "zstd/xxHash",
+      "source_member": "lib/common/xxhash.h",
+      "source_archive": {
+        "component": "zstd",
+        "version": "1.5.7_1",
+        "url": "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
+        "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3",
+        "filename": "zstd-1.5.7_1.tar.gz"
+      }
+    },
+    {
+      "path": "licenses/Unicode/Unicode-database-ReadMe.txt",
+      "sha256": "14cafa23788d3a20dd21d6b0cdcb8d6dab520781fcd9ad9392f3b88ea607e633",
+      "bytes": 693,
+      "component": "Unicode 16.0.0",
+      "source_url": "https://www.unicode.org/Public/16.0.0/ucd/ReadMe.txt",
+      "scope": "Exact database-version notice plus current official Unicode License V3, copied unchanged; not a claim of archived historical license bytes"
+    },
+    {
+      "path": "licenses/Unicode/Unicode-LICENSE-V3.txt",
+      "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
+      "bytes": 1995,
+      "component": "Unicode 16.0.0",
+      "source_url": "https://www.unicode.org/license.txt",
+      "scope": "Exact database-version notice plus current official Unicode License V3, copied unchanged; not a claim of archived historical license bytes"
+    },
+    {
+      "path": "licenses/CPython/MODIFICATIONS.txt",
+      "sha256": "4ec6777b0cfc23842388d29593dd1724e272532a30be638a0cd5101a2e8145b1",
+      "bytes": 511,
+      "component": "Distribution changes summary"
+    }
+  ],
+  "build_formula_records": [
+    {
+      "path": "build-source-evidence/mpdecimal-formula.rb",
+      "sha256": "cd53326f11e7c84efdd2bcca39ec65d9323f4e40b1bea5245afa62c1917be617",
+      "bytes": 1441,
+      "component": "mpdecimal",
+      "version": "4.0.1"
+    },
+    {
+      "path": "build-source-evidence/openssl-4-formula.rb",
+      "sha256": "346fb8b241c41ec67ca655bdb3ba6d4acbbffda18f32bd758324f799de6c1289",
+      "bytes": 4744,
+      "component": "openssl@4",
+      "version": "4.0.3"
+    },
+    {
+      "path": "build-source-evidence/python-3.14-formula.rb",
+      "sha256": "10cf0d69af60e3229eca9ed333432f0ac5a18f3798a1a5b9feb690b474c33e9e",
+      "bytes": 24856,
+      "component": "python@3.14",
+      "version": "3.14.8_3"
+    },
+    {
+      "path": "build-source-evidence/xz-formula.rb",
+      "sha256": "0a0ec0394575eadc853cdb509c8ababc01c8926b973bd76841a1f6f254e1ebdf",
+      "bytes": 1085,
+      "component": "xz",
+      "version": "5.8.4"
+    },
+    {
+      "path": "build-source-evidence/zstd-formula.rb",
+      "sha256": "31e19064d9132ede57450f87ab121cc7d7905b4b9879ffba84992765b3f884e0",
+      "bytes": 2623,
+      "component": "zstd",
+      "version": "1.5.7_1"
+    }
+  ],
+  "unclassified_python_modules": [],
+  "source_scope": {
+    "python": "Exact official release source plus recorded Homebrew formula, source checksum and installed receipt. Formula patch bytes/build environment not all reconstructed.",
+    "native": "Exact upstream sources/notices and Homebrew version/formula. This is not a from-source reproduction of Homebrew bottles.",
+    "pyinstaller": "Exact PyPI release sdist and installed notice match. Worker bootloader origin is TOC-based, not a reproducible bootloader build claim."
+  },
+  "observations": {
+    "extensions": 42,
+    "bundled_native_files": 49,
+    "code_sections_matching_toc": 49,
+    "license_files": 73
+  },
+  "limits": [
+    "Only the worker was audited; Wine/DXMT/helper notices are separate.",
+    "CPython license documentation is itself described upstream as incomplete; per-file embedded notices collected conservatively.",
+    "System dylibs/frameworks are runtime dependencies, not copied into the worker.",
+    "Packaging/signing changes full binary bytes; matching text-section hashes support unchanged code, not a full reproducible-build claim.",
+    "No build, worker execution, credentials, saves or game inspection performed.",
+    "internal/ TOCs contain private build paths and must not be shipped."
+  ]
+}

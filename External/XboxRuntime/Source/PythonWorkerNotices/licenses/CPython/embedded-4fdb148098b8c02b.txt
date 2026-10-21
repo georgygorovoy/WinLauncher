@@ -1,0 +1,58 @@
+#
+# ElementTree
+# $Id: ElementPath.py 3375 2008-02-13 08:05:08Z fredrik $
+#
+# limited xpath support for element trees
+#
+# history:
+# 2003-05-23 fl   created
+# 2003-05-28 fl   added support for // etc
+# 2003-08-27 fl   fixed parsing of periods in element names
+# 2007-09-10 fl   new selection engine
+# 2007-09-12 fl   fixed parent selector
+# 2007-09-13 fl   added iterfind; changed findall to return a list
+# 2007-11-30 fl   added namespaces support
+# 2009-10-30 fl   added child element value filter
+#
+# Copyright (c) 2003-2009 by Fredrik Lundh.  All rights reserved.
+#
+# fredrik@pythonware.com
+# http://www.pythonware.com
+#
+# --------------------------------------------------------------------
+# The ElementTree toolkit is
+#
+# Copyright (c) 1999-2009 by Fredrik Lundh
+#
+# By obtaining, using, and/or copying this software and/or its
+# associated documentation, you agree that you have read, understood,
+# and will comply with the following terms and conditions:
+#
+# Permission to use, copy, modify, and distribute this software and
+# its associated documentation for any purpose and without fee is
+# hereby granted, provided that the above copyright notice appears in
+# all copies, and that both that copyright notice and this permission
+# notice appear in supporting documentation, and that the name of
+# Secret Labs AB or the author not be used in advertising or publicity
+# pertaining to distribution of the software without specific, written
+# prior permission.
+#
+# SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+# TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANT-
+# ABILITY AND FITNESS.  IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR
+# BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+# OF THIS SOFTWARE.
+# --------------------------------------------------------------------
+
+# Licensed to PSF under a Contributor Agreement.
+# See https://www.python.org/psf/license for licensing details.
+
+##
+# Implementation module for XPath support.  There's usually no reason
+# to import this module directly; the <b>ElementTree</b> does this for
+# you, if needed.
+##
+

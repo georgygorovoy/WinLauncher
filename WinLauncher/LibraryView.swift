@@ -35,6 +35,10 @@ struct LibraryView: View {
             AndroidSetupView()
                 .environmentObject(model)
         }
+        .sheet(isPresented: $model.showingXboxSetup) {
+            XboxSetupView()
+                .environmentObject(model)
+        }
         .sheet(item: $model.compatibilityHelp) { help in
             CompatibilityHelpView(help: help)
                 .environmentObject(model)
@@ -197,7 +201,7 @@ private struct ApplicationCard: View {
         .disabled(model.operation != .idle)
         .contextMenu {
             Button("Run") { Task { await model.launch(application) } }
-            Button(application.effectivePlatform == .android ? "Show APK in Finder" : "Open C: Drive") {
+            Button(fileMenuTitle) {
                 model.revealFiles(for: application)
             }
             Divider()
@@ -210,6 +214,12 @@ private struct ApplicationCard: View {
             return application.effectivePlatform == .android ? "Android · Not opened yet" : "Windows · Not opened yet"
         }
         return "Opened \(date.formatted(.relative(presentation: .named)))"
+    }
+
+    private var fileMenuTitle: String {
+        if application.packageIdentifier == "org.minecraft.windows.gdk" { return "Show Game Files" }
+        if application.effectivePlatform == .android { return "Show APK in Finder" }
+        return "Open C: Drive"
     }
 }
 
@@ -224,6 +234,7 @@ private struct ApplicationArtwork: View {
         if name.contains("epic") { return "bolt.fill" }
         if name.contains("battle") { return "sparkles" }
         if name.contains("trackmania") { return "flag.checkered" }
+        if name.contains("minecraft") { return "cube.fill" }
         if application.effectivePlatform == .android { return "app.badge.fill" }
         return "face.smiling.fill"
     }

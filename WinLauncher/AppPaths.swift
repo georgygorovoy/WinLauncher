@@ -17,6 +17,13 @@ struct AppPaths: Sendable {
     var androidAVDs: URL { root.appendingPathComponent("Android/AVD", isDirectory: true) }
     var androidCache: URL { root.appendingPathComponent("Android/Downloads", isDirectory: true) }
     var androidUser: URL { root.appendingPathComponent("Android/User", isDirectory: true) }
+    var xboxSupport: URL { root.appendingPathComponent("XboxSupport", isDirectory: true) }
+    var xboxHelper: URL { xboxSupport.appendingPathComponent("bin/standalone_helper") }
+    var xboxGames: URL { xboxSupport.appendingPathComponent("Games", isDirectory: true) }
+    var legacyMinecraftGame: URL { xboxGames.appendingPathComponent("Minecraft", isDirectory: true) }
+    var minecraftGame: URL { xboxSupport.appendingPathComponent("game", isDirectory: true) }
+    var xboxRuntime: URL { xboxSupport.appendingPathComponent("Runtime", isDirectory: true) }
+    var xboxCache: URL { xboxSupport.appendingPathComponent("Downloads", isDirectory: true) }
     var prefix: URL { root.appendingPathComponent("Environments/default/prefix", isDirectory: true) }
     var imports: URL { prefix.appendingPathComponent("drive_c/users/Public/WinLauncher", isDirectory: true) }
     var logs: URL { root.appendingPathComponent("Logs", isDirectory: true) }
@@ -57,7 +64,8 @@ struct AppPaths: Sendable {
 
     func createBaseDirectories(fileManager: FileManager = .default) throws {
         for directory in [root, logs, engines, engineCache, dependencies, androidSDK, androidAVDs,
-                          androidCache, androidUser, prefix.deletingLastPathComponent()] {
+                          androidCache, androidUser, xboxSupport, xboxGames, xboxRuntime, xboxCache,
+                          xboxHelper.deletingLastPathComponent(), prefix.deletingLastPathComponent()] {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true,
                                             attributes: [.posixPermissions: 0o700])
         }

@@ -1,0 +1,397 @@
+--- a/dlls/xgameruntime/GDKComponent/System/XUser.c
++++ b/dlls/xgameruntime/GDKComponent/System/XUser.c
+@@ -27,6 +27,7 @@
+ #include <wincrypt.h>
+ #include <wininet.h>
+ #include "XUserClaims.h"
++#include "XUserRefresh.h"
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(xuser);
+ #include "HttpStatusTrace.h"
+@@ -171,13 +172,18 @@
+     HSTRING accessToken;
+     HSTRING refreshToken;
+     HSTRING userToken;
++    ULONGLONG userTokenExpiry;
++    BOOL usesXodus;
+     HSTRING xstsToken;
++    ULONGLONG xstsExpiry;
+     char *xstsRelyingParty;
+     SRWLOCK xstsLock;
+     HSTRING xboxPrivileges;
+     BOOL xboxPrivilegesKnown;
+     XUserAgeGroup xboxAgeGroup;
+     ULONGLONG xboxClaimsExpiry;
++    ULONGLONG xboxPolicyRetryAfter;
++    HRESULT xboxPolicyRefreshError;
+ 
+     HSTRING publicGamerpic;
+     HSTRING classicGamertag;
+@@ -476,12 +482,73 @@
+     if (object) IJsonObject_Release( object );
+     if (SUCCEEDED(hr))
+     {
++        if (impl->refreshToken) WindowsDeleteString( impl->refreshToken );
++        if (impl->accessToken) WindowsDeleteString( impl->accessToken );
+         impl->refreshToken = newRefresh;
+         impl->accessToken = newAccess;
+         return hr;
+     }
+     if (newRefresh) WindowsDeleteString( newRefresh );
+     if (newAccess) WindowsDeleteString( newAccess );
++    return hr;
++}
++
++#if XODUS_INTEROP
++DEFINE_ASYNC_COMPLETED_HANDLER( async_operation_msa_token_response, IAsyncOperationCompletedHandler_IMsaTokenResponse, IAsyncOperation_IMsaTokenResponse )
++#endif
++
++/* No UI is permitted during background credential renewal. The helper retains
++ * the account's refresh credentials; the game process only receives an access token. */
++static HRESULT user_refresh_access_token( struct XUser *impl )
++{
++#if XODUS_INTEROP
++    if (impl->usesXodus)
++    {
++        IAsyncOperation_IMsaTokenResponse *operation = NULL;
++        IMsaTokenResponse *response = NULL;
++        const char *access = NULL;
++        HSTRING replacement = NULL;
++        DWORD status;
++        HRESULT hr;
++
++        hr = IXodusService_MsaTokenRequest( xodus_service, msaAppId, FALSE, fullTrust, &operation );
++        if (FAILED(hr)) goto cleanup;
++        status = await_IAsyncOperation_IMsaTokenResponse( operation, IPC_REQUEST_TIMEOUT_MS );
++        if (status)
++        {
++            hr = status == WAIT_TIMEOUT ? HRESULT_FROM_WIN32( ERROR_TIMEOUT ) : E_ABORT;
++            goto cleanup;
++        }
++        if (FAILED(hr = IAsyncOperation_IMsaTokenResponse_GetResults( operation, &response ))) goto cleanup;
++        if (FAILED(hr = IMsaTokenResponse_get_Token( response, &access ))) goto cleanup;
++        if (!access || !*access) { hr = E_UNEXPECTED; goto cleanup; }
++        if (FAILED(hr = MultiByteToHSTRING( access, strlen( access ), &replacement ))) goto cleanup;
++        if (impl->accessToken) WindowsDeleteString( impl->accessToken );
++        impl->accessToken = replacement;
++
++    cleanup:
++        if (access) { memset( (void *)access, 0, strlen( access ) ); free( (void *)access ); }
++        if (response) IMsaTokenResponse_Release( response );
++        if (operation) IAsyncOperation_IMsaTokenResponse_Release( operation );
++        return hr;
++    }
++#endif
++    return user_RefreshOAuthToken( &impl->IUser_iface );
++}
++
++static HRESULT user_read_token_expiry( IJsonObject *object, ULONGLONG *expiry )
++{
++    HSTRING string = NULL;
++    const WCHAR *text;
++    UINT32 length;
++    HRESULT hr;
++
++    *expiry = 0;
++    if (FAILED(hr = get_json_string( object, L"NotAfter", &string ))) return hr;
++    text = WindowsGetStringRawBuffer( string, &length );
++    if (!xuser_parse_claim_expiry( text, length, expiry ) || *expiry <= xuser_current_time())
++        hr = E_UNEXPECTED;
++    WindowsDeleteString( string );
+     return hr;
+ }
+ 
+@@ -491,6 +558,8 @@
+     struct XUser *impl = impl_from_IUser( iface );
+     UINT32 tokenLen, wTokenLen;
+     IJsonObject *object = NULL;
++    HSTRING newToken = NULL;
++    ULONGLONG expiry;
+     const WCHAR *wToken;
+     UCHAR *buf = NULL;
+     char *body = NULL;
+@@ -522,13 +591,19 @@
+         WARN( "User-token JSON parse failed, hr %#lx.\n", hr );
+         goto cleanup;
+     }
+-    if (FAILED(hr = get_json_string( object, L"Token", &impl->userToken )))
+-        WARN( "User-token response lacked Token, hr %#lx.\n", hr );
++    if (FAILED(hr = get_json_string( object, L"Token", &newToken ))) goto cleanup;
++    if (!WindowsGetStringLen( newToken )) { hr = E_UNEXPECTED; goto cleanup; }
++    if (FAILED(hr = user_read_token_expiry( object, &expiry ))) goto cleanup;
++    if (impl->userToken) WindowsDeleteString( impl->userToken );
++    impl->userToken = newToken;
++    impl->userTokenExpiry = expiry;
++    newToken = NULL;
+     goto cleanup;
+ 
+ error:
+     hr = HRESULT_FROM_WIN32( GetLastError() );
+ cleanup:
++    if (newToken) WindowsDeleteString( newToken );
+     if (buf) free( buf );
+     if (body) free( body );
+     if (object) IJsonObject_Release( object );
+@@ -542,13 +617,13 @@
+     static const char userTokens[] = ",\"UserTokens\":[\"";
+     IJsonObject *child = NULL, *claims = NULL, *object = NULL;
+     HSTRING newToken = NULL, newUserHash = NULL, xuid = NULL;
+-    HSTRING privileges = NULL, age = NULL, notAfter = NULL;
++    HSTRING privileges = NULL, age = NULL;
+     BOOL xboxAudience = !strcmp( relyingParty, "http://xboxlive.com" ) ||
+                         !strcmp( relyingParty, "https://xboxlive.com" );
+     BOOL privilegesKnown = FALSE;
+     BOOLEAN ignoredPrivilege;
+     XUserAgeGroup ageGroup = XUserAgeGroup_Unknown;
+-    ULONGLONG claimsExpiry = 0;
++    ULONGLONG tokenExpiry = 0;
+     UINT32 tokenLen, wTokenLen;
+     char *body = NULL, *newRelyingParty = NULL, *token;
+     IJsonArray *array = NULL;
+@@ -581,6 +656,8 @@
+     if (FAILED(hr = http_request( L"POST", L"xsts.auth.xboxlive.com", L"/xsts/authorize", body, CT_JSON, ACCEPT_JSON, &buffer, &bufferSize ))) goto cleanup;
+     if (FAILED(hr = parse_json( (char *)buffer, bufferSize, &object ))) goto cleanup;
+     if (FAILED(hr = get_json_string( object, L"Token", &newToken ))) goto cleanup;
++    if (!WindowsGetStringLen( newToken )) { hr = E_UNEXPECTED; goto cleanup; }
++    if (FAILED(hr = user_read_token_expiry( object, &tokenExpiry ))) goto cleanup;
+     if (FAILED(hr = get_json_object( object, L"DisplayClaims", &claims ))) goto cleanup;
+     if (FAILED(hr = get_json_array( claims, L"xui", &array ))) goto cleanup;
+     if (FAILED(hr = IJsonArray_GetObjectAt( array, 0, &child ))) goto cleanup;
+@@ -596,17 +673,15 @@
+             goto cleanup;
+         }
+     }
++    /* A silent helper refresh must never switch the identity behind an existing handle. */
++    if (xboxAudience && (!xuid || !newXuid)) { hr = E_UNEXPECTED; goto cleanup; }
++    if (impl->xuid && newXuid != impl->xuid) { hr = E_ACCESSDENIED; goto cleanup; }
+     /* Preserve policy claims separately: PlayFab/Realms audiences may omit them.
+      * Only the authenticated default Xbox response can replace this cache. */
+     if (xboxAudience)
+     {
+         const WCHAR *text;
+         UINT32 length;
+-        if (SUCCEEDED(get_json_string( object, L"NotAfter", &notAfter )))
+-        {
+-            text = WindowsGetStringRawBuffer( notAfter, &length );
+-            xuser_parse_claim_expiry( text, length, &claimsExpiry );
+-        }
+         if (SUCCEEDED(get_json_string( child, L"prv", &privileges )))
+         {
+             text = WindowsGetStringRawBuffer( privileges, &length );
+@@ -631,6 +706,7 @@
+     if (impl->userHash) WindowsDeleteString( impl->userHash );
+     free( impl->xstsRelyingParty );
+     impl->xstsToken = newToken;
++    impl->xstsExpiry = tokenExpiry;
+     impl->userHash = newUserHash;
+     impl->xstsRelyingParty = newRelyingParty;
+     impl->xuid = newXuid;
+@@ -640,7 +716,9 @@
+         impl->xboxPrivileges = privileges;
+         impl->xboxPrivilegesKnown = privilegesKnown;
+         impl->xboxAgeGroup = ageGroup;
+-        impl->xboxClaimsExpiry = claimsExpiry;
++        impl->xboxClaimsExpiry = tokenExpiry;
++        impl->xboxPolicyRetryAfter = 0;
++        impl->xboxPolicyRefreshError = S_OK;
+         privileges = NULL;
+     }
+     newToken = NULL;
+@@ -656,7 +734,6 @@
+     if (xuid) WindowsDeleteString( xuid );
+     if (privileges) WindowsDeleteString( privileges );
+     if (age) WindowsDeleteString( age );
+-    if (notAfter) WindowsDeleteString( notAfter );
+     if (array) IJsonArray_Release( array );
+     if (child) IJsonObject_Release( child );
+     if (claims) IJsonObject_Release( claims );
+@@ -666,6 +743,54 @@
+ error:
+     hr = HRESULT_FROM_WIN32( GetLastError() );
+     goto cleanup;
++}
++
++/* Call with xstsLock held exclusively after publishing the user. Keep the
++ * proof key unchanged: each renewed XSTS token is bound to that existing key. */
++static HRESULT user_ensure_xsts_token( struct XUser *impl, const char *audience, BOOL force )
++{
++    ULONGLONG now = xuser_current_time();
++    HRESULT hr;
++
++    if (!xuser_token_needs_refresh( impl->xstsToken != NULL, impl->xstsRelyingParty,
++            audience, impl->xstsExpiry, now, force )) return S_OK;
++    if (force && impl->xstsRelyingParty && !strcmp( impl->xstsRelyingParty, audience ))
++        impl->xstsExpiry = 0; /* A rejected token must not re-enter the cache after a failed retry. */
++    if (!impl->userToken || xuser_expiry_needs_refresh( impl->userTokenExpiry, now ))
++    {
++        TRACE( "Renewing parent Xbox user token silently.\n" );
++        if (FAILED(hr = user_refresh_access_token( impl ))) return hr;
++        if (FAILED(hr = user_RequestUserToken( &impl->IUser_iface ))) return hr;
++        /* Validate the renewed identity with the Xbox audience before asking
++         * for an audience that might omit xid, and refresh its policy cache. */
++        if (FAILED(hr = user_request_xsts_token( impl, "http://xboxlive.com" ))) return hr;
++        if (!strcmp( audience, "http://xboxlive.com" )) return S_OK;
++    }
++    TRACE( "Renewing XSTS token, forced %u.\n", force );
++    return user_request_xsts_token( impl, audience );
++}
++
++static HRESULT user_refresh_policy( struct XUser *impl )
++{
++    ULONGLONG now = xuser_current_time();
++    HRESULT hr;
++
++    if (!xuser_expiry_needs_refresh( impl->xboxClaimsExpiry, now )) return S_OK;
++    if (impl->xboxPolicyRetryAfter > GetTickCount64())
++        hr = impl->xboxPolicyRefreshError;
++    else
++    {
++        hr = user_ensure_xsts_token( impl, "http://xboxlive.com", TRUE );
++        if (FAILED(hr))
++        {
++            impl->xboxPolicyRefreshError = hr;
++            impl->xboxPolicyRetryAfter = GetTickCount64() + 30000;
++        }
++    }
++    /* A failed proactive refresh can use an unexpired claim. Never extend its
++     * server-supplied lifetime, and do not hammer the service on repeated checks. */
++    if (FAILED(hr) && impl->xboxClaimsExpiry > xuser_current_time()) return S_OK;
++    return hr;
+ }
+ 
+ static HRESULT WINAPI user_RequestXstsToken( IUser *iface )
+@@ -958,6 +1083,7 @@
+     impl->IUser_iface.lpVtbl = &user_vtbl;
+     impl->ref = 1;
+ 
++    impl->usesXodus = TRUE;
+     if (FAILED(hr = MultiByteToHSTRING( access_token, strlen( access_token ), &impl->accessToken )))
+         goto error;
+     if (FAILED(hr = finish_user_load( impl ))) goto error;
+@@ -1098,10 +1224,6 @@
+     XUserAddOptions options;
+     XUserHandle user;
+ };
+-
+-#if XODUS_INTEROP
+-DEFINE_ASYNC_COMPLETED_HANDLER( async_operation_msa_token_response, IAsyncOperationCompletedHandler_IMsaTokenResponse, IAsyncOperation_IMsaTokenResponse )
+-#endif
+ 
+ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *data )
+ {
+@@ -1452,21 +1574,21 @@
+ 
+ static HRESULT WINAPI x_user_XUserGetAgeGroup( IXUserImpl6 *iface, XUserHandle user, XUserAgeGroup *ageGroup )
+ {
+-    FILETIME now;
+     ULONGLONG ticks;
+     HRESULT hr = E_NOTIMPL;
+ 
+     if (!user || !ageGroup) return E_POINTER;
+     *ageGroup = XUserAgeGroup_Unknown;
+-    GetSystemTimeAsFileTime( &now );
+-    ticks = ((ULONGLONG)now.dwHighDateTime << 32) | now.dwLowDateTime;
+-    AcquireSRWLockShared( &user->xstsLock );
+-    if (user->xboxClaimsExpiry > ticks && user->xboxAgeGroup != XUserAgeGroup_Unknown)
++    AcquireSRWLockExclusive( &user->xstsLock );
++    hr = user_refresh_policy( user );
++    ticks = xuser_current_time();
++    if (SUCCEEDED(hr) && user->xboxClaimsExpiry > ticks && user->xboxAgeGroup != XUserAgeGroup_Unknown)
+     {
+         *ageGroup = user->xboxAgeGroup;
+         hr = S_OK;
+     }
+-    ReleaseSRWLockShared( &user->xstsLock );
++    else if (SUCCEEDED(hr)) hr = E_NOTIMPL;
++    ReleaseSRWLockExclusive( &user->xstsLock );
+     TRACE( "Authenticated age-group availability hr %#lx.\n", hr );
+     return hr;
+ }
+@@ -1475,7 +1597,6 @@
+ {
+     const WCHAR *claim;
+     UINT32 length;
+-    FILETIME now;
+     ULONGLONG ticks;
+     HRESULT hr;
+ 
+@@ -1486,13 +1607,13 @@
+     /* Multi-user aggregation requires distinct policy semantics. Never infer it
+      * from one account's claim. The normal per-user check is fully supported. */
+     if (options == XUserPrivilegeOptions_AllUsers) return E_NOTIMPL;
+-    GetSystemTimeAsFileTime( &now );
+-    ticks = ((ULONGLONG)now.dwHighDateTime << 32) | now.dwLowDateTime;
+-    AcquireSRWLockShared( &user->xstsLock );
++    AcquireSRWLockExclusive( &user->xstsLock );
++    hr = user_refresh_policy( user );
++    ticks = xuser_current_time();
+     claim = WindowsGetStringRawBuffer( user->xboxPrivileges, &length );
+-    hr = xuser_check_privilege_claim( user->xboxPrivilegesKnown, claim, length,
++    if (SUCCEEDED(hr)) hr = xuser_check_privilege_claim( user->xboxPrivilegesKnown, claim, length,
+             user->xboxClaimsExpiry, ticks, (UINT32)privilege, hasPrivilege );
+-    ReleaseSRWLockShared( &user->xstsLock );
++    ReleaseSRWLockExclusive( &user->xstsLock );
+     if (SUCCEEDED(hr) && *hasPrivilege && reason) *reason = XUserPrivilegeDenyReason_None;
+     TRACE( "Authenticated privilege %u check hr %#lx, allowed %u.\n", (UINT32)privilege, hr, *hasPrivilege );
+     return hr;
+@@ -1590,10 +1711,8 @@
+             relyingParty = user_GetRelyingParty( context->user, &uc );
+             AcquireSRWLockExclusive( &context->user->xstsLock );
+             xstsLocked = TRUE;
+-            if (!context->user->xstsRelyingParty || strcmp( context->user->xstsRelyingParty, relyingParty ))
+-            {
+-                if (FAILED(hr = user_request_xsts_token( context->user, relyingParty ))) goto cleanup;
+-            }
++            if (FAILED(hr = user_ensure_xsts_token( context->user, relyingParty,
++                    !!(context->options & XUserGetTokenAndSignatureOptions_ForceRefresh) ))) goto cleanup;
+             TRACE( "Using XSTS relying party %s for %s.\n", debugstr_a( relyingParty ), "<request URL>" );
+             wUserHash = WindowsGetStringRawBuffer( context->user->userHash, &wUserHashLen );
+             wToken = WindowsGetStringRawBuffer( context->user->xstsToken, &wTokenLen );
+@@ -1837,12 +1956,15 @@
+ 
+     /* url */
+     ptr = (char *)context + sizeof(*context);
++    context->url = ptr;
+     if (!WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, url, -1, ptr, urlLen, NULL, NULL )) goto error_win32;
+     ptr += urlLen;
+     /* method */
++    context->method = ptr;
+     if (!WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, method, -1, ptr, methodLen, NULL, NULL )) goto error_win32;
+     ptr += methodLen;
+     /* headers */
++    context->headers = ptr;
+     for (SIZE_T i = 0; i < headerCount; i++)
+     {
+         if (!(size = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, headers[i].value, -1, NULL, 0, NULL, NULL ))) goto error_win32;
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XUserRefresh.h
+@@ -0,0 +1,29 @@
++/* Token cache lifetime rules, shared with the regression tests.
++ * SPDX-License-Identifier: LGPL-2.1-or-later
++ */
++#ifndef __WINE_XUSER_REFRESH_H
++#define __WINE_XUSER_REFRESH_H
++
++#define XUSER_REFRESH_MARGIN (300ULL * 10000000)
++
++static ULONGLONG xuser_current_time(void)
++{
++    FILETIME now;
++    GetSystemTimeAsFileTime(&now);
++    return ((ULONGLONG)now.dwHighDateTime << 32) | now.dwLowDateTime;
++}
++
++static BOOL xuser_expiry_needs_refresh(ULONGLONG expiry, ULONGLONG now)
++{
++    /* Subtraction after the boundary check avoids unsigned wraparound. */
++    return expiry <= now || expiry - now <= XUSER_REFRESH_MARGIN;
++}
++
++static BOOL xuser_token_needs_refresh(BOOL present, const char *cached_audience,
++        const char *requested_audience, ULONGLONG expiry, ULONGLONG now, BOOL force)
++{
++    return force || !present || !cached_audience ||
++            strcmp(cached_audience, requested_audience) || xuser_expiry_needs_refresh(expiry, now);
++}
++
++#endif

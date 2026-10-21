@@ -1,0 +1,821 @@
+diff --git a/crates/xodus-service/src/connection/mod.rs b/crates/xodus-service/src/connection/mod.rs
+index 4f5948a..81822c0 100644
+--- a/crates/xodus-service/src/connection/mod.rs
++++ b/crates/xodus-service/src/connection/mod.rs
+@@ -1,6 +1,7 @@
+ pub mod proto;
+ pub mod router;
+ pub mod xml;
++mod store;
+ 
+ pub fn encode_message(magic: u32, msg_type: u16, message_buffer: Vec<u8>) -> Vec<u8> {
+     let mut buffer = Vec::with_capacity(8);
+diff --git a/crates/xodus-service/src/connection/router.rs b/crates/xodus-service/src/connection/router.rs
+index 8deefbe..30fa38c 100644
+--- a/crates/xodus-service/src/connection/router.rs
++++ b/crates/xodus-service/src/connection/router.rs
+@@ -12,11 +12,12 @@ pub async fn route(
+     token: CancellationToken,
+     device_token: LegacyToken,
+     tokens: Arc<TokenManager>,
++    store_session: Arc<xodus::licensing::store::StoreLicenseSession>,
+ ) {
+     let cred = socket.peer_cred().ok().and_then(|cred| cred.pid());
+     tracing::debug!("Connection from pid {cred:?}");
+ 
+-    let mut context = SimpleContext::new(device_token, tokens);
++    let mut context = SimpleContext::new(device_token, tokens, store_session);
+     loop {
+         let mut read_magic = [0; 4];
+         if token.is_cancelled() {
+diff --git a/crates/xodus-service/src/connection/xml.rs b/crates/xodus-service/src/connection/xml.rs
+index 8ce765b..9afb64f 100644
+--- a/crates/xodus-service/src/connection/xml.rs
++++ b/crates/xodus-service/src/connection/xml.rs
+@@ -21,6 +21,13 @@ pub async fn handle(
+     tracing::debug!("Read buffer");
+     let message_type = XodusMessageType::try_from(message_type as i32).unwrap_or_default();
+ 
++    if matches!(message_type, XodusMessageType::StoreContextRequest | XodusMessageType::LicenseTokenRequest) {
++        let permitted = socket.peer_cred().is_ok_and(|cred| cred.uid() == super::store::effective_uid());
++        let out_buf = super::store::reply(&context.store_session, message_type, &buffer, permitted).await;
++        let data = super::encode_message(XML_MAGIC, message_type as u16 + 1, out_buf);
++        return socket.write_all(&data).await;
++    }
++
+     let out_buf = match parse_message(context, message_type, buffer).await {
+         Ok(buf) => buf,
+         Err(err) => {
+diff --git a/crates/xodus-service/src/main.rs b/crates/xodus-service/src/main.rs
+index 392bd90..3f08534 100644
+--- a/crates/xodus-service/src/main.rs
++++ b/crates/xodus-service/src/main.rs
+@@ -48,6 +48,10 @@ async fn main() {
+     };
+ 
+     let runtime_dir = utils::get_runtime_dir();
++    // Fixed Store selection for this process; later CLI account changes cannot
++    // redirect a context that is already bound to this session.
++    let store_session = Arc::new(xodus::licensing::store::StoreLicenseSession::new(tokens.clone()).await
++        .expect("Unable to initialize Store licensing client"));
+     let cancellation = CancellationToken::new();
+     let socket_path = format!("{runtime_dir}/xodus.sock");
+     let trigger = cancellation.clone();
+@@ -61,7 +65,8 @@ async fn main() {
+         let listener = UnixListener::bind(&socket_path).expect("Unable to bind to socket");
+         let mode = 0o600;
+         let perms = Permissions::from_mode(mode);
+-        _ = tokio::fs::set_permissions(&socket_path, perms).await;
++        tokio::fs::set_permissions(&socket_path, perms).await
++            .expect("Unable to restrict socket permissions");
+         loop {
+             let accept = tokio::select! {
+                 r = listener.accept() => r,
+@@ -72,8 +77,9 @@ async fn main() {
+             let token = cancellation.clone();
+             let device_token = device_token.clone();
+             let tokens = tokens.clone();
++            let store_session = store_session.clone();
+             tokio::spawn(async move {
+-                connection::router::route(accept.0, token, device_token, tokens).await
++                connection::router::route(accept.0, token, device_token, tokens, store_session).await
+             });
+         }
+     }
+diff --git a/crates/xodus-service/src/simple_context.rs b/crates/xodus-service/src/simple_context.rs
+index 2900465..f709d87 100644
+--- a/crates/xodus-service/src/simple_context.rs
++++ b/crates/xodus-service/src/simple_context.rs
+@@ -9,10 +9,12 @@ pub struct SimpleContext {
+     pub client: reqwest::Client,
+     pub device_token: Option<LegacyToken>,
+     tokens: Arc<TokenManager>,
++    pub store_session: Arc<xodus::licensing::store::StoreLicenseSession>,
+ }
+ 
+ impl SimpleContext {
+-    pub fn new(device_token: LegacyToken, tokens: Arc<TokenManager>) -> Self {
++    pub fn new(device_token: LegacyToken, tokens: Arc<TokenManager>,
++        store_session: Arc<xodus::licensing::store::StoreLicenseSession>) -> Self {
+         let client = reqwest::ClientBuilder::new()
+             .user_agent(format!("xodus-service/{}", env!("CARGO_PKG_VERSION")))
+             .connection_verbose(true)
+@@ -23,6 +25,7 @@ impl SimpleContext {
+             client,
+             device_token: Some(device_token),
+             tokens,
++            store_session,
+         }
+     }
+ 
+diff --git a/crates/xodus/proto/xodus/common.proto b/crates/xodus/proto/xodus/common.proto
+index c7741a6..436c3c6 100644
+--- a/crates/xodus/proto/xodus/common.proto
++++ b/crates/xodus/proto/xodus/common.proto
+@@ -8,4 +8,8 @@ enum XodusMessageType {
+     PONG = 2;
+     MSA_TOKEN_REQUEST=3;
+     MSA_TOKEN_RESPONSE=4;
++    STORE_CONTEXT_REQUEST=5;
++    STORE_CONTEXT_RESPONSE=6;
++    LICENSE_TOKEN_REQUEST=7;
++    LICENSE_TOKEN_RESPONSE=8;
+ }
+diff --git a/crates/xodus/src/api/live/mod.rs b/crates/xodus/src/api/live/mod.rs
+index f9abc32..803c70d 100644
+--- a/crates/xodus/src/api/live/mod.rs
++++ b/crates/xodus/src/api/live/mod.rs
+@@ -52,8 +52,9 @@ pub async fn exchange_device_token(
+     scope: String,
+     policy: Option<soap::PolicyReference>,
+ ) -> Result<soap::RequestSecurityTokenResponse, rst::RSTError> {
+-    let secret = BASE64_STANDARD.decode(token.binary_secret.as_ref().unwrap())?;
+-    let secret: [u8; 4096] = secret.try_into().unwrap();
++    let secret = BASE64_STANDARD.decode(token.binary_secret.as_ref().ok_or(rst::RSTError::HmacKey)?)?;
++    let secret: [u8; 4096] = secret.try_into().map_err(|_| rst::RSTError::HmacKey)?;
++    if !secret.starts_with(&4u32.to_ne_bytes()) { return Err(rst::RSTError::HmacKey); }
+     let secret: ClepHmacState = transmute!(secret);
+     let hmac_secret = secret.get_hmac_state();
+ 
+@@ -73,10 +74,10 @@ pub async fn exchange_device_token(
+     match envelope.body.body {
+         soap::BodyContent::RequestSecurityTokenResponse(res) => Ok(*res),
+         soap::BodyContent::RequestSecurityTokenResponseCollection(mut collection) => {
+-            let token = collection.security_tokens.remove(0);
+-            Ok(token)
++            if collection.security_tokens.is_empty() { return Err(rst::RSTError::UnexpectedResponse); }
++            Ok(collection.security_tokens.remove(0))
+         }
+-        b => unimplemented!("Exchange token supports only singular token right now {b:?}"),
++        _ => Err(rst::RSTError::UnexpectedResponse),
+     }
+ }
+ 
+@@ -93,8 +94,9 @@ pub async fn exchange_user_token(
+     hosting_app: String,
+     scope_policies: &[(String, Option<soap::PolicyReference>)],
+ ) -> Result<ExchangeUserTokenOutcome, rst::RSTError> {
+-    let secret = BASE64_STANDARD.decode(device_token.binary_secret.as_ref().unwrap())?;
+-    let secret: [u8; 4096] = secret.try_into().unwrap();
++    let secret = BASE64_STANDARD.decode(device_token.binary_secret.as_ref().ok_or(rst::RSTError::HmacKey)?)?;
++    let secret: [u8; 4096] = secret.try_into().map_err(|_| rst::RSTError::HmacKey)?;
++    if !secret.starts_with(&4u32.to_ne_bytes()) { return Err(rst::RSTError::HmacKey); }
+     let secret: ClepHmacState = transmute!(secret);
+     let hmac_secret = secret.get_hmac_state();
+ 
+diff --git a/crates/xodus/src/api/live/rst/error.rs b/crates/xodus/src/api/live/rst/error.rs
+index 5e5789b..80d8f82 100644
+--- a/crates/xodus/src/api/live/rst/error.rs
++++ b/crates/xodus/src/api/live/rst/error.rs
+@@ -17,6 +17,8 @@ pub enum RSTError {
+     MissingNonce,
+     #[error("Unexpected error deriving hmac key")]
+     HmacKey,
++    #[error("Unexpected or malformed authentication response")]
++    UnexpectedResponse,
+     #[error("The signature verification failed - {0}")]
+     InvalidResponseSignature(String),
+ }
+diff --git a/crates/xodus/src/api/live/rst/request.rs b/crates/xodus/src/api/live/rst/request.rs
+index 8fff9ae..d8eccd5 100644
+--- a/crates/xodus/src/api/live/rst/request.rs
++++ b/crates/xodus/src/api/live/rst/request.rs
+@@ -17,7 +17,7 @@ impl<'a> RSTRequest<'a> {
+         client: &reqwest::Client,
+     ) -> Result<soap::Envelope, super::RSTError> {
+         tracing::trace!("Making RST2.srf request");
+-        let response = client
++        let mut response = client
+         .post("https://login.live.com/RST2.srf")
+         .header("User-Agent", "MSAWindows/55 (OS 10.0.26100.0.0 ge_release; IDK 10.0.26100.5074 ge_release; Cfg 16.000.29325.00; Test 0)")
+         .header("Content-Type", "application/soap+xml")
+@@ -25,11 +25,31 @@ impl<'a> RSTRequest<'a> {
+         .body(self.signed_xml)
+         .send()
+         .await?;
++        let http_success = response.status().is_success();
+ 
+-        let response_text = response.text().await?;
++        // Bound authentication material before XML parsing/decryption. Preserve
++        // SOAP fault handling for callers that use HTTP errors for auth flows.
++        const RESPONSE_LIMIT: usize = 1024 * 1024;
++        if response.content_length().is_some_and(|size| size > RESPONSE_LIMIT as u64) {
++            return Err(super::RSTError::UnexpectedResponse);
++        }
++        let mut bytes = Vec::new();
++        while let Some(chunk) = response.chunk().await? {
++            if chunk.len() > RESPONSE_LIMIT - bytes.len() {
++                return Err(super::RSTError::UnexpectedResponse);
++            }
++            bytes.extend_from_slice(&chunk);
++        }
++        let response_text = String::from_utf8(bytes).map_err(|_| super::RSTError::UnexpectedResponse)?;
+         let envelope: soap::Envelope = quick_xml::de::from_str(&response_text)?;
+ 
+-        verify_and_decrypt_envelope(self.signature, response_text, envelope)
++        let envelope = verify_and_decrypt_envelope(self.signature, response_text, envelope)?;
++        // Keep SOAP faults available to interactive auth callers, but never
++        // accept an issued-token-shaped body from a failed HTTP exchange.
++        if !http_success && !matches!(&envelope.body.body, soap::BodyContent::Fault(_)) {
++            return Err(super::RSTError::UnexpectedResponse);
++        }
++        Ok(envelope)
+     }
+ }
+ 
+@@ -55,7 +75,8 @@ fn verify_and_decrypt_envelope<'a>(
+         && let Some(key_info) = &security_signature.key_info
+     {
+         let id = &key_info.security_token_reference.reference.uri;
+-        let nonce = nonces.get(&id[1..]).ok_or(super::RSTError::MissingNonce)?;
++        let id = id.strip_prefix('#').filter(|id| !id.is_empty()).ok_or(super::RSTError::MissingNonce)?;
++        let nonce = nonces.get(id).ok_or(super::RSTError::MissingNonce)?;
+         let nonce = BASE64_STANDARD.decode(nonce)?;
+         let key = signature.signing_key(&nonce)?;
+         let mut kmgr = bergshamra::KeysManager::new();
+diff --git a/crates/xodus/src/api/live/utils.rs b/crates/xodus/src/api/live/utils.rs
+index 33c3d62..e10b9dd 100644
+--- a/crates/xodus/src/api/live/utils.rs
++++ b/crates/xodus/src/api/live/utils.rs
+@@ -101,27 +101,30 @@ pub fn decrypt_soap_encrypted_data<T: serde::de::DeserializeOwned>(
+     signature: &rst::RSTSignature,
+     nonces: &HashMap<String, String>,
+ ) -> Result<T, rst::RSTError> {
+-    let id = &encrypted_data
+-        .key_info
+-        .as_signature()
+-        .security_token_reference
++    let reference = encrypted_data.key_info.security_token_reference
++        .ok_or(rst::RSTError::MissingNonce)?;
++    let id = &reference
+         .reference
+         .uri;
+ 
+-    let nonce = nonces.get(&id[1..]).ok_or(rst::RSTError::MissingNonce)?;
++    let id = id.strip_prefix('#').filter(|id| !id.is_empty()).ok_or(rst::RSTError::MissingNonce)?;
++    let nonce = nonces.get(id).ok_or(rst::RSTError::MissingNonce)?;
+     let nonce = BASE64_STANDARD.decode(nonce)?;
+     let key = signature.hmac_key(&nonce).ok_or(rst::RSTError::HmacKey)?;
+     let cipher_value = BASE64_STANDARD.decode(encrypted_data.cipher_data.cipher_value)?;
+ 
++    if cipher_value.len() < 16 || cipher_value.len() > 16 + 8192 {
++        return Err(rst::RSTError::UnexpectedResponse);
++    }
+     let (iv, encrypted) = cipher_value.split_at(16);
+-    let iv: &[u8; 16] = iv.try_into().unwrap();
++    let iv: &[u8; 16] = iv.try_into().map_err(|_| rst::RSTError::UnexpectedResponse)?;
+     let decryptor = Aes256CbcDec::new(&key.into(), iv.into());
+     let mut block = [0; 8192];
+ 
+-    decryptor
++    let decrypted = decryptor
+         .decrypt_padded_b2b::<Pkcs7>(encrypted, &mut block)
+-        .expect("Failed");
+-    let result = std::str::from_utf8(&block).unwrap();
++        .map_err(|_| rst::RSTError::UnexpectedResponse)?;
++    let result = std::str::from_utf8(decrypted).map_err(|_| rst::RSTError::UnexpectedResponse)?;
+     let data = quick_xml::de::from_str::<T>(result)?;
+ 
+     Ok(data)
+diff --git a/crates/xodus/src/licensing.rs b/crates/xodus/src/licensing.rs
+index c0e11f5..34b30ce 100644
+--- a/crates/xodus/src/licensing.rs
++++ b/crates/xodus/src/licensing.rs
+@@ -1,3 +1,4 @@
+ pub mod content;
+ pub mod splicense;
+ pub mod utils;
++pub mod store;
+diff --git a/crates/xodus/src/licensing/content.rs b/crates/xodus/src/licensing/content.rs
+index 2755f1b..50ed7e3 100644
+--- a/crates/xodus/src/licensing/content.rs
++++ b/crates/xodus/src/licensing/content.rs
+@@ -85,8 +85,8 @@ pub async fn get_license_token(
+     parent_product_id: String,
+     products: Vec<String>,
+     custom_developer_string: String,
+-) -> Result<String, Box<dyn std::error::Error>> {
+-    let response = client
++) -> Result<String, LicenseTokenError> {
++    let mut response = client
+         .post("https://licensing.mp.microsoft.com/v8.0/licenseToken")
+         .header("from", "XboxLicenseManager")
+         .header("Authorization", device_ms_token)
+@@ -107,8 +107,37 @@ pub async fn get_license_token(
+         })
+         .send()
+         .await?;
++    if !response.status().is_success() {
++        return Err(LicenseTokenError::ServerStatus(response.status().as_u16()));
++    }
++    const RESPONSE_LIMIT: usize = 65_535;
++    if response.content_length().is_some_and(|size| size > RESPONSE_LIMIT as u64) {
++        return Err(LicenseTokenError::InvalidResponse);
++    }
++    let mut bytes = Vec::new();
++    while let Some(chunk) = response.chunk().await? {
++        if chunk.len() > RESPONSE_LIMIT - bytes.len() {
++            return Err(LicenseTokenError::InvalidResponse);
++        }
++        bytes.extend_from_slice(&chunk);
++    }
++    let token_resp: LicenseTokenResponse = serde_json::from_slice(&bytes)
++        .map_err(|_| LicenseTokenError::InvalidResponse)?;
++    let token = token_resp.license_token;
++    // JWT/base64 data only; this also bounds XML framing without escaping growth.
++    if token.is_empty() || token.len() > 49_152 ||
++        !token.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.=+/".contains(&c)) {
++        return Err(LicenseTokenError::InvalidResponse);
++    }
++    Ok(token)
++}
+ 
+-    let token_resp: LicenseTokenResponse = response.json().await?;
+-
+-    Ok(token_resp.license_token)
++#[derive(Debug, thiserror::Error)]
++pub enum LicenseTokenError {
++    #[error("license request failed")]
++    Request(#[from] reqwest::Error),
++    #[error("license service rejected the request")]
++    ServerStatus(u16),
++    #[error("invalid license service response")]
++    InvalidResponse,
+ }
+diff --git a/crates/xodus/src/models/xgameruntime/mod.rs b/crates/xodus/src/models/xgameruntime/mod.rs
+index 01f38b7..9014bb9 100644
+--- a/crates/xodus/src/models/xgameruntime/mod.rs
++++ b/crates/xodus/src/models/xgameruntime/mod.rs
+@@ -1 +1,2 @@
+ pub mod xuser;
++pub mod xstore;
+diff --git a/crates/xodus/src/licensing/store.rs b/crates/xodus/src/licensing/store.rs
+new file mode 100644
+index 0000000..41f8404
+--- /dev/null
++++ b/crates/xodus/src/licensing/store.rs
+@@ -0,0 +1,304 @@
++//! Real Store license tokens for the account selected when the service starts.
++//! No Xbox-user substitution, entitlement synthesis, caching, or payload logs.
++use std::sync::Arc;
++use std::time::Duration;
++
++use base64::prelude::*;
++
++use super::content::{LicenseTokenError, get_license_token};
++use crate::models::live::ExchangeUserTokenOutcome;
++use crate::models::secrets::{LegacyToken, Token, User};
++use crate::models::soap;
++use crate::models::xgameruntime::xstore::{
++    LicenseTokenRequest, LicenseTokenResponse, StoreContextResponse,
++};
++use crate::tokens::TokenManager;
++
++pub const INVALID_ARGUMENT: u32 = 0x80070057;
++pub const INVALID_HANDLE: u32 = 0x80070006;
++pub const NOT_LOGGED_ON: u32 = 0x800704dd;
++pub const ACCESS_DENIED: u32 = 0x80070005;
++pub const TIMEOUT: u32 = 0x800705b4;
++pub const FAILURE: u32 = 0x80004005;
++pub const MAX_REQUEST_BYTES: usize = 8192;
++const STORE_HOSTING_APP: &str = "{d6d5a677-0872-4ab0-9442-bb792fce85c5}";
++const STORE_RELYING_PARTY: &str = "www.microsoft.com";
++
++struct AccountSnapshot {
++    user: User,
++    user_sts: LegacyToken,
++    device_sts: LegacyToken,
++}
++
++pub struct StoreLicenseSession {
++    binding: String,
++    account: Option<AccountSnapshot>,
++    client: reqwest::Client,
++    request_lock: tokio::sync::Mutex<()>,
++}
++
++fn unexpired(expires: &str) -> bool {
++    chrono::DateTime::parse_from_rfc3339(expires)
++        .is_ok_and(|expiry| expiry.timestamp() > chrono::Utc::now().timestamp())
++}
++
++fn capture_account(tokens: &TokenManager) -> Option<AccountSnapshot> {
++    let user = tokens.get_user().ok()?;
++    let Token::Legacy(user_sts) = tokens.get_user_sts_token().ok()? else {
++        return None;
++    };
++    let Token::Legacy(device_sts) = tokens.get_device_sts_token().ok()? else {
++        return None;
++    };
++    // Detect a selection change during the initial multi-key read. No subsequent
++    // request reads account selection or persists refreshed credentials.
++    let checked_user = tokens.get_user().ok()?;
++    let Token::Legacy(checked_sts) = tokens.get_user_sts_token().ok()? else {
++        return None;
++    };
++    if user.puid.is_empty()
++        || user.username.is_empty()
++        || user.puid != checked_user.puid
++        || user.username != checked_user.username
++        || user_sts.token != checked_sts.token
++        || !unexpired(&user_sts.lifetime.expires)
++        || !unexpired(&device_sts.lifetime.expires)
++    {
++        return None;
++    }
++    let secret = BASE64_STANDARD
++        .decode(device_sts.binary_secret.as_ref()?)
++        .ok()?;
++    if secret.len() != 4096 {
++        return None;
++    }
++    Some(AccountSnapshot {
++        user,
++        user_sts,
++        device_sts,
++    })
++}
++
++impl StoreLicenseSession {
++    pub async fn new(tokens: Arc<TokenManager>) -> Result<Self, reqwest::Error> {
++        let mut bytes: [u8; 16] = rand::random();
++        bytes[6] = (bytes[6] & 0x0f) | 0x40;
++        bytes[8] = (bytes[8] & 0x3f) | 0x80;
++        // Keychain APIs can wait synchronously for an OS permission dialog.
++        // Do not block an async worker or bypass that dialog. A timed-out
++        // snapshot stays unavailable for this session even if its worker later
++        // completes; a newly selected account requires a new service session.
++        let account = match tokio::time::timeout(
++            Duration::from_secs(25),
++            tokio::task::spawn_blocking(move || capture_account(&tokens)),
++        )
++        .await
++        {
++            Ok(Ok(account)) => account,
++            _ => None,
++        };
++        Ok(Self {
++            binding: uuid::Uuid::from_bytes(bytes).to_string(),
++            account,
++            client: reqwest::Client::builder()
++                .connect_timeout(Duration::from_secs(8))
++                .timeout(Duration::from_secs(20))
++                .redirect(reqwest::redirect::Policy::none())
++                .connection_verbose(false)
++                .build()?,
++            request_lock: tokio::sync::Mutex::new(()),
++        })
++    }
++
++    pub fn create_context(&self) -> StoreContextResponse {
++        let available = self.account.as_ref().is_some_and(|account| {
++            unexpired(&account.user_sts.lifetime.expires)
++                && unexpired(&account.device_sts.lifetime.expires)
++        });
++        StoreContextResponse {
++            hresult: if available { 0 } else { NOT_LOGGED_ON },
++            account_binding: if available {
++                self.binding.clone()
++            } else {
++                String::new()
++            },
++        }
++    }
++
++    pub async fn query_license(&self, request: LicenseTokenRequest) -> LicenseTokenResponse {
++        let result = if !valid_request(&request) {
++            Err(INVALID_ARGUMENT)
++        } else if request.account_binding != self.binding {
++            Err(INVALID_HANDLE)
++        } else {
++            match tokio::time::timeout(Duration::from_secs(25), async {
++                let _guard = self.request_lock.lock().await;
++                self.acquire(&request).await
++            })
++            .await
++            {
++                Ok(result) => result,
++                Err(_) => Err(TIMEOUT),
++            }
++        };
++        match result {
++            Ok(token) => LicenseTokenResponse { hresult: 0, token },
++            Err(hresult) => LicenseTokenResponse {
++                hresult,
++                token: String::new(),
++            },
++        }
++    }
++
++    async fn acquire(&self, request: &LicenseTokenRequest) -> Result<String, u32> {
++        let account = self.account.as_ref().ok_or(NOT_LOGGED_ON)?;
++        if !unexpired(&account.user_sts.lifetime.expires)
++            || !unexpired(&account.device_sts.lifetime.expires)
++        {
++            return Err(NOT_LOGGED_ON);
++        }
++        let device = crate::api::live::exchange_device_token(
++            &self.client,
++            account.device_sts.clone(),
++            STORE_HOSTING_APP.into(),
++            STORE_RELYING_PARTY.into(),
++            Some(soap::PolicyReference::mbi_ssl()),
++        )
++        .await
++        .map_err(|_| FAILURE)?;
++        let device_token = compact_store_token(device)?;
++        let user = crate::api::live::exchange_user_token(
++            &self.client,
++            account.user_sts.clone(),
++            account.user.username.clone(),
++            account.device_sts.clone(),
++            None,
++            Some("Silent".into()),
++            STORE_HOSTING_APP.into(),
++            &[(
++                STORE_RELYING_PARTY.into(),
++                Some(soap::PolicyReference::mbi_ssl()),
++            )],
++        )
++        .await
++        .map_err(|_| FAILURE)?;
++        let user = match user {
++            ExchangeUserTokenOutcome::Issued(soap::BodyContent::RequestSecurityTokenResponse(
++                value,
++            )) => *value,
++            ExchangeUserTokenOutcome::Issued(
++                soap::BodyContent::RequestSecurityTokenResponseCollection(collection),
++            ) => {
++                let mut matching = collection.security_tokens.into_iter().filter(|token| {
++                    token.applies_to.endpoint_reference.address == STORE_RELYING_PARTY
++                });
++                let token = matching.next().ok_or(FAILURE)?;
++                if matching.next().is_some() {
++                    return Err(FAILURE);
++                }
++                token
++            }
++            _ => return Err(ACCESS_DENIED),
++        };
++        let user_token = compact_store_token(user)?;
++        get_license_token(
++            &self.client,
++            device_token,
++            user_token,
++            account.user.puid.clone(),
++            request.parent_product_id.clone(),
++            request.product_ids.clone(),
++            request.custom_developer_string.clone(),
++        )
++        .await
++        .map_err(|error| match error {
++            LicenseTokenError::ServerStatus(401 | 403) => ACCESS_DENIED,
++            LicenseTokenError::ServerStatus(400) => INVALID_ARGUMENT,
++            LicenseTokenError::Request(error) if error.is_timeout() => TIMEOUT,
++            _ => FAILURE,
++        })
++    }
++}
++
++fn compact_store_token(response: soap::RequestSecurityTokenResponse) -> Result<String, u32> {
++    if response.applies_to.endpoint_reference.address != STORE_RELYING_PARTY
++        || !unexpired(&response.lifetime.expires)
++    {
++        return Err(FAILURE);
++    }
++    let token = response
++        .requested_security_token
++        .binary_security_token
++        .ok_or(FAILURE)?
++        .value;
++    if token.is_empty() || token.len() > 65_535 {
++        return Err(FAILURE);
++    }
++    match response.token_type.as_str() {
++        "urn:passport:compact" => Ok(token),
++        "urn:passport:delegationcompact" => Ok(format!("d={token}")),
++        _ => Err(FAILURE),
++    }
++}
++
++pub fn valid_request(request: &LicenseTokenRequest) -> bool {
++    let product =
++        |value: &str| value.len() == 12 && value.bytes().all(|c| c.is_ascii_alphanumeric());
++    request.account_binding.len() == 36
++        && uuid::Uuid::parse_str(&request.account_binding).is_ok()
++        && product(&request.parent_product_id)
++        && !request.product_ids.is_empty()
++        && request.product_ids.len() <= 32
++        && request.product_ids.iter().all(|value| product(value))
++        && !request.custom_developer_string.is_empty()
++        && request.custom_developer_string.len() <= 4096
++        && !request
++            .custom_developer_string
++            .chars()
++            .any(|c| c == '\0' || (c < ' ' && c != '\t' && c != '\n' && c != '\r'))
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn request() -> LicenseTokenRequest {
++        LicenseTokenRequest {
++            account_binding: "12345678-1234-4234-8234-123456789abc".into(),
++            parent_product_id: "9N6JF50HZFW9".into(),
++            product_ids: vec!["9N6JF50HZFW9".into()],
++            custom_developer_string: "test-challenge".into(),
++        }
++    }
++
++    #[test]
++    fn request_bounds_fail_closed() {
++        assert!(valid_request(&request()));
++        let mut value = request();
++        value.product_ids.clear();
++        assert!(!valid_request(&value));
++        value = request();
++        value.product_ids = vec!["9N6JF50HZFW9".into(); 33];
++        assert!(!valid_request(&value));
++        value = request();
++        value.parent_product_id = "9N6JF50HZFW/".into();
++        assert!(!valid_request(&value));
++        value = request();
++        value.custom_developer_string = "a".repeat(4096);
++        assert!(valid_request(&value));
++        value.custom_developer_string.push('a');
++        assert!(!valid_request(&value));
++        value = request();
++        value.custom_developer_string.push('\0');
++        assert!(!valid_request(&value));
++    }
++
++    #[test]
++    fn wire_preserves_order_and_exact_challenge() {
++        let xml = "<LicenseTokenRequest><AccountBinding>12345678-1234-4234-8234-123456789abc</AccountBinding><ParentProductId>9N6JF50HZFW9</ParentProductId><ProductId>9N6JF50HZFW9</ProductId><ProductId>AAAAAAAAAAAA</ProductId><CustomDeveloperString>a&amp;b&lt;c&gt;&#13;&#10;</CustomDeveloperString></LicenseTokenRequest>";
++        let value: LicenseTokenRequest = quick_xml::de::from_str(xml).expect("valid test XML");
++        assert_eq!(value.product_ids, ["9N6JF50HZFW9", "AAAAAAAAAAAA"]);
++        assert_eq!(value.custom_developer_string, "a&b<c>\r\n");
++        assert!(valid_request(&value));
++    }
++}
+diff --git a/crates/xodus/src/models/xgameruntime/xstore.rs b/crates/xodus/src/models/xgameruntime/xstore.rs
+new file mode 100644
+index 0000000..b17812c
+--- /dev/null
++++ b/crates/xodus/src/models/xgameruntime/xstore.rs
+@@ -0,0 +1,31 @@
++use serde::{Deserialize, Serialize};
++
++#[derive(Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct StoreContextRequest {}
++
++#[derive(Serialize)]
++#[serde(rename_all = "PascalCase")]
++pub struct StoreContextResponse {
++    #[serde(rename = "HResult")]
++    pub hresult: u32,
++    pub account_binding: String,
++}
++
++#[derive(Deserialize)]
++#[serde(rename_all = "PascalCase", deny_unknown_fields)]
++pub struct LicenseTokenRequest {
++    pub account_binding: String,
++    pub parent_product_id: String,
++    #[serde(rename = "ProductId", default)]
++    pub product_ids: Vec<String>,
++    pub custom_developer_string: String,
++}
++
++#[derive(Serialize)]
++#[serde(rename_all = "PascalCase")]
++pub struct LicenseTokenResponse {
++    #[serde(rename = "HResult")]
++    pub hresult: u32,
++    pub token: String,
++}
+diff --git a/crates/xodus-service/src/connection/store.rs b/crates/xodus-service/src/connection/store.rs
+new file mode 100644
+index 0000000..bae0fca
+--- /dev/null
++++ b/crates/xodus-service/src/connection/store.rs
+@@ -0,0 +1,117 @@
++use xodus::licensing::store::{self, StoreLicenseSession};
++use xodus::models::xgameruntime::xstore::{
++    LicenseTokenRequest, LicenseTokenResponse, StoreContextRequest, StoreContextResponse,
++};
++use xodus::proto::xodus::XodusMessageType;
++
++// POSIX uid_t is uint32_t on both supported service targets (macOS/Linux).
++unsafe extern "C" {
++    fn geteuid() -> u32;
++}
++pub fn effective_uid() -> u32 {
++    unsafe { geteuid() }
++}
++
++fn root_is(bytes: &[u8], expected: &[u8]) -> bool {
++    let mut reader = quick_xml::Reader::from_reader(bytes);
++    loop {
++        match reader.read_event() {
++            Ok(quick_xml::events::Event::Start(start) | quick_xml::events::Event::Empty(start)) => {
++                return start.name().as_ref().as_bytes() == expected && start.attributes().next().is_none();
++            }
++            Ok(quick_xml::events::Event::Decl(_)) => continue,
++            Ok(quick_xml::events::Event::Text(text))
++                if text.as_ref().bytes().all(|byte| byte.is_ascii_whitespace()) =>
++            {
++                continue;
++            }
++            // No DTD/custom entities, comments, or alternate root names.
++            _ => return false,
++        }
++    }
++}
++
++pub async fn reply(
++    session: &StoreLicenseSession,
++    kind: XodusMessageType,
++    bytes: &[u8],
++    permitted: bool,
++) -> Vec<u8> {
++    let validation_error = if !permitted {
++        Some(store::ACCESS_DENIED)
++    } else if bytes.len() > store::MAX_REQUEST_BYTES {
++        Some(store::INVALID_ARGUMENT)
++    } else {
++        None
++    };
++    // Parse errors are never formatted: they can contain caller-controlled data.
++    if kind == XodusMessageType::StoreContextRequest {
++        let response = if let Some(hresult) = validation_error {
++            StoreContextResponse {
++                hresult,
++                account_binding: String::new(),
++            }
++        } else if !root_is(bytes, b"StoreContextRequest")
++            || quick_xml::de::from_reader::<_, StoreContextRequest>(bytes).is_err()
++        {
++            StoreContextResponse {
++                hresult: store::INVALID_ARGUMENT,
++                account_binding: String::new(),
++            }
++        } else {
++            session.create_context()
++        };
++        return quick_xml::se::to_string(&response).ok().filter(|s| s.len() <= 1024)
++            .unwrap_or_else(|| "<StoreContextResponse><HResult>2147500037</HResult><AccountBinding/></StoreContextResponse>".into()).into_bytes();
++    }
++    let response = if let Some(hresult) = validation_error {
++        LicenseTokenResponse {
++            hresult,
++            token: String::new(),
++        }
++    } else if !root_is(bytes, b"LicenseTokenRequest") {
++        LicenseTokenResponse {
++            hresult: store::INVALID_ARGUMENT,
++            token: String::new(),
++        }
++    } else {
++        match quick_xml::de::from_reader::<_, LicenseTokenRequest>(bytes) {
++            Ok(request) => session.query_license(request).await,
++            Err(_) => LicenseTokenResponse {
++                hresult: store::INVALID_ARGUMENT,
++                token: String::new(),
++            },
++        }
++    };
++    quick_xml::se::to_string(&response)
++        .ok()
++        .filter(|s| s.len() <= u16::MAX as usize)
++        .unwrap_or_else(|| {
++            "<LicenseTokenResponse><HResult>2147500037</HResult><Token/></LicenseTokenResponse>"
++                .into()
++        })
++        .into_bytes()
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn accepts_only_expected_root_without_dtd() {
++        assert!(root_is(b"<StoreContextRequest/>", b"StoreContextRequest"));
++        assert!(root_is(
++            b"<?xml version=\"1.0\"?>\n<StoreContextRequest/>",
++            b"StoreContextRequest"
++        ));
++        assert!(!root_is(
++            b"<!DOCTYPE x><StoreContextRequest/>",
++            b"StoreContextRequest"
++        ));
++        assert!(!root_is(b"<Other/>", b"StoreContextRequest"));
++        assert!(!root_is(
++            b"<StoreContextRequest injected=\"1\"/>",
++            b"StoreContextRequest"
++        ));
++    }
++}

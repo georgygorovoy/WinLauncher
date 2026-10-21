@@ -1,0 +1,4 @@
+This distribution embeds a subset of Homebrew CPython 3.14.8_3 and its standard library using PyInstaller 6.22.3.
+Native load commands and code signatures are adjusted for app-bundle packaging; all inspected native code sections match their recorded input binaries.
+Homebrew modifies sysconfig and generates installation-specific _sysconfigdata. Exact installed versions and the Homebrew build formula are retained as source evidence.
+Original CPython license terms and embedded-code notices remain applicable.

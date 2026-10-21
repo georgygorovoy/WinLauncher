@@ -1,0 +1,15 @@
+diff --git a/crates/xodus-cli/src/webview.rs b/crates/xodus-cli/src/webview.rs
+--- a/crates/xodus-cli/src/webview.rs
++++ b/crates/xodus-cli/src/webview.rs
+@@ -144,9 +144,9 @@ pub fn login_request(client_id: String, market: String) -> WebviewRequest {
+         HeaderValue::from_static(r#"CloudExperienceHost"#),
+     );
+ 
+-    WebviewRequest::new("Xodus login", url, headers)
++    WebviewRequest::new("Microsoft sign-in", url, headers)
+ }
+ 
+ pub fn finalize_request(url: String) -> WebviewRequest {
+-    WebviewRequest::new("Xodus login", url, HeaderMap::new())
++    WebviewRequest::new("Microsoft sign-in", url, HeaderMap::new())
+ }

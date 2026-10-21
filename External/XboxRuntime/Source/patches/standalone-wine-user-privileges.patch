@@ -1,0 +1,252 @@
+--- a/dlls/xgameruntime/GDKComponent/System/XUser.c
++++ b/dlls/xgameruntime/GDKComponent/System/XUser.c
+@@ -26,6 +26,7 @@
+ #include <time.h>
+ #include <wincrypt.h>
+ #include <wininet.h>
++#include "XUserClaims.h"
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(xuser);
+ #include "HttpStatusTrace.h"
+@@ -173,6 +174,10 @@
+     HSTRING xstsToken;
+     char *xstsRelyingParty;
+     SRWLOCK xstsLock;
++    HSTRING xboxPrivileges;
++    BOOL xboxPrivilegesKnown;
++    XUserAgeGroup xboxAgeGroup;
++    ULONGLONG xboxClaimsExpiry;
+ 
+     HSTRING publicGamerpic;
+     HSTRING classicGamertag;
+@@ -305,6 +310,7 @@
+         if (impl->refreshToken) WindowsDeleteString( impl->refreshToken );
+         if (impl->userToken) WindowsDeleteString( impl->userToken );
+         if (impl->xstsToken) WindowsDeleteString( impl->xstsToken );
++        if (impl->xboxPrivileges) WindowsDeleteString( impl->xboxPrivileges );
+         free( impl->xstsRelyingParty );
+         if (impl->publicGamerpic) WindowsDeleteString( impl->publicGamerpic );
+         if (impl->classicGamertag) WindowsDeleteString( impl->classicGamertag );
+@@ -531,6 +537,13 @@
+     static const char userTokens[] = ",\"UserTokens\":[\"";
+     IJsonObject *child = NULL, *claims = NULL, *object = NULL;
+     HSTRING newToken = NULL, newUserHash = NULL, xuid = NULL;
++    HSTRING privileges = NULL, age = NULL, notAfter = NULL;
++    BOOL xboxAudience = !strcmp( relyingParty, "http://xboxlive.com" ) ||
++                        !strcmp( relyingParty, "https://xboxlive.com" );
++    BOOL privilegesKnown = FALSE;
++    BOOLEAN ignoredPrivilege;
++    XUserAgeGroup ageGroup = XUserAgeGroup_Unknown;
++    ULONGLONG claimsExpiry = 0;
+     UINT32 tokenLen, wTokenLen;
+     char *body = NULL, *newRelyingParty = NULL, *token;
+     IJsonArray *array = NULL;
+@@ -578,6 +591,30 @@
+             goto cleanup;
+         }
+     }
++    /* Preserve policy claims separately: PlayFab/Realms audiences may omit them.
++     * Only the authenticated default Xbox response can replace this cache. */
++    if (xboxAudience)
++    {
++        const WCHAR *text;
++        UINT32 length;
++        if (SUCCEEDED(get_json_string( object, L"NotAfter", &notAfter )))
++        {
++            text = WindowsGetStringRawBuffer( notAfter, &length );
++            xuser_parse_claim_expiry( text, length, &claimsExpiry );
++        }
++        if (SUCCEEDED(get_json_string( child, L"prv", &privileges )))
++        {
++            text = WindowsGetStringRawBuffer( privileges, &length );
++            privilegesKnown = xuser_parse_privilege_claim( text, length, 0, &ignoredPrivilege );
++        }
++        if (SUCCEEDED(get_json_string( child, L"agg", &age )))
++        {
++            text = WindowsGetStringRawBuffer( age, &length );
++            if (length == 5 && !memcmp( text, L"Adult", 5 * sizeof(WCHAR) )) ageGroup = XUserAgeGroup_Adult;
++            else if (length == 4 && !memcmp( text, L"Teen", 4 * sizeof(WCHAR) )) ageGroup = XUserAgeGroup_Teen;
++            else if (length == 5 && !memcmp( text, L"Child", 5 * sizeof(WCHAR) )) ageGroup = XUserAgeGroup_Child;
++        }
++    }
+     hr = S_OK;
+     if (!(newRelyingParty = strdup( relyingParty )))
+     {
+@@ -592,6 +629,15 @@
+     impl->userHash = newUserHash;
+     impl->xstsRelyingParty = newRelyingParty;
+     impl->xuid = newXuid;
++    if (xboxAudience)
++    {
++        if (impl->xboxPrivileges) WindowsDeleteString( impl->xboxPrivileges );
++        impl->xboxPrivileges = privileges;
++        impl->xboxPrivilegesKnown = privilegesKnown;
++        impl->xboxAgeGroup = ageGroup;
++        impl->xboxClaimsExpiry = claimsExpiry;
++        privileges = NULL;
++    }
+     newToken = NULL;
+     newUserHash = NULL;
+     newRelyingParty = NULL;
+@@ -603,6 +649,9 @@
+     if (newToken) WindowsDeleteString( newToken );
+     if (newUserHash) WindowsDeleteString( newUserHash );
+     if (xuid) WindowsDeleteString( xuid );
++    if (privileges) WindowsDeleteString( privileges );
++    if (age) WindowsDeleteString( age );
++    if (notAfter) WindowsDeleteString( notAfter );
+     if (array) IJsonArray_Release( array );
+     if (child) IJsonObject_Release( child );
+     if (claims) IJsonObject_Release( claims );
+@@ -1398,20 +1447,50 @@
+ 
+ static HRESULT WINAPI x_user_XUserGetAgeGroup( IXUserImpl6 *iface, XUserHandle user, XUserAgeGroup *ageGroup )
+ {
+-    TRACE( "iface %p, user %p, ageGroup %p.\n", iface, user, ageGroup );
++    FILETIME now;
++    ULONGLONG ticks;
++    HRESULT hr = E_NOTIMPL;
++
+     if (!user || !ageGroup) return E_POINTER;
+     *ageGroup = XUserAgeGroup_Unknown;
+-    return E_NOTIMPL;
++    GetSystemTimeAsFileTime( &now );
++    ticks = ((ULONGLONG)now.dwHighDateTime << 32) | now.dwLowDateTime;
++    AcquireSRWLockShared( &user->xstsLock );
++    if (user->xboxClaimsExpiry > ticks && user->xboxAgeGroup != XUserAgeGroup_Unknown)
++    {
++        *ageGroup = user->xboxAgeGroup;
++        hr = S_OK;
++    }
++    ReleaseSRWLockShared( &user->xstsLock );
++    TRACE( "Authenticated age-group availability hr %#lx.\n", hr );
++    return hr;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserCheckPrivilege( IXUserImpl6 *iface, XUserHandle user, XUserPrivilegeOptions options, XUserPrivilege privilege, BOOLEAN *hasPrivilege, XUserPrivilegeDenyReason *reason )
+ {
+-    TRACE( "iface %p, user %p, options %d, privilege %d, hasPrivilege %p, reason %p.\n", iface, user, options, privilege, hasPrivilege, reason );
++    const WCHAR *claim;
++    UINT32 length;
++    FILETIME now;
++    ULONGLONG ticks;
++    HRESULT hr;
++
+     if (!user || !hasPrivilege) return E_POINTER;
+-
+     *hasPrivilege = FALSE;
+     if (reason) *reason = XUserPrivilegeDenyReason_Unknown;
+-    return E_NOTIMPL;
++    if ((UINT32)options & ~XUserPrivilegeOptions_AllUsers) return E_INVALIDARG;
++    /* Multi-user aggregation requires distinct policy semantics. Never infer it
++     * from one account's claim. The normal per-user check is fully supported. */
++    if (options == XUserPrivilegeOptions_AllUsers) return E_NOTIMPL;
++    GetSystemTimeAsFileTime( &now );
++    ticks = ((ULONGLONG)now.dwHighDateTime << 32) | now.dwLowDateTime;
++    AcquireSRWLockShared( &user->xstsLock );
++    claim = WindowsGetStringRawBuffer( user->xboxPrivileges, &length );
++    hr = xuser_check_privilege_claim( user->xboxPrivilegesKnown, claim, length,
++            user->xboxClaimsExpiry, ticks, (UINT32)privilege, hasPrivilege );
++    ReleaseSRWLockShared( &user->xstsLock );
++    if (SUCCEEDED(hr) && *hasPrivilege && reason) *reason = XUserPrivilegeDenyReason_None;
++    TRACE( "Authenticated privilege %u check hr %#lx, allowed %u.\n", (UINT32)privilege, hr, *hasPrivilege );
++    return hr;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserResolvePrivilegeWithUiAsync( IXUserImpl6 *iface, XUserHandle user, XUserPrivilegeOptions options, XUserPrivilege privilege, XAsyncBlock *async )
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XUserClaims.h
+@@ -0,0 +1,93 @@
++/* Parse only authenticated Xbox display claims. Missing/invalid claims never grant access. */
++#ifndef WINEGDK_XUSER_CLAIMS_H
++#define WINEGDK_XUSER_CLAIMS_H
++
++static BOOL xuser_claim_space( WCHAR ch )
++{
++    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
++}
++
++static BOOL xuser_parse_privilege_claim( const WCHAR *text, SIZE_T length,
++        UINT32 privilege, BOOLEAN *allowed )
++{
++    SIZE_T pos = 0;
++    BOOL found = FALSE;
++
++    *allowed = FALSE;
++    if (!text) return FALSE;
++    while (pos < length)
++    {
++        UINT32 value = 0;
++        while (pos < length && xuser_claim_space( text[pos] )) ++pos;
++        if (pos == length) break;
++        if (text[pos] < '0' || text[pos] > '9') return FALSE;
++        do
++        {
++            UINT32 digit = text[pos++] - '0';
++            if (value > (0xffffffffu - digit) / 10) return FALSE;
++            value = value * 10 + digit;
++        } while (pos < length && text[pos] >= '0' && text[pos] <= '9');
++        if (pos < length && !xuser_claim_space( text[pos] )) return FALSE;
++        if (value == privilege) found = TRUE;
++    }
++    *allowed = found;
++    return TRUE;
++}
++
++/* XSTS NotAfter uses ISO-8601 UTC, with an optional fractional second. */
++static BOOL xuser_parse_claim_expiry( const WCHAR *text, SIZE_T length, ULONGLONG *expiry )
++{
++    static const unsigned int starts[] = {0, 5, 8, 11, 14, 17};
++    static const unsigned int widths[] = {4, 2, 2, 2, 2, 2};
++    WORD values[6];
++    SYSTEMTIME system = {0}, check;
++    FILETIME file;
++    SIZE_T pos = 19;
++    ULONGLONG ticks, fraction = 0, scale = 1000000;
++    unsigned int i, j;
++
++    *expiry = 0;
++    if (!text || length < 20 || text[4] != '-' || text[7] != '-' ||
++        text[10] != 'T' || text[13] != ':' || text[16] != ':') return FALSE;
++    for (i = 0; i < ARRAY_SIZE(starts); ++i)
++    {
++        values[i] = 0;
++        for (j = 0; j < widths[i]; ++j)
++        {
++            WCHAR ch = text[starts[i] + j];
++            if (ch < '0' || ch > '9') return FALSE;
++            values[i] = values[i] * 10 + ch - '0';
++        }
++    }
++    if (pos < length && text[pos] == '.')
++    {
++        ++pos;
++        if (pos == length || text[pos] < '0' || text[pos] > '9') return FALSE;
++        while (pos < length && text[pos] >= '0' && text[pos] <= '9')
++        {
++            if (!scale) return FALSE; /* Precision beyond FILETIME is unsupported. */
++            fraction += (text[pos++] - '0') * scale;
++            scale /= 10;
++        }
++    }
++    if (pos + 1 != length || text[pos] != 'Z') return FALSE;
++    system.wYear = values[0]; system.wMonth = values[1]; system.wDay = values[2];
++    system.wHour = values[3]; system.wMinute = values[4]; system.wSecond = values[5];
++    if (!SystemTimeToFileTime( &system, &file ) || !FileTimeToSystemTime( &file, &check )) return FALSE;
++    if (check.wYear != system.wYear || check.wMonth != system.wMonth || check.wDay != system.wDay ||
++        check.wHour != system.wHour || check.wMinute != system.wMinute || check.wSecond != system.wSecond)
++        return FALSE;
++    ticks = ((ULONGLONG)file.dwHighDateTime << 32) | file.dwLowDateTime;
++    *expiry = ticks + fraction;
++    return TRUE;
++}
++
++static HRESULT xuser_check_privilege_claim( BOOL known, const WCHAR *text, SIZE_T length,
++        ULONGLONG expiry, ULONGLONG now, UINT32 privilege, BOOLEAN *allowed )
++{
++    *allowed = FALSE;
++    if (!known || !expiry || expiry <= now) return E_NOTIMPL;
++    if (!xuser_parse_privilege_claim( text, length, privilege, allowed )) return E_NOTIMPL;
++    return S_OK;
++}
++#endif

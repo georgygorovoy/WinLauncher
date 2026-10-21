@@ -1,0 +1,11 @@
+#
+# Secret Labs' Regular Expression Engine
+#
+# various symbols used by the regular expression engine.
+# run this script to update the _sre include files!
+#
+# Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
+#
+# See the __init__.py file for information on usage and redistribution.
+#
+

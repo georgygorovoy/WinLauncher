@@ -1,0 +1,2652 @@
+diff --git a/dlls/xgameruntime/GDKComponent/System/Threading/XAsync.cpp b/dlls/xgameruntime/GDKComponent/System/Threading/XAsync.cpp
+index 6b30344..effaaef 100644
+--- a/dlls/xgameruntime/GDKComponent/System/Threading/XAsync.cpp
++++ b/dlls/xgameruntime/GDKComponent/System/Threading/XAsync.cpp
+@@ -807,7 +807,6 @@ HRESULT WINAPI XAsyncSchedule(
+ 
+     state.Detach();
+ 
+-    TRACE("Before completion, queue here was %p\n", state->queue);
+ 
+     return S_OK;
+ }
+diff --git a/dlls/xgameruntime/GDKComponent/System/Threading/XTaskQueue.h b/dlls/xgameruntime/GDKComponent/System/Threading/XTaskQueue.h
+index 2c68e95..8800bb7 100644
+--- a/dlls/xgameruntime/GDKComponent/System/Threading/XTaskQueue.h
++++ b/dlls/xgameruntime/GDKComponent/System/Threading/XTaskQueue.h
+@@ -269,7 +269,7 @@ private:
+ };
+ 
+ 
+-class TaskQueuePortImpl : public ITaskQueuePort
++class DECLSPEC_UUID("4529CADF-1BA0-4038-A854-2C0CA26396CB") TaskQueuePortImpl : public ITaskQueuePort
+ {
+ public:
+ 
+@@ -458,7 +458,7 @@ private:
+ __CRT_UUID_DECL(TaskQueuePortImpl, 0x4529CADF, 0x1BA0, 0x4038, 0xA8,0x54, 0x2C,0x0C,0xA2,0x63,0x96,0xCB)
+ #endif
+ 
+-class TaskQueuePortContextImpl : public ITaskQueuePortContext
++class DECLSPEC_UUID("AFAF0302-AEBB-491A-946F-BFB283496E7A") TaskQueuePortContextImpl : public ITaskQueuePortContext
+ {
+ public:
+ 
+@@ -504,7 +504,7 @@ private:
+ __CRT_UUID_DECL(TaskQueuePortContextImpl, 0xAFAF0302, 0xAEBB, 0x491A, 0x94,0x6F, 0xBF,0xB2,0x83,0x49,0x6E,0x7A)
+ #endif
+ 
+-class TaskQueueImpl : public ITaskQueue
++class DECLSPEC_UUID("D63140D8-9A27-4951-B446-FB8639490A9B") TaskQueueImpl : public ITaskQueue
+ #ifdef SUSPEND_API
+     , public ISuspendResumeCallback
+ #endif
+@@ -620,4 +620,4 @@ bool XTaskQueueGetCurrentProcessTaskQueueWithOptions( XTaskQueueDuplicateOptions
+ HRESULT XTaskQueueDuplicateHandleWithOptions( XTaskQueueHandle queueHandle, XTaskQueueDuplicateOptions options, XTaskQueueHandle *duplicatedHandle );
+ void XTaskQueueResumeTermination( XTaskQueueHandle queue );
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/dlls/xgameruntime/GDKComponent/System/XNetworking.cpp b/dlls/xgameruntime/GDKComponent/System/XNetworking.cpp
+index 6ccdab0..1b2ba25 100644
+--- a/dlls/xgameruntime/GDKComponent/System/XNetworking.cpp
++++ b/dlls/xgameruntime/GDKComponent/System/XNetworking.cpp
+@@ -44,7 +44,7 @@ static HRESULT WINAPI security_information_provider( XAsyncOp op, const XAsyncPr
+             break;
+         case XAsyncOp::DoWork:
+             threading->XAsyncComplete( data->async, S_OK, sizeof(XNetworkingSecurityInformation) );
+-            hr = S_OK;
++            hr = E_PENDING;
+             break;
+         case XAsyncOp::GetResult:
+         {
+diff --git a/dlls/xgameruntime/GDKComponent/System/XUser.c b/dlls/xgameruntime/GDKComponent/System/XUser.c
+index 7891759..c291a98 100644
+--- a/dlls/xgameruntime/GDKComponent/System/XUser.c
++++ b/dlls/xgameruntime/GDKComponent/System/XUser.c
+@@ -27,7 +27,8 @@
+ #include <wincrypt.h>
+ #include <wininet.h>
+ 
+-WINE_DEFAULT_DEBUG_CHANNEL(gdkc);
++WINE_DEFAULT_DEBUG_CHANNEL(xuser);
++#include "HttpStatusTrace.h"
+ 
+ static const WCHAR *ACCEPT_JSON[] = { L"application/json", NULL };
+ static const WCHAR CT_JSON[] = L"Content-Type: application/json";
+@@ -102,7 +103,7 @@ static HRESULT parse_json( const char *json, SIZE_T jsonLen, IJsonObject **objec
+     WCHAR *wJson;
+     HRESULT hr;
+ 
+-    TRACE( "json %s, object %p.\n", debugstr_an( json, jsonLen ), object );
++    TRACE( "JSON payload %Iu bytes, object %p.\n", jsonLen, object );
+ 
+     if (!(wJsonLen = MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, json, jsonLen, NULL, 0 ))) return HRESULT_FROM_WIN32( GetLastError() );
+     if (FAILED(hr = WindowsCreateStringReference( name, wcslen( name ), &header, &string ))) return hr;
+@@ -137,6 +138,7 @@ struct endpoint
+ 
+ static void free_endpoints( struct endpoint *endpoints, UINT32 count )
+ {
++    if (!endpoints) return;
+     for (UINT32 i = 0; i < count; ++i)
+     {
+         free( endpoints[i].host );
+@@ -156,6 +158,8 @@ struct XUser
+ {
+     IUser IUser_iface;
+     LONG ref;
++    UINT64 localId;
++    struct XUser *registered_next;
+ 
+     UINT64 xuid;
+     HSTRING userHash;
+@@ -185,6 +189,27 @@ struct XUser
+     struct policy *policies;
+ };
+ 
++static SRWLOCK registered_users_lock = SRWLOCK_INIT;
++static struct XUser *registered_users;
++static UINT64 last_local_id;
++
++static HRESULT register_authenticated_user( struct XUser *user )
++{
++    HRESULT hr = S_OK;
++
++    if (!user->xuid) return E_UNEXPECTED;
++    AcquireSRWLockExclusive( &registered_users_lock );
++    if (last_local_id == ~(UINT64)0) hr = E_OUTOFMEMORY;
++    else
++    {
++        user->localId = ++last_local_id;
++        user->registered_next = registered_users;
++        registered_users = user;
++    }
++    ReleaseSRWLockExclusive( &registered_users_lock );
++    return hr;
++}
++
+ static struct XUser *impl_from_IUser( IUser *iface )
+ {
+     return CONTAINING_RECORD( iface, struct XUser, IUser_iface );
+@@ -255,7 +280,22 @@ static ULONG WINAPI user_AddRef( IUser *iface )
+ static ULONG WINAPI user_Release( IUser *iface )
+ {
+     struct XUser *impl = impl_from_IUser( iface );
+-    ULONG ref = InterlockedDecrement( &impl->ref );
++    struct XUser **entry;
++    ULONG ref;
++
++    /* The registry owns no reference; lookup must not race the last release. */
++    AcquireSRWLockExclusive( &registered_users_lock );
++    ref = InterlockedDecrement( &impl->ref );
++    if (!ref && impl->localId)
++    {
++        for (entry = &registered_users; *entry; entry = &(*entry)->registered_next)
++            if (*entry == impl)
++            {
++                *entry = impl->registered_next;
++                break;
++            }
++    }
++    ReleaseSRWLockExclusive( &registered_users_lock );
+     TRACE( "iface %p decreasing refcount to %lu.\n", iface, ref );
+     if (!ref)
+     {
+@@ -450,7 +490,7 @@ static HRESULT WINAPI user_RequestUserToken( IUser *iface )
+ 
+     wToken = WindowsGetStringRawBuffer( impl->accessToken, &wTokenLen );
+     if (!(tokenLen = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, wToken, wTokenLen, NULL, 0, NULL, NULL ))) goto error;
+-    if (!(body = calloc( strlen( template ) + tokenLen + strlen( "\"}}" ), sizeof(char) )))
++    if (!(body = calloc( strlen( template ) + tokenLen + strlen( "\"}}" ) + 1, sizeof(char) )))
+     {
+         hr = E_OUTOFMEMORY;
+         goto cleanup;
+@@ -665,7 +705,7 @@ static HRESULT WINAPI user_CacheEndpoints( IUser *iface )
+ 
+     TRACE( "iface %p.\n", iface );
+ 
+-    if (FAILED(hr = http_request( L"GET", L"title.mgmt.xboxlive.com", L"/titles/default/endpoints?type=1", NULL, NULL, ACCEPT_JSON, &buffer, &size )))
++    if (FAILED(hr = http_request( L"GET", L"title.mgt.xboxlive.com", L"/titles/default/endpoints?type=1", NULL, NULL, ACCEPT_JSON, &buffer, &size )))
+         return hr;
+     if (FAILED(hr = parse_json( (char *)buffer, size, &object ))) goto cleanup;
+ 
+@@ -848,6 +888,7 @@ cleanup:
+     if (modernGamertag) IJsonObject_Release( modernGamertag );
+     if (modernGamertagSuffix) IJsonObject_Release( modernGamertagSuffix );
+     if (uniqueModernGamertag) IJsonObject_Release( uniqueModernGamertag );
++    if (SUCCEEDED(hr)) hr = register_authenticated_user( impl );
+     return hr;
+ }
+ 
+@@ -1016,6 +1057,7 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+ 
+     if (FAILED(hr = QueryApiImpl( &CLSID_XThreadingImpl, &IID_IXThreadingImpl, (void **)&xthreading ))) return hr;
+     context = (struct XUserAddContext *)data->context;
++    TRACE( "XUserAdd provider operation %d.\n", op );
+ 
+     switch (op)
+     {
+@@ -1025,6 +1067,7 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+ 
+         case XAsyncOp_GetResult:
+             memcpy( data->buffer, &context->user, sizeof(XUserHandle) );
++            context->user = NULL;
+             break;
+ 
+         case XAsyncOp_DoWork:
+@@ -1062,7 +1105,7 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+                     free( (void *)access_token );
+                     if (response) IMsaTokenResponse_Release( response );
+                     if (operation) IAsyncOperation_IMsaTokenResponse_Release( operation );
+-                    if (SUCCEEDED(hr)) goto complete;
++                    goto complete;
+                 }
+             }
+ #endif
+@@ -1071,11 +1114,13 @@ static HRESULT WINAPI XUserAddProvider( XAsyncOp op, const XAsyncProviderData *d
+             else hr = E_ABORT;
+ 
+         complete:
++            TRACE( "XUserAdd completion hr %#lx, hasUser %d.\n", hr, context->user != NULL );
+             IXThreadingImpl_XAsyncComplete( xthreading, data->async, hr, SUCCEEDED(hr) ? sizeof(XUserHandle) : 0 );
+-            hr = S_OK;
++            hr = E_PENDING;
+             break;
+ 
+         case XAsyncOp_Cleanup:
++            if (context->user) IUser_Release( &context->user->IUser_iface );
+             free( context );
+             break;
+ 
+@@ -1126,17 +1171,45 @@ static HRESULT WINAPI x_user_XUserAddResult( IXUserImpl6 *iface, XAsyncBlock *as
+ 
+ static HRESULT WINAPI x_user_XUserGetLocalId( IXUserImpl6 *iface, XUserHandle user, XUserLocalId *userLocalId )
+ {
++    struct XUser *entry;
++    HRESULT hr = E_HANDLE;
++
+     TRACE( "iface %p, user %p, userLocalId %p.\n", iface, user, userLocalId );
+-    if (!user || !userLocalId) return E_POINTER;
++    if (!userLocalId) return E_POINTER;
++    userLocalId->value = 0;
++    if (!user) return E_POINTER;
+ 
+-    userLocalId->value = (UINT64)(ULONG_PTR)user;
+-    return S_OK;
++    AcquireSRWLockShared( &registered_users_lock );
++    for (entry = registered_users; entry; entry = entry->registered_next)
++        if (entry == user)
++        {
++            userLocalId->value = entry->localId;
++            hr = S_OK;
++            break;
++        }
++    ReleaseSRWLockShared( &registered_users_lock );
++    return hr;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserFindUserByLocalId( IXUserImpl6 *iface, XUserLocalId userLocalId, XUserHandle *handle )
+ {
+-    FIXME( "iface %p, userLocalId %p, handle %p stub!\n", iface, &userLocalId, handle );
+-    return E_NOTIMPL;
++    struct XUser *entry;
++    HRESULT hr = HRESULT_FROM_WIN32( ERROR_NOT_FOUND );
++
++    if (!handle) return E_POINTER;
++    *handle = NULL;
++    AcquireSRWLockShared( &registered_users_lock );
++    for (entry = registered_users; entry; entry = entry->registered_next)
++        if (entry->localId == userLocalId.value)
++        {
++            IUser_AddRef( &entry->IUser_iface );
++            *handle = entry;
++            hr = S_OK;
++            break;
++        }
++    ReleaseSRWLockShared( &registered_users_lock );
++    TRACE( "FindUserByLocalId hr %#lx, found %d.\n", hr, SUCCEEDED(hr) );
++    return hr;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserGetId( IXUserImpl6 *iface, XUserHandle user, UINT64 *userId )
+@@ -1251,7 +1324,7 @@ static HRESULT WINAPI XUserGetGamerPictureProvider( XAsyncOp op, const XAsyncPro
+             if (object) IJsonObject_Release( object );
+             if (url) WindowsDeleteString( url );
+             if (hostName) free( hostName );
+-            hr = S_OK;
++            hr = E_PENDING;
+             break;
+ 
+         case XAsyncOp_Cleanup:
+@@ -1326,8 +1399,9 @@ static HRESULT WINAPI x_user_XUserGetGamerPictureResult( IXUserImpl6 *iface, XAs
+ static HRESULT WINAPI x_user_XUserGetAgeGroup( IXUserImpl6 *iface, XUserHandle user, XUserAgeGroup *ageGroup )
+ {
+     TRACE( "iface %p, user %p, ageGroup %p.\n", iface, user, ageGroup );
+-    *ageGroup = XUserAgeGroup_Adult;
+-    return S_OK;
++    if (!user || !ageGroup) return E_POINTER;
++    *ageGroup = XUserAgeGroup_Unknown;
++    return E_NOTIMPL;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserCheckPrivilege( IXUserImpl6 *iface, XUserHandle user, XUserPrivilegeOptions options, XUserPrivilege privilege, BOOLEAN *hasPrivilege, XUserPrivilegeDenyReason *reason )
+@@ -1335,9 +1409,9 @@ static HRESULT WINAPI x_user_XUserCheckPrivilege( IXUserImpl6 *iface, XUserHandl
+     TRACE( "iface %p, user %p, options %d, privilege %d, hasPrivilege %p, reason %p.\n", iface, user, options, privilege, hasPrivilege, reason );
+     if (!user || !hasPrivilege) return E_POINTER;
+ 
+-    *hasPrivilege = TRUE;
+-    if (reason) *reason = XUserPrivilegeDenyReason_None;
+-    return S_OK;
++    *hasPrivilege = FALSE;
++    if (reason) *reason = XUserPrivilegeDenyReason_Unknown;
++    return E_NOTIMPL;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserResolvePrivilegeWithUiAsync( IXUserImpl6 *iface, XUserHandle user, XUserPrivilegeOptions options, XUserPrivilege privilege, XAsyncBlock *async )
+@@ -1436,7 +1510,7 @@ static HRESULT WINAPI XUserGetTokenAndSignatureProvider( XAsyncOp op, const XAsy
+             {
+                 if (FAILED(hr = user_request_xsts_token( context->user, relyingParty ))) goto cleanup;
+             }
+-            TRACE( "Using XSTS relying party %s for %s.\n", debugstr_a( relyingParty ), debugstr_a( context->url ) );
++            TRACE( "Using XSTS relying party %s for %s.\n", debugstr_a( relyingParty ), "<request URL>" );
+             wUserHash = WindowsGetStringRawBuffer( context->user->userHash, &wUserHashLen );
+             wToken = WindowsGetStringRawBuffer( context->user->xstsToken, &wTokenLen );
+             if (!(userHashLen = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, wUserHash, wUserHashLen, NULL, 0, NULL, NULL ))) goto error;
+@@ -1492,8 +1566,6 @@ static HRESULT WINAPI XUserGetTokenAndSignatureProvider( XAsyncOp op, const XAsy
+             /* body */
+             memcpy( ptr, context->bodyBuffer, min( context->bodySize, 0x2000 ) );
+ 
+-            TRACE( "buf: %s\n", debugstr_an( (char *)buf, bufLen ) );
+-            TRACE( "rawSignature: %s\n", debugstr_an( (char *)rawSignature, 76 ) );
+ 
+             if (FAILED(hr = IUser_SignData( &context->user->IUser_iface, bufLen, (UCHAR *)buf, 64, rawSignature + 12 ))) goto cleanup;
+ 
+@@ -1520,8 +1592,6 @@ static HRESULT WINAPI XUserGetTokenAndSignatureProvider( XAsyncOp op, const XAsy
+                 wcsncat( wAuth, wToken, wTokenLen );
+                 encode_base64_utf16( 76, rawSignature, 104, wSignature, TRUE );
+ 
+-                TRACE( "token: %s\n", debugstr_wn( context->dataUtf16->token, context->dataUtf16->tokenCount ) );
+-                TRACE( "signature: %s\n", debugstr_wn( context->dataUtf16->signature, context->dataUtf16->signatureCount ) );
+             }
+             else
+             {
+@@ -1543,8 +1613,6 @@ static HRESULT WINAPI XUserGetTokenAndSignatureProvider( XAsyncOp op, const XAsy
+                 strcpy( auth, buf + strlen( context->method ) + pathAndQueryLen + 16 );
+                 encode_base64( 76, rawSignature, 104, signature, TRUE );
+ 
+-                TRACE( "token: %s\n", debugstr_an( context->data->token, context->data->tokenSize ) );
+-                TRACE( "signature: %s\n", debugstr_an( context->data->signature, context->data->signatureSize ) );
+             }
+             goto cleanup;
+ 
+@@ -1560,7 +1628,7 @@ static HRESULT WINAPI XUserGetTokenAndSignatureProvider( XAsyncOp op, const XAsy
+                 context->data = NULL;
+             }
+             IXThreadingImpl_XAsyncComplete( xthreading, data->async, hr, dataSize );
+-            hr = S_OK;
++            hr = E_PENDING;
+             break;
+ 
+         case XAsyncOp_Cleanup:
+@@ -1585,7 +1653,9 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureAsync( IXUserImpl6 *iface,
+     HRESULT hr;
+     char *ptr;
+ 
+-    TRACE( "iface %p, user %p, options %d, method %s, url %s, headerCount %Iu, headers %p, bodySize %Iu, bodyBuffer %p, async %p.\n", iface, user, options, debugstr_a( method ), debugstr_a( url ), headerCount, headers, bodySize, bodyBuffer, async );
++    enable_http_status_trace();
++
++    TRACE( "iface %p, user %p, options %d, method %s, url %s, headerCount %Iu, headers %p, bodySize %Iu, bodyBuffer %p, async %p.\n", iface, user, options, debugstr_a( method ), "<request URL>", headerCount, headers, bodySize, bodyBuffer, async );
+ 
+     contextSize = sizeof(*context) + strlen( url ) + strlen( method ) + 2 + bodySize;
+     for (SIZE_T i = 0; i < headerCount; i++)
+@@ -1632,6 +1702,7 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureResultSize( IXUserImpl6 *i
+     if (FAILED(hr = QueryApiImpl( &CLSID_XThreadingImpl, &IID_IXThreadingImpl, (void **)&xthreading ))) return hr;
+     hr = IXThreadingImpl_XAsyncGetResultSize( xthreading, async, bufferSize );
+     IXThreadingImpl_Release( xthreading );
++    TRACE( "Token result hr %#lx.\n", hr );
+     return hr;
+ }
+ 
+@@ -1646,6 +1717,7 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureResult( IXUserImpl6 *iface
+     hr = IXThreadingImpl_XAsyncGetResult( xthreading, async, NULL, bufferSize, buffer, bufferUsed );
+     *ptrToBuffer = (XUserGetTokenAndSignatureData *)buffer;
+     IXThreadingImpl_Release( xthreading );
++    TRACE( "Token result hr %#lx.\n", hr );
+     return hr;
+ }
+ 
+@@ -1658,7 +1730,9 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureUtf16Async( IXUserImpl6 *i
+     char *ptr;
+     int size;
+ 
+-    TRACE( "iface %p, user %p, options %d, method %s, url %s, headerCount %Iu, headers %p, bodySize %Iu, bodyBuffer %p, async %p.\n", iface, user, options, debugstr_w( method ), debugstr_w( url ), headerCount, headers, bodySize, bodyBuffer, async );
++    enable_http_status_trace();
++
++    TRACE( "iface %p, user %p, options %d, method %s, url %s, headerCount %Iu, headers %p, bodySize %Iu, bodyBuffer %p, async %p.\n", iface, user, options, debugstr_w( method ), "<request URL>", headerCount, headers, bodySize, bodyBuffer, async );
+ 
+     if (!(methodLen = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, method, -1, NULL, 0, NULL, NULL ))) return HRESULT_FROM_WIN32( GetLastError() );
+     if (!(urlLen = WideCharToMultiByte( CP_UTF8, WC_ERR_INVALID_CHARS, url, -1, NULL, 0, NULL, NULL ))) return HRESULT_FROM_WIN32( GetLastError() );
+@@ -1718,6 +1792,7 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureUtf16ResultSize( IXUserImp
+     if (FAILED(hr = QueryApiImpl( &CLSID_XThreadingImpl, &IID_IXThreadingImpl, (void **)&xthreading ))) return hr;
+     hr = IXThreadingImpl_XAsyncGetResultSize( xthreading, async, bufferSize );
+     IXThreadingImpl_Release( xthreading );
++    TRACE( "Token result hr %#lx.\n", hr );
+     return hr;
+ }
+ 
+@@ -1732,12 +1807,13 @@ static HRESULT WINAPI x_user_XUserGetTokenAndSignatureUtf16Result( IXUserImpl6 *
+     hr = IXThreadingImpl_XAsyncGetResult( xthreading, async, NULL, bufferSize, buffer, bufferUsed );
+     *ptrToBuffer = (XUserGetTokenAndSignatureUtf16Data *)buffer;
+     IXThreadingImpl_Release( xthreading );
++    TRACE( "Token result hr %#lx.\n", hr );
+     return hr;
+ }
+ 
+ static HRESULT WINAPI x_user_XUserResolveIssueWithUiAsync( IXUserImpl6 *iface, XUserHandle user, const char *url, XAsyncBlock *async )
+ {
+-    FIXME( "iface %p, user %p, url %s, async %p stub!\n", iface, user, debugstr_a( url ), async );
++    FIXME( "iface %p, user %p, url %s, async %p stub!\n", iface, user, "<request URL>", async );
+     return E_NOTIMPL;
+ }
+ 
+@@ -1749,7 +1825,7 @@ static HRESULT WINAPI x_user_XUserResolveIssueWithUiResult( IXUserImpl6 *iface,
+ 
+ static HRESULT WINAPI x_user_XUserResolveIssueWithUiUtf16Async( IXUserImpl6 *iface, XUserHandle user, const WCHAR *url, XAsyncBlock *async )
+ {
+-    FIXME( "iface %p, user %p, url %s, async %p stub!\n", iface, user, debugstr_w( url ), async );
++    FIXME( "iface %p, user %p, url %s, async %p stub!\n", iface, user, "<request URL>", async );
+     return E_NOTIMPL;
+ }
+ 
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/IPCLayer.cpp b/dlls/xgameruntime/GDKComponent/Xodus/IPCLayer.cpp
+index eb9107e..1220af2 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/IPCLayer.cpp
++++ b/dlls/xgameruntime/GDKComponent/Xodus/IPCLayer.cpp
+@@ -193,7 +193,7 @@ private:
+         auto packet = static_cast<IXodusIPCPacket *>( param );
+ 
+         BYTE* messageBuffer;
+-        DWORD asyncres;
++        DWORD asyncres, waitError;
+         HRESULT status = S_OK;
+         NTSTATUS nts;
+         IPCFrame *frame = new IPCFrame();
+@@ -244,6 +244,7 @@ private:
+         if ( FAILED( nts ) ) return HRESULT_FROM_NT( nts );
+ 
+         asyncres = WaitForSingleObject( context.event, IPC_REQUEST_TIMEOUT_MS );
++        waitError = asyncres == WAIT_FAILED ? GetLastError() : ERROR_TIMEOUT;
+         status = iface->remove_ResponseReceived( token );
+         handler->Release();
+         CloseHandle( context.event );
+@@ -251,7 +252,7 @@ private:
+         if ( asyncres )
+         {
+             WARN("Timeout while waiting for a Xodus response.\n");
+-            return HRESULT_FROM_NT( STATUS_TIMEOUT );
++            return HRESULT_FROM_WIN32( waitError );
+         }
+ 
+         result->vt = VT_UNKNOWN;
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/Unix/socket.c b/dlls/xgameruntime/GDKComponent/Xodus/Unix/socket.c
+index c49e1dd..6849da7 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/Unix/socket.c
++++ b/dlls/xgameruntime/GDKComponent/Xodus/Unix/socket.c
+@@ -233,9 +233,106 @@ static NTSTATUS send_frm( void *args )
+     return STATUS_SUCCESS;
+ }
+ 
++/* Store calls own their connection: no shared callback or response matching state. */
++#include "store.h"
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <time.h>
++
++static long long store_now_ms(void)
++{
++    struct timespec t;
++    clock_gettime(CLOCK_MONOTONIC, &t);
++    return (long long)t.tv_sec * 1000 + t.tv_nsec / 1000000;
++}
++static NTSTATUS store_wait(int fd, short events, long long deadline)
++{
++    struct pollfd p = {fd, events, 0};
++    int n;
++    long long left;
++    for (;;) {
++        left = deadline - store_now_ms();
++        if (left <= 0) return STATUS_IO_TIMEOUT;
++        n = poll(&p, 1, (int)left);
++        if (n < 0 && errno == EINTR) continue;
++        if (!n) return STATUS_IO_TIMEOUT;
++        if (n < 0 || !(p.revents & events)) return STATUS_CONNECTION_DISCONNECTED;
++        return STATUS_SUCCESS;
++    }
++}
++static NTSTATUS store_transfer(int fd, BYTE *data, size_t count, BOOL writing, long long deadline)
++{
++    NTSTATUS status;
++    ssize_t n;
++    while (count) {
++        status = store_wait(fd, writing ? POLLOUT : POLLIN, deadline);
++        if (status) return status;
++        n = writing ? write(fd, data, count) : read(fd, data, count);
++        if (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
++        if (n <= 0) return STATUS_CONNECTION_DISCONNECTED;
++        data += n; count -= n;
++    }
++    return STATUS_SUCCESS;
++}
++static NTSTATUS store_request(void *args)
++{
++    struct store_unix_request *a = args;
++    struct sockaddr_un address;
++    struct stat st;
++    BYTE header[8];
++    UINT32 magic = STORE_XML_MAGIC;
++    UINT16 type, size;
++    int fd = -1, error = 0, one = 1;
++    socklen_t error_size = sizeof(error);
++    long long deadline = store_now_ms() + 30000;
++    NTSTATUS status = STATUS_INVALID_PARAMETER;
++#ifdef __APPLE__
++    const char *runtime = "/tmp";
++    uid_t peer_uid; gid_t peer_gid;
++#else
++    const char *runtime = getenv("XDG_RUNTIME_DIR");
++    struct ucred peer; socklen_t peer_size = sizeof(peer);
++#endif
++    a->response_size = 0;
++    if (!runtime || !a->request || !a->response || !a->request_size || a->request_size > 8192 ||
++        a->response_capacity > 65535 ||
++        !((a->request_type == 5 && a->response_type == 6) || (a->request_type == 7 && a->response_type == 8))) return status;
++    memset(&address, 0, sizeof(address)); address.sun_family = AF_UNIX;
++    if (snprintf(address.sun_path, sizeof(address.sun_path), "%s/xodus.sock", runtime) >= sizeof(address.sun_path)) return status;
++    if (lstat(address.sun_path, &st) || !S_ISSOCK(st.st_mode) || st.st_uid != getuid() || (st.st_mode & 0077)) return STATUS_ACCESS_DENIED;
++    fd = socket(AF_UNIX, SOCK_STREAM, 0);
++    if (fd < 0) return STATUS_CONNECTION_REFUSED;
++    if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0 || fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) goto cleanup;
++#ifdef SO_NOSIGPIPE
++    if (setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, sizeof(one))) goto cleanup;
++#endif
++    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
++        if (errno != EINPROGRESS && errno != EAGAIN) { status = STATUS_CONNECTION_REFUSED; goto cleanup; }
++        if ((status = store_wait(fd, POLLOUT, deadline))) goto cleanup;
++        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size) || error) { status = STATUS_CONNECTION_REFUSED; goto cleanup; }
++    }
++#ifdef __APPLE__
++    if (getpeereid(fd, &peer_uid, &peer_gid) || peer_uid != getuid()) { status = STATUS_ACCESS_DENIED; goto cleanup; }
++#else
++    if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &peer, &peer_size) || peer.uid != getuid()) { status = STATUS_ACCESS_DENIED; goto cleanup; }
++#endif
++    type = a->request_type; size = a->request_size;
++    memcpy(header, &magic, 4); memcpy(header+4, &type, 2); memcpy(header+6, &size, 2);
++    if ((status = store_transfer(fd, header, 8, TRUE, deadline))) goto cleanup;
++    if ((status = store_transfer(fd, (BYTE *)a->request, a->request_size, TRUE, deadline))) goto cleanup;
++    if ((status = store_transfer(fd, header, 8, FALSE, deadline))) goto cleanup;
++    memcpy(&magic, header, 4); memcpy(&type, header+4, 2); memcpy(&size, header+6, 2);
++    if (magic != STORE_XML_MAGIC || type != a->response_type || !size || size > a->response_capacity) { status = STATUS_INVALID_PARAMETER; goto cleanup; }
++    if (!(status = store_transfer(fd, a->response, size, FALSE, deadline))) a->response_size = size;
++cleanup:
++    close(fd);
++    return status;
++}
++
+ const unixlib_entry_t __wine_unix_call_funcs[] =
+ {
+     conn_sock,
+     poll_sock,
+-    send_frm
+-};
+\ No newline at end of file
++    send_frm,
++    store_request
++};
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/XodusService.cpp b/dlls/xgameruntime/GDKComponent/Xodus/XodusService.cpp
+index 1c9bf5d..1875a67 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/XodusService.cpp
++++ b/dlls/xgameruntime/GDKComponent/Xodus/XodusService.cpp
+@@ -128,53 +128,37 @@ private:
+     PingAsync( IUnknown *invoker, PVOID param, PROPVARIANT *result )
+     {
+         DWORD ret;
+-        UINT16 messageType;
++        UINT16 messageType = 0;
+         HRESULT status;
+         HSTRING bufferClass;
+-
+-        IXodusIPCPacket *xodusPacket = nullptr;
++        IXodusIPCPacket *request = nullptr, *packet = nullptr;
+         IBuffer *message = nullptr;
+-        IBufferFactory *bufferFactory = nullptr;
+-        IAsyncOperation<IXodusIPCPacket *> *response;
+-
+-        TRACE("invoker %p, param %p, result %p\n", invoker, param, result);
++        IBufferFactory *factory = nullptr;
++        IAsyncOperation<IXodusIPCPacket *> *response = nullptr;
+ 
+-        status = WindowsCreateString( RuntimeClass_Windows_Storage_Streams_Buffer, lstrlenW( RuntimeClass_Windows_Storage_Streams_Buffer ), &bufferClass );
+-        if ( FAILED( status ) ) return status;
+-
+-        status = RoGetActivationFactory( bufferClass, __uuidof( IBufferFactory ), (void **)&bufferFactory );
++        status = WindowsCreateString( RuntimeClass_Windows_Storage_Streams_Buffer,
++                                      lstrlenW( RuntimeClass_Windows_Storage_Streams_Buffer ), &bufferClass );
++        if (FAILED(status)) return status;
++        status = RoGetActivationFactory( bufferClass, __uuidof( IBufferFactory ), (void **)&factory );
+         WindowsDeleteString( bufferClass );
+-        if ( FAILED( status ) ) return status;
+-
+-        status = bufferFactory->Create( 1, &message );
+-        if ( FAILED( status ) ) return status;
+-
+-        // Construct a new IPC Packet
+-        xodusPacket = new XodusIPCPacket(
+-            MagicHeaderType::XML,
+-            1 /* PING */,
+-            message
+-        );
+-
+-        xodus_ipclayer->SendRequestAsync( xodusPacket, &response );
+-
++        if (FAILED(status)) return status;
++        if (FAILED(status = factory->Create( 1, &message ))) goto cleanup;
++        request = new XodusIPCPacket( MagicHeaderType::XML, 1, message );
++        if (FAILED(status = xodus_ipclayer->SendRequestAsync( request, &response ))) goto cleanup;
++        if (!response) { status = E_UNEXPECTED; goto cleanup; }
+         ret = AsyncOperationCompletedHandler<IXodusIPCPacket *>::await_AsyncOperation( response, INFINITE );
+-        if ( ret )
+-            return E_FAIL;
+-
+-        xodusPacket->Release();
+-        message->Release();
+-
+-        // confirm that we actually PONGed
+-        status = response->GetResults( &xodusPacket );
+-        response->Release();
+-        if ( FAILED( status ) ) return status;
+-        xodusPacket->get_MessageType( &messageType );
+-        xodusPacket->Release();
+-        if ( messageType != 2 /* PONG */)
+-            return E_INVALIDARG;
+-        
+-        return S_OK;
++        if (ret) { status = E_FAIL; goto cleanup; }
++        if (FAILED(status = response->GetResults( &packet ))) goto cleanup;
++        if (!packet) { status = E_UNEXPECTED; goto cleanup; }
++        if (FAILED(status = packet->get_MessageType( &messageType ))) goto cleanup;
++        status = messageType == 2 ? S_OK : E_INVALIDARG;
++    cleanup:
++        if (packet) packet->Release();
++        if (response) response->Release();
++        if (request) request->Release();
++        if (message) message->Release();
++        if (factory) factory->Release();
++        return status;
+     }
+ 
+     static HRESULT WINAPI
+@@ -186,8 +170,8 @@ private:
+         auto ctx = static_cast<MsaTokenRequestContext *>(param);
+         IAsyncOperation<IXodusIPCPacket *> *asyncop = nullptr;
+         HSTRING_HEADER classNameHeader;
+-        IMsaTokenResponse *token;
+-        IBufferFactory *factory;
++        IMsaTokenResponse *token = nullptr;
++        IBufferFactory *factory = nullptr;
+         UINT16 messageType = 3; /* MSA_TOKEN_REQUEST */
+         char *xml = nullptr;
+         HSTRING className;
+@@ -196,9 +180,9 @@ private:
+ 
+         if (FAILED(hr = WindowsCreateStringReference( RuntimeClass_Windows_Storage_Streams_Buffer,
+                                                       wcslen( RuntimeClass_Windows_Storage_Streams_Buffer ),
+-                                                      &classNameHeader, &className ))) return hr;
++                                                      &classNameHeader, &className ))) goto cleanup;
+ 
+-        if (FAILED(hr = RoGetActivationFactory( className, __uuidof( IBufferFactory ), (void **)&factory ))) return hr;
++        if (FAILED(hr = RoGetActivationFactory( className, __uuidof( IBufferFactory ), (void **)&factory ))) goto cleanup;
+         if (FAILED(hr = xodus_xml_builder->BuildMsaTokenRequestXml( ctx->clientId, ctx->allowUi, ctx->fullTrust, &xml ))) goto cleanup;
+         if (FAILED(hr = factory->Create( strlen( xml ) + 1, &requestMessage ))) goto cleanup;
+         if (FAILED(hr = requestMessage->QueryInterface<IBufferByteAccess>( &requestByteAccess ))) goto cleanup;
+@@ -208,7 +192,7 @@ private:
+ 
+         /* Construct a new IPC Packet */
+         requestPacket = new XodusIPCPacket( MagicHeaderType::XML, messageType, requestMessage );
+-        xodus_ipclayer->SendRequestAsync( requestPacket, &asyncop );
++        if (FAILED(hr = xodus_ipclayer->SendRequestAsync( requestPacket, &asyncop ))) goto cleanup;
+         if (AsyncOperationCompletedHandler<IXodusIPCPacket *>::await_AsyncOperation( asyncop, INFINITE ))
+         {
+             hr = E_FAIL;
+@@ -216,17 +200,20 @@ private:
+         }
+ 
+         if (FAILED(hr = asyncop->GetResults( &responsePacket ))) goto cleanup;
+-        responsePacket->get_MessageType( &messageType );
++        if (!responsePacket) { hr = E_UNEXPECTED; goto cleanup; }
++        if (FAILED(hr = responsePacket->get_MessageType( &messageType ))) goto cleanup;
+         if (messageType != 4 /* MSA_TOKEN_RESPONSE */)
+         {
+             hr = E_FAIL;
+             goto cleanup;
+         }
+ 
+-        responsePacket->get_Message( &responseMessage );
++        if (FAILED(hr = responsePacket->get_Message( &responseMessage ))) goto cleanup;
++        if (!responseMessage) { hr = E_UNEXPECTED; goto cleanup; }
+         if (FAILED(hr = responseMessage->QueryInterface<IBufferByteAccess>( &responseByteAccess ))) goto cleanup;
+         if (FAILED(hr = responseByteAccess->Buffer( &buffer ))) goto cleanup;
+-        xodus_xml_builder->FromMsaTokenResponseXml( reinterpret_cast<char *>(buffer), &token );
++        if (FAILED(hr = xodus_xml_builder->FromMsaTokenResponseXml( reinterpret_cast<char *>(buffer), &token ))) goto cleanup;
++        if (!token) { hr = E_UNEXPECTED; goto cleanup; }
+ 
+         result->vt = VT_UNKNOWN;
+         result->punkVal = token;
+@@ -240,7 +227,7 @@ private:
+         if (requestPacket) requestPacket->Release();
+         if (asyncop) asyncop->Release();
+         if (xml) free( xml );
+-        factory->Release();
++        if (factory) factory->Release();
+         delete ctx;
+         return hr;
+     }
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp b/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
+index e2b9d7e..17ae000 100644
+--- a/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
++++ b/dlls/xgameruntime/GDKComponent/Xodus/XodusXMLBuilder.cpp
+@@ -152,7 +152,7 @@ public:
+         char *token = nullptr;
+         xmlDocPtr doc;
+ 
+-        TRACE( "xml_string %s, response %p.\n", debugstr_a( xml_string ), response );
++        TRACE( "MSA response received, output %p.\n", response );
+ 
+         if (!(doc = xmlReadMemory( xml_string, strlen( xml_string ), nullptr, nullptr, 0 ))) return E_FAIL;
+         if (!(root = xmlDocGetRootElement( doc )))
+@@ -169,6 +169,12 @@ public:
+                     break;
+                 }
+ 
++        if (!token || !*token)
++        {
++            xmlFree( token );
++            xmlFreeDoc( doc );
++            return E_FAIL;
++        }
+         *response = new MsaTokenResponse( token );
+         xmlFreeDoc( doc );
+         return S_OK;
+diff --git a/dlls/xgameruntime/Makefile.in b/dlls/xgameruntime/Makefile.in
+index 684e92a..1c94ab0 100644
+--- a/dlls/xgameruntime/Makefile.in
++++ b/dlls/xgameruntime/Makefile.in
+@@ -25,6 +25,8 @@ SOURCES = \
+ 	GDKComponent/System/XSystemAnalytics.cpp \
+ 	GDKComponent/System/XNetworking.cpp \
+ 	GDKComponent/System/XUser.c \
++	GDKComponent/System/XGameSave.c \
++	GDKComponent/System/XStore.c \
+ 	\
+ 	GDKComponent/Xodus/Structs.cpp \
+ 	GDKComponent/Xodus/IPCLayer.cpp \
+diff --git a/dlls/xgameruntime/WineCoreUAP/Foundation/IWineAsync.cpp b/dlls/xgameruntime/WineCoreUAP/Foundation/IWineAsync.cpp
+index 2deb963..d0e4648 100755
+--- a/dlls/xgameruntime/WineCoreUAP/Foundation/IWineAsync.cpp
++++ b/dlls/xgameruntime/WineCoreUAP/Foundation/IWineAsync.cpp
+@@ -329,27 +329,28 @@ AsyncInfo::Create( IUnknown *invoker, PVOID param, async_operation_callback call
+ void CALLBACK
+ AsyncInfo::async_info_callback( TP_CALLBACK_INSTANCE *instance, void *iface, TP_WORK *work )
+ {
+-    HRESULT hr;
++    HRESULT hr, init_hr;
+     AsyncInfo *impl = static_cast<AsyncInfo *>( iface );
+-    PROPVARIANT result;
++    PROPVARIANT result{};
+     IInspectable *operation = impl->IInspectable_outer;
+     IWineAsyncOperationCompletedHandler *handler = nullptr;
+     AsyncStatus status;
+ 
+     TRACE( "instace %p, iface %p, work %p\n", instance, iface, work );
+ 
+-    hr = impl->callback( impl->invoker, impl->param, &result );
++    init_hr = RoInitialize( RO_INIT_MULTITHREADED );
++    hr = FAILED(init_hr) ? init_hr : impl->callback( impl->invoker, impl->param, &result );
+ 
+     {
+         const std::lock_guard<std::mutex> lock( impl->mutex );
+ 
++        if (SUCCEEDED(hr)) hr = PropVariantCopy( &impl->result, &result );
+         if ( impl->status != Closed )
+             impl->status = FAILED(hr) ? Error : Completed;
+ 
+         if ( impl->status == Error )
+             GetErrorInfo(0, &impl->errorInfo);
+ 
+-        PropVariantCopy( &impl->result, &result );
+         impl->hr = hr;
+ 
+         if ( impl->handler != nullptr && impl->handler != HANDLER_NOT_SET )
+@@ -366,6 +367,9 @@ AsyncInfo::async_info_callback( TP_CALLBACK_INSTANCE *instance, void *iface, TP_
+         handler->Invoke( operation, status );
+         handler->Release();
+     }
++    PropVariantClear( &result );
++    if (SUCCEEDED(init_hr)) RoUninitialize();
++
+ }
+ 
+ template<typename T>
+@@ -476,13 +480,19 @@ AsyncOperation<T>::GetResults( T *results ) noexcept
+ {
+     TRACE( "iface %p.\n", this );
+ 
+-    PROPVARIANT result = {.vt = VT_NULL};
++    PROPVARIANT result{};
+     HRESULT hr;
+ 
++    if (!results) return E_POINTER;
++    *results = nullptr;
+     hr = info->get_Result( &result );
+ 
+-    if ( result.vt == VT_UNKNOWN )
++    if (SUCCEEDED(hr) && result.vt == VT_UNKNOWN && result.punkVal)
++    {
+         *results = static_cast<T>(result.punkVal);
++        result.vt = VT_EMPTY;
++    }
++    else if (SUCCEEDED(hr)) hr = E_UNEXPECTED;
+ 
+     PropVariantClear( &result );
+ 
+@@ -640,4 +650,4 @@ AsyncAction::Create( IUnknown *invoker, PVOID param, async_operation_callback ca
+     *out = impl;
+     TRACE( "created AsyncAction %p\n", *out );
+     return S_OK;
+-}
+\ No newline at end of file
++}
+diff --git a/dlls/xgameruntime/main.c b/dlls/xgameruntime/main.c
+index 7c8ba38..5d5dc14 100644
+--- a/dlls/xgameruntime/main.c
++++ b/dlls/xgameruntime/main.c
+@@ -20,6 +20,8 @@
+ 
+ #include "initguid.h"
+ #include "private.h"
++#include "GDKComponent/System/XGameSave.h"
++#include "GDKComponent/System/XStore.h"
+ 
+ #include "ntstatus.h"
+ #include "shlwapi.h"
+@@ -254,11 +256,24 @@ _INIT:
+             {
+                 if (!strcmp( (char *)child->name, "MSAAppId" ))
+                     msaAppId = (char *)xmlNodeGetContent( child );
++                else if (!strcmp( (char *)child->name, "StoreId" ))
++                {
++                    char *value = (char *)xmlNodeGetContent( child );
++                    if (!value || strlen(value) != 12 || strspn(value,"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") != 12)
++                    { xmlFree(value); goto badconfig; }
++                    memcpy(gdkStoreId,value,13);
++                    xmlFree(value);
++                }
+                 else if (!strcmp( (char *)child->name, "TitleId" ))
+                 {
+                     char *value = (char *)xmlNodeGetContent( child );
+-                    titleId = strtoul( value, NULL, 10 );
+-                    free( value );
++                    if (!value || strlen( value ) != 8 || strspn( value, "0123456789abcdefABCDEF" ) != 8)
++                    {
++                        xmlFree( value );
++                        goto badconfig;
++                    }
++                    titleId = strtoul( value, NULL, 16 );
++                    xmlFree( value );
+                 }
+                 else if (!strcmp( (char *)child->name, "MSAFullTrust" ))
+                 {
+@@ -292,13 +307,60 @@ HRESULT WINAPI InitializeApiImpl( ULONG gdkVer, ULONG gsVer )
+ 
+ typedef HRESULT (WINAPI *QueryApiImpl_ext)( const GUID *runtimeClassId, REFIID interfaceId, void **out );
+ 
++static void trace_missing_factory_caller( const GUID *runtimeClassId )
++{
++    static const GUID store_class = {0x0dd112ac,0x7c24,0x448c,{0xb9,0x2b,0x39,0x60,0xfb,0x5b,0xd3,0x0c}};
++    static const GUID package_class = {0xaf406016,0xe850,0x4aa8,{0xa8,0x8d,0x2f,0x3d,0xcb,0x9d,0xac,0x7e}};
++    static LONG store_traces, package_traces;
++    void *frames[6];
++    const char *component;
++    LONG *counter;
++    USHORT count, i;
++
++    if (!TRACE_ON(xgameruntime)) return;
++    if (IsEqualGUID( runtimeClassId, &store_class ))
++    {
++        component = "Store";
++        counter = &store_traces;
++    }
++    else if (IsEqualGUID( runtimeClassId, &package_class ))
++    {
++        component = "Package";
++        counter = &package_traces;
++    }
++    else return;
++    if (InterlockedIncrement( counter ) > 16) return;
++
++    /* The direct caller is a shared GDK thunk; retain the wrapper and its caller. */
++    count = CaptureStackBackTrace( 1, ARRAY_SIZE(frames), frames, NULL );
++    for (i = 0; i < count; ++i)
++    {
++        WCHAR path[MAX_PATH], *basename, *slash;
++        HMODULE module;
++        DWORD length;
++
++        if (!GetModuleHandleExW( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
++                GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)frames[i], &module )) continue;
++        length = GetModuleFileNameW( module, path, ARRAY_SIZE(path) );
++        if (!length || length >= ARRAY_SIZE(path)) continue;
++        basename = wcsrchr( path, '\\' );
++        slash = wcsrchr( path, '/' );
++        if (!basename || (slash && slash > basename)) basename = slash;
++        basename = basename ? basename + 1 : path;
++        TRACE( "factory_failure component %s, frame %u, module %s, return_rva %#llx.\n",
++                component, i, debugstr_w(basename),
++                (ULONGLONG)((ULONG_PTR)frames[i] - (ULONG_PTR)module) );
++    }
++}
++
+ HRESULT WINAPI QueryApiImpl( const GUID *runtimeClassId, REFIID interfaceId, void **out )
+ {
+     QueryApiImpl_ext func = (QueryApiImpl_ext)GetProcAddress( xgameruntime_threading, "QueryApiImpl" );
+     DWORD asked;
+ 
+-    TRACE( "runtimeClassId %s, interfaceId %s, out %p\n",
+-           debugstr_guid( runtimeClassId ), debugstr_guid( interfaceId ), out );
++    if (!IsEqualGUID( runtimeClassId, &CLSID_XThreadingImpl ))
++        TRACE( "runtimeClassId %s, interfaceId %s, out %p\n",
++               debugstr_guid( runtimeClassId ), debugstr_guid( interfaceId ), out );
+ 
+     if (IsEqualGUID( runtimeClassId, &CLSID_XSystemImpl ))
+         return IXSystemImpl_QueryInterface( x_system, interfaceId, out );
+@@ -319,12 +381,17 @@ HRESULT WINAPI QueryApiImpl( const GUID *runtimeClassId, REFIID interfaceId, voi
+     }
+     if (IsEqualGUID( runtimeClassId, &CLSID_XGameImpl ))
+         return IXGameImpl_QueryInterface( x_game, interfaceId, out );
++    if (IsEqualGUID( runtimeClassId, &CLSID_XStoreImpl ))
++        return x_store->lpVtbl->QueryInterface( x_store, interfaceId, out );
++    if (IsEqualGUID( runtimeClassId, &CLSID_XGameSaveImpl ))
++        return x_game_save->lpVtbl->QueryInterface( x_game_save, interfaceId, out );
+     if (IsEqualGUID( runtimeClassId, &CLSID_XUserImpl ))
+         return IXUserImpl6_QueryInterface( x_user, interfaceId, out );
+     if (IsEqualGUID( runtimeClassId, &CLSID_XUserDeviceImpl ))
+         return IXUserDeviceImpl_QueryInterface( x_user_device, interfaceId, out );
+ 
+-    FIXME( "%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid( runtimeClassId ) );
++    trace_missing_factory_caller( runtimeClassId );
++    FIXME( "%s not implemented, returning E_NOTIMPL.\n", debugstr_guid( runtimeClassId ) );
+     return E_NOTIMPL;
+ }
+ 
+@@ -338,4 +405,4 @@ HRESULT WINAPI XErrorReport( HRESULT status, LPCSTR message )
+ {
+     WARN( "status %#lx, message %s stub!\n", status, debugstr_a( message ) );
+     return E_NOTIMPL;
+-}
+\ No newline at end of file
++}
+diff --git a/dlls/xgameruntime/private.h b/dlls/xgameruntime/private.h
+index 9f96480..ffcb804 100644
+--- a/dlls/xgameruntime/private.h
++++ b/dlls/xgameruntime/private.h
+@@ -97,32 +97,32 @@
+ 
+ #define POLL_BUFFER_SIZE 0x10008 /* UINT16 payload plus IPC header */
+ #define XODUS_SOCKET_SUFFIX "xodus.sock"
+-#define IPC_REQUEST_TIMEOUT_MS 5000
++#define IPC_REQUEST_TIMEOUT_MS 30000
+ #define XODUS_INTEROP 1
+ 
+-extern BOOLEAN initializeCalled;
++EXTERN_C BOOLEAN initializeCalled;
+ 
+-extern char *msaAppId;
+-extern UINT32 titleId;
+-extern BOOLEAN fullTrust;
++EXTERN_C char *msaAppId;
++EXTERN_C UINT32 titleId;
++EXTERN_C BOOLEAN fullTrust;
+ 
+-extern IXThreadingImpl *x_threading_impl;
+-extern IXGameRuntimeFeatureImpl *x_game_runtime_feature;
+-extern IXSystemImpl *x_system;
+-extern IXSystemAnalyticsImpl *x_system_analytics;
+-extern IXNetworkingImpl *x_networking;
+-extern IXGameImpl *x_game;
+-extern IXUserImpl6 *x_user;
+-extern IXUserDeviceImpl *x_user_device;
++EXTERN_C IXThreadingImpl *x_threading_impl;
++EXTERN_C IXGameRuntimeFeatureImpl *x_game_runtime_feature;
++EXTERN_C IXSystemImpl *x_system;
++EXTERN_C IXSystemAnalyticsImpl *x_system_analytics;
++EXTERN_C IXNetworkingImpl *x_networking;
++EXTERN_C IXGameImpl *x_game;
++EXTERN_C IXUserImpl6 *x_user;
++EXTERN_C IXUserDeviceImpl *x_user_device;
+ 
+ #ifdef __cplusplus
+-extern ABI::Xodus::IIPCLayer *xodus_ipclayer;
+-extern ABI::Xodus::IXodusService *xodus_service;
+-extern ABI::Xodus::IXodusXMLBuilder *xodus_xml_builder;
++EXTERN_C ABI::Xodus::IIPCLayer *xodus_ipclayer;
++EXTERN_C ABI::Xodus::IXodusService *xodus_service;
++EXTERN_C ABI::Xodus::IXodusXMLBuilder *xodus_xml_builder;
+ #else
+-extern IIPCLayer *xodus_ipclayer;
+-extern IXodusService *xodus_service;
+-extern IXodusXMLBuilder *xodus_xml_builder;
++EXTERN_C IIPCLayer *xodus_ipclayer;
++EXTERN_C IXodusService *xodus_service;
++EXTERN_C IXodusXMLBuilder *xodus_xml_builder;
+ #endif
+ 
+ EXTERN_C HRESULT WINAPI QueryApiImpl( const GUID *runtimeClassId, REFIID interfaceId, void **out );
+@@ -147,7 +147,7 @@ enum unix_funcs
+     send_frame
+ };
+ 
+-extern unixlib_handle_t unixhandle;
++EXTERN_C unixlib_handle_t unixhandle;
+ 
+ typedef HRESULT (WINAPI *async_operation_callback)( IUnknown *invoker, PVOID param, PROPVARIANT *result );
+ 
+diff --git a/dlls/xgameruntime/util.c b/dlls/xgameruntime/util.c
+index 70d2ef6..a942f31 100644
+--- a/dlls/xgameruntime/util.c
++++ b/dlls/xgameruntime/util.c
+@@ -30,8 +30,7 @@ HRESULT http_request( const WCHAR *method, const WCHAR *hostName, const WCHAR *p
+     DWORD size = sizeof( DWORD ), status;
+     HRESULT hr = S_OK;
+ 
+-    TRACE( "method %s, hostName %s, pathAndQuery %s, data %s, headers %s, accept %p, buffer %p, bufferSize %p.\n",
+-           debugstr_w( method ), debugstr_w( hostName ), debugstr_w( pathAndQuery ), debugstr_a( data ), debugstr_w( headers ), accept, buffer, bufferSize );
++    TRACE( "HTTP method %s, host %s.\n", debugstr_w( method ), debugstr_w( hostName ) );
+ 
+     if (!(session = WinHttpOpen( USER_AGENT, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0 ))) goto error;
+     if (!(connection = WinHttpConnect( session, hostName, INTERNET_DEFAULT_HTTPS_PORT, 0 ))) goto error;
+diff --git a/include/wine/unixlib.h b/include/wine/unixlib.h
+index a4b9d36..aeb81fc 100644
+--- a/include/wine/unixlib.h
++++ b/include/wine/unixlib.h
+@@ -278,12 +278,12 @@ NTSYSAPI int ntdll_wcsnicmp( const WCHAR *str1, const WCHAR *str2, int n );
+ 
+ #else /* WINE_UNIX_LIB */
+ 
+-extern unixlib_handle_t __wine_unixlib_handle;
+-extern NTSTATUS (WINAPI *__wine_unix_call_dispatcher)( unixlib_handle_t, unsigned int, void * );
+-extern NTSTATUS WINAPI __wine_init_unix_call(void);
+-extern NTSTATUS WINAPI __wine_load_unix_lib( const UNICODE_STRING *name, unixlib_module_t *lib,
++EXTERN_C unixlib_handle_t __wine_unixlib_handle;
++EXTERN_C NTSTATUS (WINAPI *__wine_unix_call_dispatcher)( unixlib_handle_t, unsigned int, void * );
++EXTERN_C NTSTATUS WINAPI __wine_init_unix_call(void);
++EXTERN_C NTSTATUS WINAPI __wine_load_unix_lib( const UNICODE_STRING *name, unixlib_module_t *lib,
+                                              unixlib_handle_t *handle );
+-extern NTSTATUS WINAPI __wine_unload_unix_lib( unixlib_module_t lib );
++EXTERN_C NTSTATUS WINAPI __wine_unload_unix_lib( unixlib_module_t lib );
+ 
+ #ifdef __arm64ec__
+ NTSTATUS __wine_unix_call_arm64ec( unixlib_handle_t handle, unsigned int code, void *args );
+diff --git a/dlls/xgameruntime/GDKComponent/System/XGameSave.c b/dlls/xgameruntime/GDKComponent/System/XGameSave.c
+new file mode 100644
+index 0000000..0545cb5
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XGameSave.c
+@@ -0,0 +1,799 @@
++#define COBJMACROS
++#include "XGameSave.h"
++#include "wine/debug.h"
++#include <bcrypt.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++
++WINE_DEFAULT_DEBUG_CHANNEL(xgamesave);
++
++extern HRESULT WINAPI QueryApiImpl(const GUID *class_id, REFIID iid, void **out);
++
++struct game_save { IXGameSaveImpl iface; LONG ref; };
++static const char failure_identity;
++/* Diagnostic labels are static function names; never log account or save content. */
++static HRESULT trace_result(const char *operation, HRESULT hr)
++{
++    TRACE("%s returned hr=%#lx.\n", operation, hr);
++    return hr;
++}
++/* A separate local store: no native WGS files, network calls, or cloud ownership claims. */
++#define LOCAL_QUOTA (256u * 1024u * 1024u)
++#define UPDATE_LIMIT (16u * 1024u * 1024u)
++#define GS_INVALID_NAME ((HRESULT)0x80830001)
++#define GS_BLOB_NOT_FOUND ((HRESULT)0x80830008)
++#define GS_BUFFER_SMALL ((HRESULT)0x80830007)
++#define GS_QUOTA ((HRESULT)0x80830006)
++#define GS_UPDATE_BIG ((HRESULT)0x80830005)
++
++struct local_provider { LONG refs; BOOL closed; WCHAR root[1024]; IXUserImpl *users; XUserHandle user; };
++struct local_blob { struct local_blob *next; char *name; BYTE *data; UINT32 size; BOOL deleted; };
++struct local_snapshot { struct local_snapshot *next; char *name, *display; INT64 modified; struct local_blob *blobs; };
++struct local_handle {
++    struct local_handle *next;
++    ULONG_PTR id;
++    unsigned int kind;
++    struct local_provider *provider;
++    char *name, *display;
++    struct local_blob *changes;
++    UINT64 change_bytes;
++    BOOL consumed;
++};
++static SRWLOCK local_lock = SRWLOCK_INIT;
++static struct local_handle *local_handles;
++static ULONG_PTR next_local_id = 0x47530000;
++enum { PROVIDER_HANDLE = 1, CONTAINER_HANDLE, UPDATE_HANDLE };
++
++static HRESULT winerr(void) { DWORD e = GetLastError(); return HRESULT_FROM_WIN32(e ? e : ERROR_GEN_FAILURE); }
++static char *copy_string(const char *s) { SIZE_T n; char *p; if (!s) return NULL; n = strlen(s)+1; p = malloc(n); if (p) memcpy(p,s,n); return p; }
++static BOOL local_enabled(void) { WCHAR value[4]; return GetEnvironmentVariableW(L"WINEGDK_LOCAL_GAMESAVE",value,4)==1 && value[0]=='1'; }
++static BOOL ascii_alnum(char c) { return (c>='a'&&c<='z') || (c>='A'&&c<='Z') || (c>='0'&&c<='9'); }
++static BOOL valid_name(const char *s, BOOL container)
++{
++    SIZE_T n, last = 0, i;
++    if (!s || !(n = strnlen(s,257)) || n > 256 || s[0]=='/' || s[n-1]=='/' || s[n-1]=='.') return FALSE;
++    for (i=0;i<n;i++) {
++        if (s[i]=='.' && i && s[i-1]=='.') return FALSE;
++        if (!(ascii_alnum(s[i]) || s[i]=='_' || s[i]=='.' || s[i]=='-' || (container && s[i]=='/'))) return FALSE;
++        if (s[i]=='/') {
++            SIZE_T j;
++            if (i==last) return FALSE;
++            for (j=last;j<i;j++) if (!(ascii_alnum(s[j]) || s[j]=='_')) return FALSE;
++            last=i+1;
++        }
++    }
++    return TRUE;
++}
++static BOOL normalize_scid(const char *s, WCHAR out[37])
++{
++    unsigned int i;
++    if (!s || strnlen(s,37)!=36) return FALSE;
++    for(i=0;i<36;i++) {
++        char c=s[i];
++        if(i==8||i==13||i==18||i==23) { if(c!='-') return FALSE; }
++        else { if(c>='A'&&c<='F') c+=32; if(!((c>='0'&&c<='9')||(c>='a'&&c<='f'))) return FALSE; }
++        out[i]=c;
++    }
++    out[36]=0; return TRUE;
++}
++static HRESULT make_dir(const WCHAR *p)
++{
++    DWORD attrs;
++    if (!CreateDirectoryW(p,NULL) && GetLastError()!=ERROR_ALREADY_EXISTS) return winerr();
++    attrs=GetFileAttributesW(p);
++    if(attrs==INVALID_FILE_ATTRIBUTES) return winerr();
++    if(!(attrs&FILE_ATTRIBUTE_DIRECTORY) || (attrs&FILE_ATTRIBUTE_REPARSE_POINT)) return E_ACCESSDENIED;
++    return S_OK;
++}
++static HRESULT append_dir(WCHAR *path, SIZE_T count, const WCHAR *part)
++{
++    SIZE_T n=wcslen(path), m=wcslen(part);
++    if(n+m+2>count) return HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
++    path[n++]='\\'; memcpy(path+n,part,(m+1)*sizeof(WCHAR)); return make_dir(path);
++}
++static void release_provider(struct local_provider *p)
++{
++    if (!--p->refs) { IXUserImpl_XUserCloseHandle(p->users,p->user); IXUserImpl_Release(p->users); free(p); }
++}
++static void free_blobs(struct local_blob *b)
++{
++    while(b) { struct local_blob *next=b->next; free(b->name); free(b->data); free(b); b=next; }
++}
++static void free_snapshot(struct local_snapshot *s)
++{
++    while(s) { struct local_snapshot *next=s->next; free(s->name); free(s->display); free_blobs(s->blobs); free(s); s=next; }
++}
++static struct local_handle *find_handle(void *id, unsigned int kind)
++{
++    struct local_handle *h;
++    for(h=local_handles;h;h=h->next) if(h->id==(ULONG_PTR)id && h->kind==kind) return h;
++    return NULL;
++}
++static HRESULT usable_handle(void *id,unsigned int kind,struct local_handle **out)
++{
++    *out=find_handle(id,kind);
++    return !*out || (*out)->provider->closed ? E_HANDLE : S_OK;
++}
++static HRESULT new_handle(unsigned int kind,struct local_provider *p,const char *name,const char *display,void **out)
++{
++    struct local_handle *h=calloc(1,sizeof(*h));
++    if(!h) return E_OUTOFMEMORY;
++    if((name && !(h->name=copy_string(name))) || (display && !(h->display=copy_string(display)))) { free(h->name);free(h->display);free(h);return E_OUTOFMEMORY; }
++    if(next_local_id==(ULONG_PTR)-1) { free(h->name);free(h->display);free(h);return E_OUTOFMEMORY; }
++    h->id=++next_local_id;h->kind=kind;h->provider=p;p->refs++;
++    h->next=local_handles;local_handles=h;*out=(void *)h->id;return S_OK;
++}
++static void close_local(void *id,unsigned int kind)
++{
++    struct local_handle **cur,*h;
++    AcquireSRWLockExclusive(&local_lock);
++    for(cur=&local_handles;(h=*cur);cur=&h->next) if(h->id==(ULONG_PTR)id && h->kind==kind) {
++        *cur=h->next;
++        if(kind==PROVIDER_HANDLE) h->provider->closed=TRUE;
++        release_provider(h->provider);free(h->name);free(h->display);free_blobs(h->changes);free(h);break;
++    }
++    ReleaseSRWLockExclusive(&local_lock);
++}
++static HRESULT create_local_provider(XUserHandle user,const char *scid,XGameSaveProviderHandle *out)
++{
++    WCHAR scid_w[37],xuid_w[17];
++    UINT64 xuid=0;
++    DWORD n;
++    HRESULT hr;
++    struct local_provider *p;
++    *out=NULL;
++    if(!local_enabled()) return E_NOTIMPL;
++    if(!user || !normalize_scid(scid,scid_w)) return E_INVALIDARG;
++    p=calloc(1,sizeof(*p));if(!p) return E_OUTOFMEMORY;
++    hr=QueryApiImpl(&CLSID_XUserImpl,&IID_IXUserImpl,(void **)&p->users);
++    if(FAILED(hr)||!p->users) { free(p);return FAILED(hr)?hr:E_UNEXPECTED; }
++    hr=IXUserImpl_XUserGetId(p->users,user,&xuid);
++    if(SUCCEEDED(hr)&&!xuid) hr=E_ACCESSDENIED;
++    if(SUCCEEDED(hr)) hr=IXUserImpl_XUserDuplicateHandle(p->users,user,&p->user);
++    if(FAILED(hr)) { IXUserImpl_Release(p->users);free(p);return hr; }
++    p->refs=1;
++    n=GetEnvironmentVariableW(L"LOCALAPPDATA",p->root,ARRAY_SIZE(p->root));
++    if(!n || n>=ARRAY_SIZE(p->root)) hr=HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
++    if(SUCCEEDED(hr)) hr=append_dir(p->root,ARRAY_SIZE(p->root),L"WineGDK");
++    if(SUCCEEDED(hr)) hr=append_dir(p->root,ARRAY_SIZE(p->root),L"LocalGameSave");
++    if(SUCCEEDED(hr)) hr=append_dir(p->root,ARRAY_SIZE(p->root),L"v1");
++    for(n=0;n<16;n++) xuid_w[15-n]=L"0123456789abcdef"[(xuid>>(n*4))&15];xuid_w[16]=0;
++    if(SUCCEEDED(hr)) hr=append_dir(p->root,ARRAY_SIZE(p->root),xuid_w);
++    if(SUCCEEDED(hr)) hr=append_dir(p->root,ARRAY_SIZE(p->root),scid_w);
++    if(SUCCEEDED(hr)) { AcquireSRWLockExclusive(&local_lock);hr=new_handle(PROVIDER_HANDLE,p,NULL,NULL,(void **)out);ReleaseSRWLockExclusive(&local_lock); }
++    release_provider(p);
++    TRACE("Local-only provider initialization hr=%#lx; cloud sync unavailable.\n",hr);
++    return hr;
++}
++static HRESULT sha256(const BYTE *data,UINT32 size,BYTE digest[32])
++{
++    BCRYPT_ALG_HANDLE alg=NULL;
++    NTSTATUS st=BCryptOpenAlgorithmProvider(&alg,BCRYPT_SHA256_ALGORITHM,NULL,0);
++    if(st>=0) { st=BCryptHash(alg,NULL,0,(BYTE *)data,size,digest,32);BCryptCloseAlgorithmProvider(alg,0); }
++    return st>=0?S_OK:E_FAIL;
++}
++static HRESULT container_path(struct local_provider *p,const char *name,WCHAR path[1200])
++{
++    BYTE digest[32];WCHAR file[68];unsigned int i;HRESULT hr=sha256((const BYTE *)name,strlen(name),digest);
++    if(FAILED(hr)) return hr;
++    for(i=0;i<32;i++) { file[2*i]=L"0123456789abcdef"[digest[i]>>4];file[2*i+1]=L"0123456789abcdef"[digest[i]&15]; }
++    memcpy(file+64,L".gs",4*sizeof(WCHAR));
++    if(_snwprintf(path,1200,L"%s\\%s",p->root,file)<0) return HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
++    return S_OK;
++}
++static HRESULT storage_lock(struct local_provider *p,HANDLE *out)
++{
++    WCHAR path[1200];_snwprintf(path,ARRAY_SIZE(path),L"%s\\.lock",p->root);
++    *out=CreateFileW(path,GENERIC_READ|GENERIC_WRITE,0,NULL,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT,NULL);
++    if(*out==INVALID_HANDLE_VALUE) return winerr();
++    { BY_HANDLE_FILE_INFORMATION info;
++      if(!GetFileInformationByHandle(*out,&info) || (info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT)) { CloseHandle(*out);*out=INVALID_HANDLE_VALUE;return E_ACCESSDENIED; } }
++    return S_OK;
++}
++static BOOL take_bytes(const BYTE **cursor,const BYTE *end,void *out,SIZE_T size)
++{
++    if((SIZE_T)(end-*cursor)<size) return FALSE;
++    if(out) memcpy(out,*cursor,size);*cursor+=size;return TRUE;
++}
++static char *take_string(const BYTE **cursor,const BYTE *end,UINT32 limit)
++{
++    UINT32 size;char *s;
++    if(!take_bytes(cursor,end,&size,4)||size>limit||(SIZE_T)(end-*cursor)<size) return NULL;
++    s=malloc((SIZE_T)size+1);if(!s) return NULL;
++    memcpy(s,*cursor,size);s[size]=0;*cursor+=size;
++    if(memchr(s,0,size)) { free(s);return NULL; } return s;
++}
++static UINT64 snapshot_bytes(struct local_snapshot *s)
++{
++    UINT64 n=0;struct local_blob *b;for(b=s->blobs;b;b=b->next)n+=b->size;return n;
++}
++static HRESULT load_path(const WCHAR *path,struct local_snapshot **out)
++{
++    HANDLE file;LARGE_INTEGER size;DWORD got;BYTE *buffer=NULL,digest[32];const BYTE *cursor,*end;UINT32 payload,count,i;
++    struct local_snapshot *s=NULL;struct local_blob **tail;HRESULT hr=HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
++    *out=NULL;
++    file=CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OPEN_REPARSE_POINT,NULL);
++    if(file==INVALID_HANDLE_VALUE) return GetLastError()==ERROR_FILE_NOT_FOUND?S_FALSE:winerr();
++    { BY_HANDLE_FILE_INFORMATION info;
++      if(!GetFileInformationByHandle(file,&info)||(info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT)) { CloseHandle(file);return E_ACCESSDENIED; } }
++    if(!GetFileSizeEx(file,&size)||size.QuadPart<44||size.QuadPart>LOCAL_QUOTA+UPDATE_LIMIT) goto done;
++    buffer=malloc(size.QuadPart);if(!buffer) { hr=E_OUTOFMEMORY;goto done; }
++    if(!ReadFile(file,buffer,(DWORD)size.QuadPart,&got,NULL)||got!=size.QuadPart) { hr=winerr();goto done; }
++    memcpy(&payload,buffer+8,4);
++    if(memcmp(buffer,"WGDKLGS1",8)||payload!=size.QuadPart-44) goto done;
++    if(FAILED(sha256(buffer+44,payload,digest))||memcmp(digest,buffer+12,32)) goto done;
++    cursor=buffer+44;end=cursor+payload;
++    s=calloc(1,sizeof(*s));if(!s) { hr=E_OUTOFMEMORY;goto done; }
++    if(!(s->name=take_string(&cursor,end,256))||!valid_name(s->name,TRUE)||!(s->display=take_string(&cursor,end,4096))) goto done;
++    if(!take_bytes(&cursor,end,&s->modified,8)||!take_bytes(&cursor,end,&count,4)||count>(SIZE_T)(end-cursor)/8) goto done;
++    tail=&s->blobs;
++    for(i=0;i<count;i++) {
++        struct local_blob *b=calloc(1,sizeof(*b)),*prev;
++        if(!b) { hr=E_OUTOFMEMORY;goto done; } *tail=b;tail=&b->next;
++        if(!(b->name=take_string(&cursor,end,256))||!valid_name(b->name,FALSE)||!take_bytes(&cursor,end,&b->size,4)||b->size>UPDATE_LIMIT||(SIZE_T)(end-cursor)<b->size) goto done;
++        for(prev=s->blobs;prev!=b;prev=prev->next) if(!strcmp(prev->name,b->name)) goto done;
++        b->data=malloc(b->size?b->size:1);if(!b->data) { hr=E_OUTOFMEMORY;goto done; }
++        if(!take_bytes(&cursor,end,b->data,b->size)) goto done;
++    }
++    if(cursor!=end || snapshot_bytes(s)>LOCAL_QUOTA) goto done;
++    *out=s;s=NULL;hr=S_OK;
++done:
++    CloseHandle(file);free(buffer);free_snapshot(s);return hr;
++}
++static HRESULT load_container(struct local_provider *p,const char *name,struct local_snapshot **out)
++{
++    WCHAR path[1200];HRESULT hr=container_path(p,name,path);*out=NULL;
++    if(SUCCEEDED(hr)) hr=load_path(path,out);
++    if(hr==S_OK && strcmp((*out)->name,name)) { free_snapshot(*out);*out=NULL;hr=HRESULT_FROM_WIN32(ERROR_INVALID_DATA); }
++    return hr;
++}
++static HRESULT list_containers(struct local_provider *p,struct local_snapshot **out,UINT64 *used)
++{
++    WCHAR pattern[1200],path[1200];WIN32_FIND_DATAW info;HANDLE find;struct local_snapshot **tail=out;HRESULT hr=S_OK;
++    *out=NULL;if(used)*used=0;
++    _snwprintf(pattern,ARRAY_SIZE(pattern),L"%s\\*.gs",p->root);
++    find=FindFirstFileW(pattern,&info);
++    if(find==INVALID_HANDLE_VALUE) return GetLastError()==ERROR_FILE_NOT_FOUND?S_OK:winerr();
++    do {
++        struct local_snapshot *s=NULL;WCHAR expected[1200];
++        if(info.dwFileAttributes&(FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT)) {hr=E_ACCESSDENIED;break;}
++        _snwprintf(path,ARRAY_SIZE(path),L"%s\\%s",p->root,info.cFileName);
++        hr=load_path(path,&s);if(hr!=S_OK) {if(hr==S_FALSE)hr=HRESULT_FROM_WIN32(ERROR_INVALID_DATA);break;}
++        hr=container_path(p,s->name,expected);
++        if(FAILED(hr)||wcscmp(path,expected)) {free_snapshot(s);hr=HRESULT_FROM_WIN32(ERROR_INVALID_DATA);break;}
++        *tail=s;tail=&s->next;if(used)*used+=snapshot_bytes(s);
++    } while(FindNextFileW(find,&info));
++    if(SUCCEEDED(hr)&&GetLastError()!=ERROR_NO_MORE_FILES)hr=winerr();
++    FindClose(find);
++    if(FAILED(hr)){free_snapshot(*out);*out=NULL;}return hr;
++}
++static void put_bytes(BYTE **cursor,const void *data,SIZE_T size) { memcpy(*cursor,data,size);*cursor+=size; }
++static void put_string(BYTE **cursor,const char *s) { UINT32 n=strlen(s);put_bytes(cursor,&n,4);put_bytes(cursor,s,n); }
++static HRESULT persist_container(struct local_provider *p,struct local_snapshot *s)
++{
++    struct local_blob *b;UINT64 total=44+4+strlen(s->name)+4+strlen(s->display)+8+4;UINT32 count=0,payload;
++    BYTE *buffer,*cursor;WCHAR path[1200],temp[1200];HANDLE file;DWORD written;HRESULT hr;static LONG serial;
++    for(b=s->blobs;b;b=b->next) {total+=4+strlen(b->name)+4+b->size;count++;}
++    if(total>LOCAL_QUOTA+UPDATE_LIMIT)return GS_QUOTA;
++    buffer=malloc(total);if(!buffer)return E_OUTOFMEMORY;
++    memcpy(buffer,"WGDKLGS1",8);payload=total-44;memcpy(buffer+8,&payload,4);cursor=buffer+44;
++    put_string(&cursor,s->name);put_string(&cursor,s->display);put_bytes(&cursor,&s->modified,8);put_bytes(&cursor,&count,4);
++    for(b=s->blobs;b;b=b->next){put_string(&cursor,b->name);put_bytes(&cursor,&b->size,4);put_bytes(&cursor,b->data,b->size);}
++    hr=sha256(buffer+44,payload,buffer+12);if(FAILED(hr))goto done;
++    hr=container_path(p,s->name,path);if(FAILED(hr))goto done;
++    _snwprintf(temp,ARRAY_SIZE(temp),L"%s\\.tmp-%lu-%lu",p->root,GetCurrentProcessId(),InterlockedIncrement(&serial));
++    file=CreateFileW(temp,GENERIC_WRITE,0,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
++    if(file==INVALID_HANDLE_VALUE){hr=winerr();goto done;}
++    if(!WriteFile(file,buffer,(DWORD)total,&written,NULL)||written!=total||!FlushFileBuffers(file))hr=winerr();
++    CloseHandle(file);
++    if(SUCCEEDED(hr)&&!MoveFileExW(temp,path,MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))hr=winerr();
++    if(FAILED(hr))DeleteFileW(temp);
++done:
++    free(buffer);return hr;
++}
++static HRESULT enumerate_local(void *id,const char *prefix,const char *exact,void *context,XGameSaveContainerInfoCallback *callback)
++{
++    struct local_handle *h;struct local_snapshot *list=NULL,*s;HANDLE lock=INVALID_HANDLE_VALUE;HRESULT hr;
++    UINT32 delivered=0;
++    TRACE("Container enumeration enter filtered=%d exact=%d.\n",prefix!=NULL,exact!=NULL);
++    if(!callback)return E_POINTER;
++    AcquireSRWLockExclusive(&local_lock);
++    hr=usable_handle(id,PROVIDER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=storage_lock(h->provider,&lock);
++    if(SUCCEEDED(hr))hr=list_containers(h->provider,&list,NULL);
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);
++    ReleaseSRWLockExclusive(&local_lock);
++    if(SUCCEEDED(hr))for(s=list;s;s=s->next) {
++        XGameSaveContainerInfo info;struct local_blob *b;BOOLEAN keep_going;
++        if(prefix&&strncmp(s->name,prefix,strlen(prefix)))continue;
++        if(exact&&strcmp(s->name,exact))continue;
++        info.name=s->name;info.displayName=s->display;info.blobCount=0;info.totalSize=0;info.lastModifiedTime=s->modified;info.needsSync=FALSE;
++        for(b=s->blobs;b;b=b->next){info.blobCount++;info.totalSize+=b->size;}
++        TRACE("Container enumeration callback begin index=%u blobCount=%u.\n",delivered,info.blobCount);
++        keep_going=callback(&info,context);delivered++;
++        TRACE("Container enumeration callback returned count=%u continue=%d.\n",delivered,keep_going);
++        if(!keep_going)break;
++    }
++    TRACE("Container enumeration returned hr=%#lx count=%u.\n",hr,delivered);
++    free_snapshot(list);return hr;
++}
++static HRESULT enumerate_blobs_local(void *id,const char *prefix,void *context,XGameSaveBlobInfoCallback *callback)
++{
++    struct local_handle *h;struct local_snapshot *s=NULL;struct local_blob *b;HANDLE lock=INVALID_HANDLE_VALUE;HRESULT hr;
++    UINT32 delivered=0;
++    TRACE("Blob enumeration enter filtered=%d.\n",prefix!=NULL);
++    if(!callback)return E_POINTER;
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(id,CONTAINER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=storage_lock(h->provider,&lock);
++    if(SUCCEEDED(hr))hr=load_container(h->provider,h->name,&s);
++    if(hr==S_FALSE)hr=S_OK;
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);ReleaseSRWLockExclusive(&local_lock);
++    if(SUCCEEDED(hr)&&s)for(b=s->blobs;b;b=b->next){
++        XGameSaveBlobInfo info={b->name,b->size};BOOLEAN keep_going;
++        if(prefix&&strncmp(b->name,prefix,strlen(prefix)))continue;
++        TRACE("Blob enumeration callback begin index=%u size=%u.\n",delivered,info.size);
++        keep_going=callback(&info,context);delivered++;
++        TRACE("Blob enumeration callback returned count=%u continue=%d.\n",delivered,keep_going);
++        if(!keep_going)break;
++    }
++    TRACE("Blob enumeration returned hr=%#lx count=%u.\n",hr,delivered);
++    free_snapshot(s);return hr;
++}
++struct local_init_context { IXThreadingImpl *threading; IXUserImpl *users; XUserHandle user; char *scid; XGameSaveProviderHandle provider; };
++static const char local_identity;
++static void free_init_context(struct local_init_context *c)
++{
++    if(c->provider)close_local(c->provider,PROVIDER_HANDLE);
++    if(c->user)IXUserImpl_XUserCloseHandle(c->users,c->user);
++    if(c->users)IXUserImpl_Release(c->users);
++    if(c->threading)IXThreadingImpl_Release(c->threading);
++    free(c->scid);free(c);
++}
++static HRESULT WINAPI local_init_provider(XAsyncOp op,const XAsyncProviderData *data)
++{
++    struct local_init_context *c=data->context;HRESULT hr;
++    switch(op) {
++    case XAsyncOp_Begin:return IXThreadingImpl_XAsyncSchedule(c->threading,data->async,0);
++    case XAsyncOp_DoWork:
++        hr=create_local_provider(c->user,c->scid,&c->provider);
++        IXThreadingImpl_XAsyncComplete(c->threading,data->async,hr,SUCCEEDED(hr)?sizeof(c->provider):0);
++        return E_PENDING;
++    case XAsyncOp_GetResult:
++        if(data->bufferSize<sizeof(c->provider)||!data->buffer||!c->provider)return E_UNEXPECTED;
++        memcpy(data->buffer,&c->provider,sizeof(c->provider));c->provider=NULL;return S_OK;
++    case XAsyncOp_Cleanup:free_init_context(c);return S_OK;
++    case XAsyncOp_Cancel:return S_OK;
++    }
++    return E_NOTIMPL;
++}
++static HRESULT begin_local(XUserHandle user,const char *scid,XAsyncBlock *async)
++{
++    struct local_init_context *c;WCHAR parsed[37];HRESULT hr;
++    if(!user||!async||!normalize_scid(scid,parsed))return E_INVALIDARG;
++    c=calloc(1,sizeof(*c));if(!c)return E_OUTOFMEMORY;
++    c->scid=copy_string(scid);if(!c->scid){free(c);return E_OUTOFMEMORY;}
++    hr=QueryApiImpl(&CLSID_XUserImpl,&IID_IXUserImpl,(void **)&c->users);
++    if(SUCCEEDED(hr)&&!c->users)hr=E_UNEXPECTED;
++    if(SUCCEEDED(hr))hr=IXUserImpl_XUserDuplicateHandle(c->users,user,&c->user);
++    if(SUCCEEDED(hr))hr=QueryApiImpl(&CLSID_XThreadingImpl,&IID_IXThreadingImpl,(void **)&c->threading);
++    if(SUCCEEDED(hr)&&!c->threading)hr=E_UNEXPECTED;
++    if(SUCCEEDED(hr))hr=IXThreadingImpl_XAsyncBegin(c->threading,async,c,&local_identity,"LocalGameSaveInitialize",local_init_provider);
++    if(FAILED(hr))free_init_context(c);
++    return hr;
++}
++
++
++/* XAsync owns the threading reference after Begin accepts the operation. */
++static HRESULT WINAPI failure_provider(XAsyncOp op, const XAsyncProviderData *data)
++{
++    IXThreadingImpl *threading = data->context;
++    TRACE("failure provider op=%u.\n", op);
++    switch (op)
++    {
++    case XAsyncOp_Begin:
++        return IXThreadingImpl_XAsyncSchedule(threading, data->async, 0);
++    case XAsyncOp_DoWork:
++        IXThreadingImpl_XAsyncComplete(threading, data->async, E_NOTIMPL, 0);
++        return E_PENDING;
++    case XAsyncOp_GetResult:
++        return E_NOTIMPL;
++    case XAsyncOp_Cleanup:
++        IXThreadingImpl_Release(threading);
++        return S_OK;
++    case XAsyncOp_Cancel:
++        return S_OK;
++    }
++    return E_NOTIMPL;
++}
++
++static HRESULT begin_failure(XAsyncBlock *async)
++{
++    IXThreadingImpl *threading = NULL;
++    HRESULT hr;
++    if (!async) return E_INVALIDARG;
++    hr = QueryApiImpl(&CLSID_XThreadingImpl, &IID_IXThreadingImpl, (void **)&threading);
++    if (FAILED(hr)) return hr;
++    if (!threading) return E_UNEXPECTED;
++    hr = IXThreadingImpl_XAsyncBegin(threading, async, threading, &failure_identity,
++                                   "GameSaveUnsupported", failure_provider);
++    if (FAILED(hr)) IXThreadingImpl_Release(threading);
++    TRACE("XAsyncBegin returned %#lx.\n", hr);
++    return hr;
++}
++
++static HRESULT failure_result(XAsyncBlock *async)
++{
++    IXThreadingImpl *threading = NULL;
++    HRESULT hr;
++    if (!async) return E_INVALIDARG;
++    hr = QueryApiImpl(&CLSID_XThreadingImpl, &IID_IXThreadingImpl, (void **)&threading);
++    if (FAILED(hr)) return hr;
++    if (!threading) return E_UNEXPECTED;
++    hr = IXThreadingImpl_XAsyncGetResult(threading, async, &failure_identity, 0, NULL, NULL);
++    IXThreadingImpl_Release(threading);
++    TRACE("XAsyncGetResult returned %#lx.\n", hr);
++    /* No block, including a foreign successful operation, can produce a provider here. */
++    return SUCCEEDED(hr) ? E_UNEXPECTED : hr;
++}
++
++static ULONG WINAPI game_save_AddRef(IXGameSaveImpl *iface)
++{
++    struct game_save *impl = CONTAINING_RECORD(iface, struct game_save, iface);
++    return InterlockedIncrement(&impl->ref);
++}
++static ULONG WINAPI game_save_Release(IXGameSaveImpl *iface)
++{
++    struct game_save *impl = CONTAINING_RECORD(iface, struct game_save, iface);
++    return InterlockedDecrement(&impl->ref);
++}
++static HRESULT WINAPI game_save_QueryInterface(IXGameSaveImpl *iface, REFIID iid, void **out)
++{
++    if (!out) return E_POINTER;
++    *out = NULL;
++    if (!iid) return E_INVALIDARG;
++    if (!IsEqualGUID(iid, &IID_IUnknown) && !IsEqualGUID(iid, &IID_IXGameSaveImpl))
++        return E_NOINTERFACE;
++    game_save_AddRef(iface);
++    *out = iface;
++    return S_OK;
++}
++
++static HRESULT WINAPI game_save_InitializeProvider(IXGameSaveImpl *iface, XUserHandle user, const char *scid, BOOLEAN sync, XGameSaveProviderHandle *provider)
++{
++    TRACE("%s enter.\n", __func__);
++    if(!provider)return trace_result(__func__, E_POINTER);
++    *provider=NULL;
++    if(sync)return trace_result(__func__, E_NOTIMPL);
++    return trace_result(__func__, create_local_provider(user,scid,provider));
++}
++
++static HRESULT WINAPI game_save_InitializeProviderAsync(IXGameSaveImpl *iface, XUserHandle user, const char *scid, BOOLEAN sync, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("InitializeProviderAsync localOptIn=%d syncOnDemand=%d.\n",local_enabled(),sync);
++    if(!local_enabled()||sync)return trace_result(__func__, begin_failure(async));
++    return trace_result(__func__, begin_local(user,scid,async));
++}
++
++static HRESULT WINAPI game_save_InitializeProviderResult(IXGameSaveImpl *iface, XAsyncBlock *async, XGameSaveProviderHandle *provider)
++{
++    IXThreadingImpl *t=NULL;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!provider)return trace_result(__func__, E_POINTER);
++    *provider=NULL;if(!async)return trace_result(__func__, E_INVALIDARG);
++    hr=QueryApiImpl(&CLSID_XThreadingImpl,&IID_IXThreadingImpl,(void **)&t);
++    if(FAILED(hr))return trace_result(__func__, hr);if(!t)return trace_result(__func__, E_UNEXPECTED);
++    hr=IXThreadingImpl_XAsyncGetResult(t,async,&local_identity,sizeof(*provider),provider,NULL);
++    IXThreadingImpl_Release(t);
++    if(FAILED(hr))*provider=NULL;
++    else if(!*provider)hr=E_UNEXPECTED;
++    TRACE("InitializeProviderResult hr=%#lx localProvider=%d.\n",hr,*provider!=NULL);
++    return trace_result(__func__, hr);
++}
++
++static void WINAPI game_save_CloseProvider(IXGameSaveImpl *iface, XGameSaveProviderHandle provider)
++{
++    TRACE("%s enter.\n", __func__);
++    close_local(provider,PROVIDER_HANDLE);
++    TRACE("%s returned.\n", __func__);
++}
++
++static HRESULT WINAPI game_save_GetRemainingQuota(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, INT64 *quota)
++{
++    struct local_handle *h;struct local_snapshot *list=NULL;UINT64 used=0;ULARGE_INTEGER free_space;HANDLE lock=INVALID_HANDLE_VALUE;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!quota)return trace_result(__func__, E_POINTER);*quota=0;
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(provider,PROVIDER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=storage_lock(h->provider,&lock);
++    if(SUCCEEDED(hr))hr=list_containers(h->provider,&list,&used);
++    if(SUCCEEDED(hr)&&!GetDiskFreeSpaceExW(h->provider->root,&free_space,NULL,NULL))hr=winerr();
++    if(SUCCEEDED(hr)){UINT64 available=used>=LOCAL_QUOTA?0:LOCAL_QUOTA-used;*quota=available<free_space.QuadPart?available:free_space.QuadPart;}
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);ReleaseSRWLockExclusive(&local_lock);free_snapshot(list);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_GetRemainingQuotaAsync(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("%s unsupported; scheduling E_NOTIMPL.\n", __func__);
++    return trace_result(__func__, begin_failure(async));
++}
++
++static HRESULT WINAPI game_save_GetRemainingQuotaResult(IXGameSaveImpl *iface, XAsyncBlock *async, INT64 *quota)
++{
++    TRACE("%s enter.\n", __func__);
++    if (!quota) return trace_result(__func__, E_POINTER);
++    *quota = 0;
++    return trace_result(__func__, failure_result(async));
++}
++
++static HRESULT WINAPI game_save_DeleteContainer(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name)
++{
++    struct local_handle *h;HANDLE lock=INVALID_HANDLE_VALUE;WCHAR path[1200];HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!valid_name(name,TRUE))return trace_result(__func__, GS_INVALID_NAME);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(provider,PROVIDER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=storage_lock(h->provider,&lock);
++    if(SUCCEEDED(hr))hr=container_path(h->provider,name,path);
++    if(SUCCEEDED(hr)&&!DeleteFileW(path)&&GetLastError()!=ERROR_FILE_NOT_FOUND)hr=winerr();
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);ReleaseSRWLockExclusive(&local_lock);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_DeleteContainerAsync(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("%s unsupported; scheduling E_NOTIMPL.\n", __func__);
++    return trace_result(__func__, begin_failure(async));
++}
++
++static HRESULT WINAPI game_save_DeleteContainerResult(IXGameSaveImpl *iface, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    return trace_result(__func__, failure_result(async));
++}
++
++static HRESULT WINAPI game_save_GetContainerInfo(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, void *context, XGameSaveContainerInfoCallback *callback)
++{
++    TRACE("%s enter.\n", __func__);
++    if(!valid_name(name,TRUE))return trace_result(__func__, GS_INVALID_NAME);
++    return trace_result(__func__, enumerate_local(provider,NULL,name,context,callback));
++}
++
++static HRESULT WINAPI game_save_EnumerateContainerInfo(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, void *context, XGameSaveContainerInfoCallback *callback)
++{
++    TRACE("%s enter.\n", __func__);
++    return trace_result(__func__, enumerate_local(provider,NULL,NULL,context,callback));
++}
++
++static HRESULT WINAPI game_save_EnumerateContainerInfoByName(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *prefix, void *context, XGameSaveContainerInfoCallback *callback)
++{
++    TRACE("%s enter.\n", __func__);
++    if(prefix&&strnlen(prefix,257)>256)return trace_result(__func__, E_INVALIDARG);
++    return trace_result(__func__, enumerate_local(provider,prefix,NULL,context,callback));
++}
++
++static HRESULT WINAPI game_save_CreateContainer(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, XGameSaveContainerHandle *container)
++{
++    struct local_handle *h;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!container)return trace_result(__func__, E_POINTER);*container=NULL;
++    if(!valid_name(name,TRUE))return trace_result(__func__, GS_INVALID_NAME);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(provider,PROVIDER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=new_handle(CONTAINER_HANDLE,h->provider,name,NULL,(void **)container);
++    ReleaseSRWLockExclusive(&local_lock);return trace_result(__func__, hr);
++}
++
++static void WINAPI game_save_CloseContainer(IXGameSaveImpl *iface, XGameSaveContainerHandle container)
++{
++    TRACE("%s enter.\n", __func__);
++    close_local(container,CONTAINER_HANDLE);
++    TRACE("%s returned.\n", __func__);
++}
++
++static HRESULT WINAPI game_save_EnumerateBlobInfo(IXGameSaveImpl *iface, XGameSaveContainerHandle container, void *context, XGameSaveBlobInfoCallback *callback)
++{
++    TRACE("%s enter.\n", __func__);
++    return trace_result(__func__, enumerate_blobs_local(container,NULL,context,callback));
++}
++
++static HRESULT WINAPI game_save_EnumerateBlobInfoByName(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char *prefix, void *context, XGameSaveBlobInfoCallback *callback)
++{
++    TRACE("%s enter.\n", __func__);
++    if(prefix&&strnlen(prefix,257)>256)return trace_result(__func__, E_INVALIDARG);
++    return trace_result(__func__, enumerate_blobs_local(container,prefix,context,callback));
++}
++
++static HRESULT WINAPI game_save_ReadBlobData(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char **names, UINT32 *count, SIZE_T size, XGameSaveBlob *blobs)
++{
++    struct local_handle *h;struct local_snapshot *s=NULL;struct local_blob *b;struct local_blob **selected=NULL;
++    HANDLE lock=INVALID_HANDLE_VALUE;HRESULT hr;UINT32 requested,n=0,i;SIZE_T required=0;BYTE *cursor;
++    TRACE("%s enter.\n", __func__);
++    if(!count)return trace_result(__func__, E_POINTER);requested=*count;*count=0;
++    TRACE("ReadBlobData requested=%u bufferSize=%Iu named=%d.\n",requested,size,names!=NULL);
++    if(!blobs)return trace_result(__func__, E_POINTER);
++    if(names)for(i=0;i<requested;i++)if(!valid_name(names[i],FALSE))return trace_result(__func__, E_INVALIDARG);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(container,CONTAINER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=storage_lock(h->provider,&lock);
++    if(SUCCEEDED(hr))hr=load_container(h->provider,h->name,&s);
++    if(hr==S_FALSE)hr=GS_BLOB_NOT_FOUND;
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);ReleaseSRWLockExclusive(&local_lock);
++    if(FAILED(hr))goto done;
++    if(names)n=requested;else for(b=s->blobs;b;b=b->next)n++;
++    if(n>LOCAL_QUOTA/sizeof(*selected)){hr=GS_BUFFER_SMALL;goto done;}
++    selected=calloc(n?n:1,sizeof(*selected));if(!selected){hr=E_OUTOFMEMORY;goto done;}
++    if(names)for(i=0;i<n;i++){for(b=s->blobs;b;b=b->next)if(!strcmp(b->name,names[i]))break;if(!b){hr=GS_BLOB_NOT_FOUND;goto done;}selected[i]=b;}
++    else {i=0;for(b=s->blobs;b;b=b->next)selected[i++]=b;}
++    required=(SIZE_T)n*sizeof(*blobs);
++    for(i=0;i<n;i++){SIZE_T extra=strlen(selected[i]->name)+1+selected[i]->size;if(required>SIZE_MAX-extra){hr=GS_BUFFER_SMALL;goto done;}required+=extra;}
++    if(size<required){hr=GS_BUFFER_SMALL;goto done;}
++    cursor=(BYTE *)(blobs+n);
++    for(i=0;i<n;i++){SIZE_T len=strlen(selected[i]->name)+1;blobs[i].info.name=(char *)cursor;memcpy(cursor,selected[i]->name,len);cursor+=len;blobs[i].info.size=selected[i]->size;blobs[i].data=cursor;memcpy(cursor,selected[i]->data,selected[i]->size);cursor+=selected[i]->size;}
++    *count=n;hr=S_OK;
++done:
++    TRACE("ReadBlobData resultCount=%u requiredSize=%Iu hr=%#lx.\n",*count,required,hr);
++    free(selected);free_snapshot(s);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_ReadBlobDataAsync(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char **names, UINT32 count, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("%s unsupported; scheduling E_NOTIMPL.\n", __func__);
++    return trace_result(__func__, begin_failure(async));
++}
++
++static HRESULT WINAPI game_save_ReadBlobDataResult(IXGameSaveImpl *iface, XAsyncBlock *async, SIZE_T size, XGameSaveBlob *blobs, UINT32 *count)
++{
++    TRACE("%s enter.\n", __func__);
++    if (!count) return trace_result(__func__, E_POINTER);
++    *count = 0;
++    return trace_result(__func__, failure_result(async));
++}
++
++static HRESULT WINAPI game_save_CreateUpdate(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char *name, XGameSaveUpdateHandle *update)
++{
++    struct local_handle *h;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!update)return trace_result(__func__, E_POINTER);*update=NULL;
++    if(!name||strnlen(name,4097)>4096)return trace_result(__func__, E_INVALIDARG);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(container,CONTAINER_HANDLE,&h);
++    if(SUCCEEDED(hr))hr=new_handle(UPDATE_HANDLE,h->provider,h->name,name,(void **)update);
++    ReleaseSRWLockExclusive(&local_lock);return trace_result(__func__, hr);
++}
++
++static void WINAPI game_save_CloseUpdate(IXGameSaveImpl *iface, XGameSaveUpdateHandle update)
++{
++    TRACE("%s enter.\n", __func__);
++    close_local(update,UPDATE_HANDLE);
++    TRACE("%s returned.\n", __func__);
++}
++
++static HRESULT WINAPI game_save_SubmitBlobWrite(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, const char *name, const BYTE *data, SIZE_T size)
++{
++    struct local_handle *h;struct local_blob *b=NULL,*existing;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    TRACE("SubmitBlobWrite size=%Iu.\n",size);
++    if(!valid_name(name,FALSE)||(!data&&size))return trace_result(__func__, E_INVALIDARG);
++    if(size>UPDATE_LIMIT)return trace_result(__func__, GS_UPDATE_BIG);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(update,UPDATE_HANDLE,&h);
++    if(SUCCEEDED(hr)&&h->consumed)hr=E_INVALIDARG;
++    if(SUCCEEDED(hr)&&h->change_bytes+size>UPDATE_LIMIT)hr=GS_UPDATE_BIG;
++    if(SUCCEEDED(hr))for(existing=h->changes;existing;existing=existing->next)if(!strcmp(existing->name,name)){hr=E_INVALIDARG;break;}
++    if(SUCCEEDED(hr)){b=calloc(1,sizeof(*b));if(!b)hr=E_OUTOFMEMORY;}
++    if(SUCCEEDED(hr)){b->name=copy_string(name);b->data=malloc(size?size:1);if(!b->name||!b->data)hr=E_OUTOFMEMORY;}
++    if(SUCCEEDED(hr)){if(size)memcpy(b->data,data,size);b->size=size;b->next=h->changes;h->changes=b;h->change_bytes+=size;b=NULL;}
++    free_blobs(b);ReleaseSRWLockExclusive(&local_lock);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_SubmitBlobDelete(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, const char *name)
++{
++    struct local_handle *h;struct local_blob *b=NULL,*existing;HRESULT hr;
++    TRACE("%s enter.\n", __func__);
++    if(!valid_name(name,FALSE))return trace_result(__func__, E_INVALIDARG);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(update,UPDATE_HANDLE,&h);
++    if(SUCCEEDED(hr)&&h->consumed)hr=E_INVALIDARG;
++    if(SUCCEEDED(hr))for(existing=h->changes;existing;existing=existing->next)if(!strcmp(existing->name,name)){hr=E_INVALIDARG;break;}
++    if(SUCCEEDED(hr)){b=calloc(1,sizeof(*b));if(!b)hr=E_OUTOFMEMORY;}
++    if(SUCCEEDED(hr)&&!(b->name=copy_string(name)))hr=E_OUTOFMEMORY;
++    if(SUCCEEDED(hr)){b->deleted=TRUE;b->next=h->changes;h->changes=b;b=NULL;}
++    free_blobs(b);ReleaseSRWLockExclusive(&local_lock);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_SubmitUpdate(IXGameSaveImpl *iface, XGameSaveUpdateHandle update)
++{
++    struct local_handle *h;struct local_snapshot *s=NULL,*list=NULL;struct local_blob *change;UINT64 used=0,old_size=0;
++    HANDLE lock=INVALID_HANDLE_VALUE;HRESULT hr;FILETIME now;ULARGE_INTEGER stamp;
++    TRACE("%s enter.\n", __func__);
++    AcquireSRWLockExclusive(&local_lock);hr=usable_handle(update,UPDATE_HANDLE,&h);
++    if(SUCCEEDED(hr)&&h->consumed)hr=E_INVALIDARG;
++    if(SUCCEEDED(hr)){h->consumed=TRUE;hr=storage_lock(h->provider,&lock);}
++    if(SUCCEEDED(hr))hr=list_containers(h->provider,&list,&used);
++    if(SUCCEEDED(hr))hr=load_container(h->provider,h->name,&s);
++    if(hr==S_FALSE){s=calloc(1,sizeof(*s));if(!s)hr=E_OUTOFMEMORY;else {s->name=copy_string(h->name);hr=s->name?S_OK:E_OUTOFMEMORY;}}
++    if(SUCCEEDED(hr)){old_size=snapshot_bytes(s);free(s->display);s->display=copy_string(h->display);if(!s->display)hr=E_OUTOFMEMORY;}
++    if(SUCCEEDED(hr))for(change=h->changes;change;change=change->next){
++        struct local_blob **slot=&s->blobs,*old,*b;
++        while(*slot&&strcmp((*slot)->name,change->name))slot=&(*slot)->next;
++        old=*slot;if(old){*slot=old->next;old->next=NULL;free_blobs(old);}
++        if(change->deleted)continue;
++        b=calloc(1,sizeof(*b));if(!b){hr=E_OUTOFMEMORY;break;}
++        b->name=copy_string(change->name);b->data=malloc(change->size?change->size:1);
++        if(!b->name||!b->data){free_blobs(b);hr=E_OUTOFMEMORY;break;}
++        if(change->size)memcpy(b->data,change->data,change->size);b->size=change->size;b->next=s->blobs;s->blobs=b;
++    }
++    if(SUCCEEDED(hr)&&(used<old_size||used-old_size+snapshot_bytes(s)>LOCAL_QUOTA))hr=GS_QUOTA;
++    if(SUCCEEDED(hr)){GetSystemTimeAsFileTime(&now);stamp.LowPart=now.dwLowDateTime;stamp.HighPart=now.dwHighDateTime;s->modified=(stamp.QuadPart-116444736000000000ULL)/10000000;hr=persist_container(h->provider,s);}
++    if(lock!=INVALID_HANDLE_VALUE)CloseHandle(lock);ReleaseSRWLockExclusive(&local_lock);
++    free_snapshot(s);free_snapshot(list);TRACE("Local atomic SubmitUpdate hr=%#lx.\n",hr);return trace_result(__func__, hr);
++}
++
++static HRESULT WINAPI game_save_SubmitUpdateAsync(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("%s unsupported; scheduling E_NOTIMPL.\n", __func__);
++    return trace_result(__func__, begin_failure(async));
++}
++
++static HRESULT WINAPI game_save_SubmitUpdateResult(IXGameSaveImpl *iface, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    return trace_result(__func__, failure_result(async));
++}
++
++static HRESULT WINAPI game_save_FilesGetFolderWithUiAsync(IXGameSaveImpl *iface, XUserHandle user, const char *scid, XAsyncBlock *async)
++{
++    TRACE("%s enter.\n", __func__);
++    TRACE("%s unsupported; scheduling E_NOTIMPL.\n", __func__);
++    return trace_result(__func__, begin_failure(async));
++}
++
++static HRESULT WINAPI game_save_FilesGetFolderWithUiResult(IXGameSaveImpl *iface, XAsyncBlock *async, SIZE_T size, char *folder)
++{
++    TRACE("%s enter.\n", __func__);
++    if (size && !folder) return trace_result(__func__, E_POINTER);
++    if (size) folder[0] = 0;
++    return trace_result(__func__, failure_result(async));
++}
++
++static HRESULT WINAPI game_save_FilesGetRemainingQuota(IXGameSaveImpl *iface, XUserHandle user, const char *scid, INT64 *quota)
++{
++    TRACE("%s enter.\n", __func__);
++    if (!quota) return trace_result(__func__, E_POINTER);
++    *quota = 0;
++    return trace_result(__func__, E_NOTIMPL);
++}
++
++static const IXGameSaveImplVtbl game_save_vtbl = {
++    game_save_QueryInterface, game_save_AddRef, game_save_Release,
++    game_save_InitializeProvider,
++    game_save_InitializeProviderAsync,
++    game_save_InitializeProviderResult,
++    game_save_CloseProvider,
++    game_save_GetRemainingQuota,
++    game_save_GetRemainingQuotaAsync,
++    game_save_GetRemainingQuotaResult,
++    game_save_DeleteContainer,
++    game_save_DeleteContainerAsync,
++    game_save_DeleteContainerResult,
++    game_save_GetContainerInfo,
++    game_save_EnumerateContainerInfo,
++    game_save_EnumerateContainerInfoByName,
++    game_save_CreateContainer,
++    game_save_CloseContainer,
++    game_save_EnumerateBlobInfo,
++    game_save_EnumerateBlobInfoByName,
++    game_save_ReadBlobData,
++    game_save_ReadBlobDataAsync,
++    game_save_ReadBlobDataResult,
++    game_save_CreateUpdate,
++    game_save_CloseUpdate,
++    game_save_SubmitBlobWrite,
++    game_save_SubmitBlobDelete,
++    game_save_SubmitUpdate,
++    game_save_SubmitUpdateAsync,
++    game_save_SubmitUpdateResult,
++    game_save_FilesGetFolderWithUiAsync,
++    game_save_FilesGetFolderWithUiResult,
++    game_save_FilesGetRemainingQuota,
++};
++static struct game_save game_save = { { &game_save_vtbl }, 1 };
++IXGameSaveImpl *x_game_save = &game_save.iface;
+diff --git a/dlls/xgameruntime/GDKComponent/System/XGameSave.h b/dlls/xgameruntime/GDKComponent/System/XGameSave.h
+new file mode 100644
+index 0000000..9eb40bd
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XGameSave.h
+@@ -0,0 +1,67 @@
++/* Experimental local-only GameSave ABI; no Xbox cloud synchronization.
++ * Method signatures: Microsoft Learn /gaming/gdk/docs/reference/system/xgamesave/functions/.
++ * Slot order observed in the installed native runtime, vtable RVA 0x305088.
++ */
++#ifndef WINE_GDK_GAMESAVE_FAILURE_H
++#define WINE_GDK_GAMESAVE_FAILURE_H
++#include <windows.h>
++#include <unknwn.h>
++#include <xasyncprovider.h>
++#include <xuser.h>
++
++DEFINE_GUID(CLSID_XGameSaveImpl, 0x704c3f58,0xe629,0x4cc2,0xb1,0x97,0x30,0x51,0x1b,0x99,0x6f,0xe2);
++DEFINE_GUID(IID_IXGameSaveImpl, 0xab4ae4fb,0x6508,0x4950,0xa0,0x32,0x45,0xfd,0x4b,0xf8,0xc4,0x3b);
++typedef struct XGameSaveProvider *XGameSaveProviderHandle;
++typedef struct XGameSaveContainer *XGameSaveContainerHandle;
++typedef struct XGameSaveUpdate *XGameSaveUpdateHandle;
++typedef struct XGameSaveBlobInfo { const char *name; UINT32 size; } XGameSaveBlobInfo;
++typedef struct XGameSaveBlob { XGameSaveBlobInfo info; BYTE *data; } XGameSaveBlob;
++typedef struct XGameSaveContainerInfo {
++    const char *name;
++    const char *displayName;
++    UINT32 blobCount;
++    UINT64 totalSize;
++    INT64 lastModifiedTime;
++    BOOLEAN needsSync;
++} XGameSaveContainerInfo;
++typedef BOOLEAN WINAPI XGameSaveContainerInfoCallback(const XGameSaveContainerInfo *, void *);
++typedef BOOLEAN WINAPI XGameSaveBlobInfoCallback(const XGameSaveBlobInfo *, void *);
++typedef struct IXGameSaveImpl IXGameSaveImpl;
++typedef struct IXGameSaveImplVtbl {
++    HRESULT (WINAPI *QueryInterface)(IXGameSaveImpl *, REFIID, void **);
++    ULONG (WINAPI *AddRef)(IXGameSaveImpl *);
++    ULONG (WINAPI *Release)(IXGameSaveImpl *);
++    HRESULT (WINAPI *XGameSaveInitializeProvider)(IXGameSaveImpl *iface, XUserHandle user, const char *scid, BOOLEAN sync, XGameSaveProviderHandle *provider);
++    HRESULT (WINAPI *XGameSaveInitializeProviderAsync)(IXGameSaveImpl *iface, XUserHandle user, const char *scid, BOOLEAN sync, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveInitializeProviderResult)(IXGameSaveImpl *iface, XAsyncBlock *async, XGameSaveProviderHandle *provider);
++    void (WINAPI *XGameSaveCloseProvider)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider);
++    HRESULT (WINAPI *XGameSaveGetRemainingQuota)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, INT64 *quota);
++    HRESULT (WINAPI *XGameSaveGetRemainingQuotaAsync)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveGetRemainingQuotaResult)(IXGameSaveImpl *iface, XAsyncBlock *async, INT64 *quota);
++    HRESULT (WINAPI *XGameSaveDeleteContainer)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name);
++    HRESULT (WINAPI *XGameSaveDeleteContainerAsync)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveDeleteContainerResult)(IXGameSaveImpl *iface, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveGetContainerInfo)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, void *context, XGameSaveContainerInfoCallback *callback);
++    HRESULT (WINAPI *XGameSaveEnumerateContainerInfo)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, void *context, XGameSaveContainerInfoCallback *callback);
++    HRESULT (WINAPI *XGameSaveEnumerateContainerInfoByName)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *prefix, void *context, XGameSaveContainerInfoCallback *callback);
++    HRESULT (WINAPI *XGameSaveCreateContainer)(IXGameSaveImpl *iface, XGameSaveProviderHandle provider, const char *name, XGameSaveContainerHandle *container);
++    void (WINAPI *XGameSaveCloseContainer)(IXGameSaveImpl *iface, XGameSaveContainerHandle container);
++    HRESULT (WINAPI *XGameSaveEnumerateBlobInfo)(IXGameSaveImpl *iface, XGameSaveContainerHandle container, void *context, XGameSaveBlobInfoCallback *callback);
++    HRESULT (WINAPI *XGameSaveEnumerateBlobInfoByName)(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char *prefix, void *context, XGameSaveBlobInfoCallback *callback);
++    HRESULT (WINAPI *XGameSaveReadBlobData)(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char **names, UINT32 *count, SIZE_T size, XGameSaveBlob *blobs);
++    HRESULT (WINAPI *XGameSaveReadBlobDataAsync)(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char **names, UINT32 count, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveReadBlobDataResult)(IXGameSaveImpl *iface, XAsyncBlock *async, SIZE_T size, XGameSaveBlob *blobs, UINT32 *count);
++    HRESULT (WINAPI *XGameSaveCreateUpdate)(IXGameSaveImpl *iface, XGameSaveContainerHandle container, const char *name, XGameSaveUpdateHandle *update);
++    void (WINAPI *XGameSaveCloseUpdate)(IXGameSaveImpl *iface, XGameSaveUpdateHandle update);
++    HRESULT (WINAPI *XGameSaveSubmitBlobWrite)(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, const char *name, const BYTE *data, SIZE_T size);
++    HRESULT (WINAPI *XGameSaveSubmitBlobDelete)(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, const char *name);
++    HRESULT (WINAPI *XGameSaveSubmitUpdate)(IXGameSaveImpl *iface, XGameSaveUpdateHandle update);
++    HRESULT (WINAPI *XGameSaveSubmitUpdateAsync)(IXGameSaveImpl *iface, XGameSaveUpdateHandle update, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveSubmitUpdateResult)(IXGameSaveImpl *iface, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveFilesGetFolderWithUiAsync)(IXGameSaveImpl *iface, XUserHandle user, const char *scid, XAsyncBlock *async);
++    HRESULT (WINAPI *XGameSaveFilesGetFolderWithUiResult)(IXGameSaveImpl *iface, XAsyncBlock *async, SIZE_T size, char *folder);
++    HRESULT (WINAPI *XGameSaveFilesGetRemainingQuota)(IXGameSaveImpl *iface, XUserHandle user, const char *scid, INT64 *quota);
++} IXGameSaveImplVtbl;
++struct IXGameSaveImpl { const IXGameSaveImplVtbl *lpVtbl; };
++extern IXGameSaveImpl *x_game_save;
++#endif
+diff --git a/dlls/xgameruntime/GDKComponent/System/HttpStatusTrace.h b/dlls/xgameruntime/GDKComponent/System/HttpStatusTrace.h
+new file mode 100644
+index 0000000..eebccb1
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/HttpStatusTrace.h
+@@ -0,0 +1,181 @@
++/* Opt-in, process-local HTTP outcome diagnostics. No general HC tracing. */
++#ifndef WINEGDK_HTTP_STATUS_TRACE_H
++#define WINEGDK_HTTP_STATUS_TRACE_H
++
++typedef void (WINAPI *status_routed_callback)( void *, void * );
++
++static struct
++{
++    SRWLOCK lock;
++    BOOL registered;
++    HRESULT (WINAPI *get_url)( void *, const char **, const char ** );
++    HRESULT (WINAPI *get_status)( void *, UINT32 * );
++    HRESULT (WINAPI *get_error)( void *, HRESULT *, UINT32 * );
++    UINT64 (WINAPI *get_id)( void * );
++    HRESULT (WINAPI *get_body_size)( void *, SIZE_T * );
++    HRESULT (WINAPI *get_body)( void *, SIZE_T, BYTE *, SIZE_T * );
++} http_status_trace;
++
++static const char *http_status_safe_method( const char *method )
++{
++    static const char *const allowed[] = { "GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "OPTIONS", "CONNECT", "TRACE" };
++    SIZE_T i;
++
++    if (method)
++        for (i = 0; i < ARRAY_SIZE(allowed); ++i)
++            if (!strcmp( method, allowed[i] )) return allowed[i];
++    return "OTHER";
++}
++
++/* Copy only a validated DNS hostname. Never fall back to the supplied URL. */
++static void http_status_safe_host( const char *url, char host[254] )
++{
++    const char *start, *end, *p, *at = NULL;
++    SIZE_T length;
++
++    strcpy( host, "unknown" );
++    if (!url) return;
++    if (!strncmp( url, "https://", 8 )) start = url + 8;
++    else if (!strncmp( url, "http://", 7 )) start = url + 7;
++    else return;
++    for (end = start; *end && *end != '/' && *end != '?' && *end != '#'; ++end)
++        if (*end == '@') at = end;
++    if (at) start = at + 1;
++    /* IPv6 literals and unfamiliar authority syntax are intentionally omitted. */
++    for (p = start; p < end; ++p)
++        if (*p == ':')
++        {
++            const char *port;
++            if (p + 1 == end) return;
++            for (port = p + 1; port < end; ++port)
++                if (*port < '0' || *port > '9') return;
++            end = p;
++            break;
++        }
++    length = end - start;
++    if (!length || length >= 254) return;
++    for (p = start; p < end; ++p)
++        if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
++                (*p >= '0' && *p <= '9') || *p == '.' || *p == '-')) return;
++    memcpy( host, start, length );
++    host[length] = 0;
++}
++
++static BOOL http_status_ascii_word( BYTE value )
++{
++    return (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z') ||
++            (value >= '0' && value <= '9') || value == '_';
++}
++
++/* These are mention flags, not diagnoses. Requiring a word start avoids e.g.
++ * treating "entitlement" as a title mention; suffixes such as TitleId match.
++ * Work only within the returned byte count, never assume a terminating NUL. */
++static BOOL http_status_mentions( const BYTE *bytes, SIZE_T size, const char *word )
++{
++    SIZE_T length = strlen( word ), i, j;
++
++    if (size < length) return FALSE;
++    for (i = 0; i <= size - length; ++i)
++    {
++        if (i && http_status_ascii_word( bytes[i - 1] )) continue;
++        for (j = 0; j < length; ++j)
++        {
++            BYTE value = bytes[i + j];
++            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';
++            if (value != (BYTE)word[j]) break;
++        }
++        if (j == length) return TRUE;
++    }
++    return FALSE;
++}
++
++static void http_status_presence_error( void *call, UINT64 id )
++{
++    BYTE bytes[4096];
++    SIZE_T size = 0, used = 0;
++    HRESULT hr = E_NOTIMPL;
++    const char *inspection = "unavailable";
++    BOOL sandbox = FALSE, title = FALSE, device = FALSE;
++
++    if (!http_status_trace.get_body_size || !http_status_trace.get_body) goto report;
++    if (FAILED(hr = http_status_trace.get_body_size( call, &size ))) goto report;
++    if (!size) { inspection = "empty"; goto report; }
++    if (size > sizeof(bytes)) { inspection = "over_limit"; goto report; }
++    hr = http_status_trace.get_body( call, sizeof(bytes), bytes, &used );
++    if (SUCCEEDED(hr) && used == size && used <= sizeof(bytes))
++    {
++        inspection = "scanned";
++        sandbox = http_status_mentions( bytes, used, "sandbox" );
++        title = http_status_mentions( bytes, used, "title" );
++        device = http_status_mentions( bytes, used, "device" );
++    }
++    else inspection = "read_failed";
++    SecureZeroMemory( bytes, sizeof(bytes) );
++report:
++    /* No free-form server text, body, header, or string-valued error code. */
++    TRACE( "Presence400 id=%llu classification=unresolved inspection=%s sandboxMention=%d titleMention=%d deviceMention=%d getter=%#lx.\n",
++            id, inspection, sandbox, title, device, hr );
++}
++
++static void WINAPI http_status_routed( void *call, void *context )
++{
++    const char *method = NULL, *url = NULL;
++    UINT32 status = 0, platform_error = 0;
++    HRESULT status_hr, error_hr, network_error = E_PENDING;
++    char host[254];
++    UINT64 id;
++
++    /* The borrowed call/strings are used only synchronously in this callback. */
++    status_hr = http_status_trace.get_status( call, &status );
++    error_hr = http_status_trace.get_error( call, &network_error, &platform_error );
++    if (FAILED(http_status_trace.get_url( call, &method, &url ))) method = url = NULL;
++    http_status_safe_host( url, host );
++    id = http_status_trace.get_id( call );
++    TRACE( "HTTP outcome id=%llu method=%s host=%s status=%u network=%#lx platform=%u statusGetter=%#lx errorGetter=%#lx.\n",
++            id, http_status_safe_method( method ), host, status, network_error,
++            platform_error, status_hr, error_hr );
++    if (SUCCEEDED(status_hr) && status == 400 && method && !strcmp( method, "POST" ) &&
++            !strcmp( host, "userpresence.xboxlive.com" ))
++        http_status_presence_error( call, id );
++}
++
++/* Call from normal runtime API code, never DllMain. No HCInitialize or cleanup:
++ * ownership of the native client's initialization remains with the game.
++ * The opt-in observer and its code remain valid for this process lifetime. */
++static void enable_http_status_trace( void )
++{
++    BOOLEAN (WINAPI *is_initialized)( void );
++    INT32 (WINAPI *add_handler)( status_routed_callback, void * );
++    HMODULE module, pinned;
++    WCHAR enabled[2];
++    INT32 handler;
++
++    if (GetEnvironmentVariableW( L"WINEGDK_HTTP_STATUS_TRACE", enabled, ARRAY_SIZE(enabled) ) != 1 ||
++            enabled[0] != '1') return;
++    AcquireSRWLockExclusive( &http_status_trace.lock );
++    if (http_status_trace.registered) goto done;
++    /* Observe only the DLL already loaded by the game. */
++    if (!GetModuleHandleExW( GET_MODULE_HANDLE_EX_FLAG_PIN,
++            L"libHttpClient.GDK.dll", &module )) goto done;
++    is_initialized = (void *)GetProcAddress( module, "HCIsInitialized" );
++    add_handler = (void *)GetProcAddress( module, "HCAddCallRoutedHandler" );
++    http_status_trace.get_url = (void *)GetProcAddress( module, "HCHttpCallRequestGetUrl" );
++    http_status_trace.get_status = (void *)GetProcAddress( module, "HCHttpCallResponseGetStatusCode" );
++    http_status_trace.get_error = (void *)GetProcAddress( module, "HCHttpCallResponseGetNetworkErrorCode" );
++    http_status_trace.get_id = (void *)GetProcAddress( module, "HCHttpCallGetId" );
++    http_status_trace.get_body_size = (void *)GetProcAddress( module, "HCHttpCallResponseGetResponseBodyBytesSize" );
++    http_status_trace.get_body = (void *)GetProcAddress( module, "HCHttpCallResponseGetResponseBodyBytes" );
++    if (!is_initialized || !add_handler || !http_status_trace.get_url ||
++            !http_status_trace.get_status || !http_status_trace.get_error ||
++            !http_status_trace.get_id || !is_initialized()) goto done;
++    /* Prevent a dangling callback/getter if either DLL is explicitly unloaded. */
++    if (!GetModuleHandleExW( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
++            (LPCWSTR)http_status_routed, &pinned )) goto done;
++    handler = add_handler( http_status_routed, NULL );
++    if (handler >= 0) http_status_trace.registered = TRUE;
++    TRACE( "HTTP status observer registration result=%ld.\n", handler );
++done:
++    ReleaseSRWLockExclusive( &http_status_trace.lock );
++}
++
++#endif
+diff --git a/dlls/xgameruntime/GDKComponent/System/XStore.c b/dlls/xgameruntime/GDKComponent/System/XStore.c
+new file mode 100644
+index 0000000..836c772
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XStore.c
+@@ -0,0 +1,392 @@
++#define COBJMACROS
++#include "XStore.h"
++#include <winternl.h>
++#include "../Xodus/Unix/store.h"
++#include "wine/unixlib.h"
++#include "wine/debug.h"
++#include <libxml/parser.h>
++#include <libxml/chvalid.h>
++#include <stdlib.h>
++#include <string.h>
++
++WINE_DEFAULT_DEBUG_CHANNEL(xstore);
++extern unixlib_handle_t unixhandle;
++extern HRESULT WINAPI QueryApiImpl(const GUID *, REFIID, void **);
++char gdkStoreId[13];
++static const char token_identity, products_identity, collections_identity, purchase_identity, associated_identity;
++struct store_context { struct store_context *next; ULONG_PTR id; LONG refs; char binding[37], parent[13]; };
++static SRWLOCK context_lock = SRWLOCK_INIT;
++static struct store_context *contexts;
++static ULONG_PTR next_context = 0x53540000;
++static LONG interface_refs = 1;
++struct token_operation {
++    struct store_context *context;
++    IXThreadingImpl *threading;
++    char **products, *challenge, *token;
++    SIZE_T count, token_size;
++    BOOL request_token;
++};
++static BOOL valid_id(const char *s)
++{
++    SIZE_T i;
++    if (!s || strnlen(s,13)!=12) return FALSE;
++    for(i=0;i<12;i++) if (!((s[i]>='0'&&s[i]<='9')||(s[i]>='A'&&s[i]<='Z')||(s[i]>='a'&&s[i]<='z'))) return FALSE;
++    return TRUE;
++}
++static BOOL valid_binding(const char *s)
++{
++    unsigned int i;
++    if(!s || strnlen(s,37)!=36) return FALSE;
++    for(i=0;i<36;i++) {
++        if(i==8||i==13||i==18||i==23) { if(s[i]!='-') return FALSE; }
++        else if(!((s[i]>='0'&&s[i]<='9')||(s[i]>='a'&&s[i]<='f')||(s[i]>='A'&&s[i]<='F'))) return FALSE;
++    }
++    return TRUE;
++}
++static char *copy_string(const char *s)
++{
++    SIZE_T n=strlen(s)+1; char *p=malloc(n); if(p) memcpy(p,s,n); return p;
++}
++static BOOL valid_challenge(const char *s)
++{
++    SIZE_T n, i=0; unsigned int cp, bytes, j;
++    if(!s || !(n=strnlen(s,4097)) || n>4096 || !xmlCheckUTF8((const xmlChar *)s)) return FALSE;
++    while(i<n) {
++        unsigned char c=s[i++];
++        if(c<0x80) { cp=c; bytes=0; }
++        else if(c<0xe0) { cp=c&0x1f; bytes=1; }
++        else if(c<0xf0) { cp=c&0xf; bytes=2; }
++        else { cp=c&7; bytes=3; }
++        if(i+bytes>n) return FALSE;
++        for(j=0;j<bytes;j++) cp=(cp<<6)|((unsigned char)s[i++]&0x3f);
++        if(!xmlIsChar(cp)) return FALSE;
++    }
++    return TRUE;
++}
++static void release_context(struct store_context *c)
++{
++    if(c && !InterlockedDecrement(&c->refs)) free(c);
++}
++static struct store_context *retain_context(XStoreContextHandle handle)
++{
++    struct store_context *c;
++    AcquireSRWLockShared(&context_lock);
++    for(c=contexts;c;c=c->next) if(c->id==(ULONG_PTR)handle) { InterlockedIncrement(&c->refs); break; }
++    ReleaseSRWLockShared(&context_lock); return c;
++}
++static HRESULT parse_hresult(const xmlChar *s, HRESULT *out)
++{
++    UINT64 n=0; unsigned int i;
++    if(!s || !s[0]) return E_INVALIDARG;
++    for(i=0;s[i];i++) { if(i>=10 || s[i]<'0'||s[i]>'9') return E_INVALIDARG; n=n*10+s[i]-'0'; if(n>0xffffffffu) return E_INVALIDARG; }
++    *out=(HRESULT)(UINT32)n; return S_OK;
++}
++/* Text only: no entities, nested elements, attributes, namespaces, or DTDs. */
++static BOOL plain_element(xmlNodePtr n)
++{
++    xmlNodePtr c;
++    if(n->properties || n->ns) return FALSE;
++    for(c=n->children;c;c=c->next) if(c->type!=XML_TEXT_NODE) return FALSE;
++    return TRUE;
++}
++static HRESULT exchange_xml(xmlDocPtr request, UINT16 type, const char *root_name, const char *value_name, SIZE_T value_limit, char **out)
++{
++    struct store_unix_request a;
++    xmlChar *encoded=NULL, *value=NULL, *hr_text=NULL;
++    xmlDocPtr response=NULL;
++    xmlNodePtr root,n;
++    int encoded_size=0;
++    LONG status;
++    HRESULT hr=E_INVALIDARG, server_hr=E_FAIL;
++    BOOL seen_hr=FALSE, seen_value=FALSE;
++    *out=NULL; memset(&a,0,sizeof(a));
++    xmlDocDumpMemoryEnc(request,&encoded,&encoded_size,"UTF-8");
++    if(!encoded) return E_OUTOFMEMORY;
++    if(encoded_size<=0 || encoded_size>8192) goto done;
++    a.request=encoded; a.request_size=encoded_size; a.request_type=type; a.response_type=type+1;
++    a.response_capacity=type==5?1024:65535;
++    if(!(a.response=malloc(a.response_capacity))) { hr=E_OUTOFMEMORY; goto done; }
++    if(!unixhandle) { hr=HRESULT_FROM_WIN32(ERROR_SERVICE_NOT_ACTIVE); goto done; }
++    status=__wine_unix_call(unixhandle,STORE_UNIX_REQUEST,&a);
++    if(status) { hr=HRESULT_FROM_WIN32(RtlNtStatusToDosError(status)); goto done; }
++    /* Existing framing allows one final NUL, never embedded NULs. */
++    if(a.response_size && !a.response[a.response_size-1]) a.response_size--;
++    if(!a.response_size || memchr(a.response,0,a.response_size)) goto done;
++    response=xmlReadMemory((const char *)a.response,a.response_size,NULL,"UTF-8",XML_PARSE_NONET|XML_PARSE_NOERROR|XML_PARSE_NOWARNING);
++    if(!response || response->intSubset || response->extSubset) goto done;
++    root=xmlDocGetRootElement(response);
++    if(!root || root->properties || root->ns || xmlStrcmp(root->name,(const xmlChar *)root_name)) goto done;
++    for(n=root->children;n;n=n->next) {
++        if(n->type==XML_TEXT_NODE && xmlIsBlankNode(n)) continue;
++        if(n->type!=XML_ELEMENT_NODE || !plain_element(n)) goto done;
++        if(!xmlStrcmp(n->name,(const xmlChar *)"HResult")) {
++            if(seen_hr) goto done; seen_hr=TRUE; hr_text=xmlNodeGetContent(n);
++        } else if(!xmlStrcmp(n->name,(const xmlChar *)value_name)) {
++            if(seen_value) goto done; seen_value=TRUE; value=xmlNodeGetContent(n);
++        } else goto done;
++    }
++    if(!seen_hr || FAILED(parse_hresult(hr_text,&server_hr))) goto done;
++    if(FAILED(server_hr)) { hr=server_hr; goto done; }
++    if(server_hr!=S_OK || !seen_value || !value || !value[0] || strnlen((char *)value,value_limit+1)>value_limit) goto done;
++    if(type==5 && !valid_binding((char *)value)) goto done;
++    *out=copy_string((char *)value); hr=*out?S_OK:E_OUTOFMEMORY;
++done:
++    if(a.response) { SecureZeroMemory(a.response,a.response_capacity); free(a.response); }
++    if(value) { SecureZeroMemory(value,xmlStrlen(value)); xmlFree(value); }
++    xmlFree(hr_text); if(response) xmlFreeDoc(response);
++    if(encoded) { SecureZeroMemory(encoded,encoded_size); xmlFree(encoded); }
++    return hr;
++}
++static BOOL add_text(xmlNodePtr parent,const char *name,const char *text)
++{
++    /* xmlNewTextChild treats content as literal text, including ampersands. */
++    return xmlNewTextChild(parent,NULL,(const xmlChar *)name,(const xmlChar *)text)!=NULL;
++}
++static HRESULT request_binding(char **binding)
++{
++    xmlDocPtr doc=xmlNewDoc((const xmlChar *)"1.0");
++    xmlNodePtr root;
++    HRESULT hr;
++    *binding=NULL;
++    if(!doc) return E_OUTOFMEMORY;
++    root=xmlNewNode(NULL,(const xmlChar *)"StoreContextRequest");
++    if(!root) { xmlFreeDoc(doc); return E_OUTOFMEMORY; }
++    xmlDocSetRootElement(doc,root);
++    hr=exchange_xml(doc,5,"StoreContextResponse","AccountBinding",36,binding);
++    xmlFreeDoc(doc); return hr;
++}
++static HRESULT request_token(struct token_operation *op)
++{
++    xmlDocPtr doc=xmlNewDoc((const xmlChar *)"1.0");
++    xmlNodePtr root;
++    HRESULT hr=E_OUTOFMEMORY;
++    SIZE_T i;
++    if(!doc) return hr;
++    root=xmlNewNode(NULL,(const xmlChar *)"LicenseTokenRequest");
++    if(!root) goto done;
++    xmlDocSetRootElement(doc,root);
++    if(!add_text(root,"AccountBinding",op->context->binding)||!add_text(root,"ParentProductId",op->context->parent)) goto done;
++    for(i=0;i<op->count;i++) if(!add_text(root,"ProductId",op->products[i])) goto done;
++    if(!add_text(root,"CustomDeveloperString",op->challenge)) goto done;
++    hr=exchange_xml(doc,7,"LicenseTokenResponse","Token",48*1024,&op->token);
++    if(SUCCEEDED(hr)) op->token_size=strlen(op->token)+1;
++done:
++    xmlFreeDoc(doc); return hr;
++}
++static void free_operation(struct token_operation *op)
++{
++    SIZE_T i;
++    if(!op) return;
++    if(op->products) { for(i=0;i<op->count;i++) free(op->products[i]); free(op->products); }
++    if(op->challenge) { SecureZeroMemory(op->challenge,strlen(op->challenge)); free(op->challenge); }
++    if(op->token) { SecureZeroMemory(op->token,op->token_size); free(op->token); }
++    release_context(op->context);
++    if(op->threading) IXThreadingImpl_Release(op->threading);
++    free(op);
++}
++static HRESULT WINAPI store_provider(XAsyncOp action,const XAsyncProviderData *data)
++{
++    struct token_operation *op=data->context;
++    HRESULT hr;
++    switch(action) {
++    case XAsyncOp_Begin: return IXThreadingImpl_XAsyncSchedule(op->threading,data->async,0);
++    case XAsyncOp_DoWork:
++        hr=op->request_token?request_token(op):E_NOTIMPL;
++        TRACE("Store operation completed hr=%#lx, token_request=%u.\n",hr,op->request_token);
++        IXThreadingImpl_XAsyncComplete(op->threading,data->async,hr,SUCCEEDED(hr)?op->token_size:0);
++        return E_PENDING;
++    case XAsyncOp_GetResult:
++        if(!op->token) return E_NOTIMPL;
++        if(!data->buffer || data->bufferSize<op->token_size) return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
++        memcpy(data->buffer,op->token,op->token_size); return S_OK;
++    case XAsyncOp_Cancel: return S_OK; /* Accepted bounded requests finish; no fabricated cancellation. */
++    case XAsyncOp_Cleanup: free_operation(op); return S_OK;
++    default: return E_UNEXPECTED;
++    }
++}
++static HRESULT begin_operation(struct token_operation *op,XAsyncBlock *async,const void *identity)
++{
++    HRESULT hr=QueryApiImpl(&CLSID_XThreadingImpl,&IID_IXThreadingImpl,(void **)&op->threading);
++    if(SUCCEEDED(hr) && !op->threading) hr=E_UNEXPECTED;
++    if(SUCCEEDED(hr)) hr=IXThreadingImpl_XAsyncBegin(op->threading,async,op,identity,"StoreRequest",store_provider);
++    if(FAILED(hr)) free_operation(op);
++    return hr;
++}
++static HRESULT WINAPI store_qi(IXStoreImpl *iface,REFIID iid,void **out)
++{
++    if(!out) return E_POINTER; *out=NULL;
++    if(!IsEqualGUID(iid,&IID_IUnknown)&&!IsEqualGUID(iid,&IID_IXStoreImpl)&&!IsEqualGUID(iid,&CLSID_XStoreImpl)) return E_NOINTERFACE;
++    InterlockedIncrement(&interface_refs); *out=iface; return S_OK;
++}
++static ULONG WINAPI store_addref(IXStoreImpl *iface) { return InterlockedIncrement(&interface_refs); }
++static ULONG WINAPI store_release(IXStoreImpl *iface) { return InterlockedDecrement(&interface_refs); }
++static HRESULT WINAPI create_context(IXStoreImpl *iface,XUserHandle ignored_user,XStoreContextHandle *out)
++{
++    struct store_context *c; char *binding=NULL; HRESULT hr;
++    if(!out) return E_POINTER; *out=NULL;
++    if(!valid_id(gdkStoreId)) return E_INVALIDARG;
++    c=calloc(1,sizeof(*c)); if(!c) return E_OUTOFMEMORY;
++    memcpy(c->parent,gdkStoreId,13);
++    hr=request_binding(&binding);
++    if(FAILED(hr)) { free(c); TRACE("CreateContext hr=%#lx.\n",hr); return hr; }
++    memcpy(c->binding,binding,37); free(binding); c->refs=1;
++    AcquireSRWLockExclusive(&context_lock);
++    if(next_context==(ULONG_PTR)-1) hr=E_OUTOFMEMORY;
++    else { c->id=++next_context; c->next=contexts; contexts=c; *out=(void *)c->id; }
++    ReleaseSRWLockExclusive(&context_lock);
++    if(FAILED(hr)) release_context(c);
++    TRACE("CreateContext hr=%#lx.\n",hr); return hr;
++}
++static void WINAPI close_context(IXStoreImpl *iface,XStoreContextHandle handle)
++{
++    struct store_context **p,*c=NULL;
++    AcquireSRWLockExclusive(&context_lock);
++    for(p=&contexts;*p;p=&(*p)->next) if((*p)->id==(ULONG_PTR)handle) { c=*p; *p=c->next; break; }
++    ReleaseSRWLockExclusive(&context_lock); release_context(c);
++}
++static HRESULT WINAPI query_token(IXStoreImpl *iface,XStoreContextHandle handle,const char **products,SIZE_T count,const char *challenge,XAsyncBlock *async)
++{
++    struct token_operation *op; SIZE_T i;
++    if(!async || !products || !count || count>32 || !valid_challenge(challenge)) return E_INVALIDARG;
++    for(i=0;i<count;i++) if(!valid_id(products[i])) return E_INVALIDARG;
++    op=calloc(1,sizeof(*op)); if(!op) return E_OUTOFMEMORY;
++    op->context=retain_context(handle);
++    if(!op->context) { free(op); return E_HANDLE; }
++    op->request_token=TRUE; op->count=count; op->products=calloc(count,sizeof(char *)); op->challenge=copy_string(challenge);
++    if(!op->products || !op->challenge) { free_operation(op); return E_OUTOFMEMORY; }
++    for(i=0;i<count;i++) if(!(op->products[i]=copy_string(products[i]))) { free_operation(op); return E_OUTOFMEMORY; }
++    return begin_operation(op,async,&token_identity);
++}
++static HRESULT get_size(XAsyncBlock *async,SIZE_T *size)
++{
++    IXThreadingImpl *t=NULL; HRESULT hr;
++    if(!size) return E_POINTER; *size=0; if(!async) return E_INVALIDARG;
++    hr=QueryApiImpl(&CLSID_XThreadingImpl,&IID_IXThreadingImpl,(void **)&t);
++    if(SUCCEEDED(hr) && t) { hr=IXThreadingImpl_XAsyncGetResultSize(t,async,size); IXThreadingImpl_Release(t); }
++    else if(SUCCEEDED(hr)) hr=E_UNEXPECTED;
++    if(FAILED(hr)) *size=0; return hr;
++}
++static HRESULT get_result(XAsyncBlock *async,SIZE_T size,char *buffer,const void *identity)
++{
++    IXThreadingImpl *t=NULL; HRESULT hr;
++    if(buffer && size) buffer[0]=0;
++    if(!async || (size && !buffer)) return E_INVALIDARG;
++    hr=QueryApiImpl(&CLSID_XThreadingImpl,&IID_IXThreadingImpl,(void **)&t);
++    if(SUCCEEDED(hr) && t) { hr=IXThreadingImpl_XAsyncGetResult(t,async,identity,size,buffer,NULL); IXThreadingImpl_Release(t); }
++    else if(SUCCEEDED(hr)) hr=E_UNEXPECTED;
++    TRACE("Store result hr=%#lx.\n",hr); return hr;
++}
++static HRESULT WINAPI token_size(IXStoreImpl *i,XAsyncBlock *a,SIZE_T *s) { return get_size(a,s); }
++static HRESULT WINAPI token_result(IXStoreImpl *i,XAsyncBlock *a,SIZE_T s,char *b) { return get_result(a,s,b,&token_identity); }
++static HRESULT unsupported_async(XStoreContextHandle handle,XAsyncBlock *async,const void *identity)
++{
++    struct token_operation *op;
++    if(!async) return E_INVALIDARG;
++    op=calloc(1,sizeof(*op)); if(!op) return E_OUTOFMEMORY;
++    op->context=retain_context(handle); if(!op->context) { free(op); return E_HANDLE; }
++    return begin_operation(op,async,identity);
++}
++static HRESULT WINAPI associated(IXStoreImpl *i,XStoreContextHandle h,UINT32 kind,UINT32 max,XAsyncBlock *a) { return unsupported_async(h,a,&products_identity); }
++static HRESULT WINAPI products_result(IXStoreImpl *i,XAsyncBlock *a,XStoreProductQueryHandle *out) { if(!out) return E_POINTER; *out=NULL; return get_result(a,0,NULL,&products_identity); }
++static HRESULT WINAPI enumerate(IXStoreImpl *i,XStoreProductQueryHandle h,void *ctx,XStoreProductQueryCallback *cb) { return E_HANDLE; }
++static BOOLEAN WINAPI false_handle(IXStoreImpl *i,void *h) { return FALSE; }
++static void WINAPI close_unsupported(IXStoreImpl *i,void *h) { }
++static HRESULT WINAPI next_page(IXStoreImpl *i,XStoreProductQueryHandle h,XAsyncBlock *a) { return E_HANDLE; }
++static HRESULT WINAPI collections(IXStoreImpl *i,XStoreContextHandle h,const char *ticket,const char *publisher,XAsyncBlock *a) { if(!ticket||!publisher) return E_INVALIDARG; return unsupported_async(h,a,&collections_identity); }
++static HRESULT WINAPI collections_result(IXStoreImpl *i,XAsyncBlock *a,SIZE_T s,char *b) { return get_result(a,s,b,&collections_identity); }
++static HRESULT WINAPI purchase(IXStoreImpl *i,XStoreContextHandle h,const char *id,const char *name,const char *json,XAsyncBlock *a) { if(!valid_id(id)) return E_INVALIDARG; return unsupported_async(h,a,&purchase_identity); }
++static HRESULT WINAPI purchase_result(IXStoreImpl *i,XAsyncBlock *a) { return get_result(a,0,NULL,&purchase_identity); }
++static HRESULT WINAPI associated_ui(IXStoreImpl *i,XStoreContextHandle h,const char *id,UINT32 kind,XAsyncBlock *a) { if(!valid_id(id)) return E_INVALIDARG; return unsupported_async(h,a,&associated_identity); }
++static HRESULT WINAPI associated_result(IXStoreImpl *i,XAsyncBlock *a) { return get_result(a,0,NULL,&associated_identity); }
++static void WINAPI unregister_unsupported(IXStoreImpl *i,void *h,UINT64 token,BOOLEAN wait) { }
++/* Remaining Win64 HRESULT slots ignore arguments and cannot grant ownership. */
++static HRESULT WINAPI unsupported(IXStoreImpl *i) { return E_NOTIMPL; }
++
++static const IXStoreImplVtbl store_vtable = {
++    .QueryInterface = store_qi,
++    .AddRef = store_addref,
++    .Release = store_release,
++    .XStoreCreateContext = create_context,
++    .XStoreCloseContextHandle = close_context,
++    .XStoreQueryAssociatedProductsAsync = associated,
++    .XStoreQueryAssociatedProductsResult = products_result,
++    .Reserved7 = unsupported,
++    .Reserved8 = unsupported,
++    .Reserved9 = unsupported,
++    .Reserved10 = unsupported,
++    .Reserved11 = unsupported,
++    .Reserved12 = unsupported,
++    .Reserved13 = unsupported,
++    .Reserved14 = unsupported,
++    .XStoreEnumerateProductsQuery = enumerate,
++    .XStoreProductsQueryHasMorePages = false_handle,
++    .XStoreProductsQueryNextPageAsync = next_page,
++    .XStoreProductsQueryNextPageResult = products_result,
++    .XStoreCloseProductsQueryHandle = close_unsupported,
++    .Reserved20 = unsupported,
++    .Reserved21 = unsupported,
++    .XStoreIsLicenseValid = false_handle,
++    .XStoreCloseLicenseHandle = close_unsupported,
++    .Reserved24 = unsupported,
++    .Reserved25 = unsupported,
++    .Reserved26 = unsupported,
++    .Reserved27 = unsupported,
++    .Reserved28 = unsupported,
++    .Reserved29 = unsupported,
++    .Reserved30 = unsupported,
++    .Reserved31 = unsupported,
++    .Reserved32 = unsupported,
++    .Reserved33 = unsupported,
++    .Reserved34 = unsupported,
++    .Reserved35 = unsupported,
++    .Reserved36 = unsupported,
++    .XStoreGetUserCollectionsIdAsync = collections,
++    .XStoreGetUserCollectionsIdResultSize = token_size,
++    .XStoreGetUserCollectionsIdResult = collections_result,
++    .Reserved40 = unsupported,
++    .Reserved41 = unsupported,
++    .Reserved42 = unsupported,
++    .XStoreQueryLicenseTokenAsync = query_token,
++    .XStoreQueryLicenseTokenResultSize = token_size,
++    .XStoreQueryLicenseTokenResult = token_result,
++    .Reserved46 = unsupported,
++    .Reserved47 = unsupported,
++    .Reserved48 = unsupported,
++    .XStoreShowPurchaseUIAsync = purchase,
++    .XStoreShowPurchaseUIResult = purchase_result,
++    .Reserved51 = unsupported,
++    .Reserved52 = unsupported,
++    .Reserved53 = unsupported,
++    .Reserved54 = unsupported,
++    .Reserved55 = unsupported,
++    .Reserved56 = unsupported,
++    .Reserved57 = unsupported,
++    .Reserved58 = unsupported,
++    .Reserved59 = unsupported,
++    .Reserved60 = unsupported,
++    .Reserved61 = unsupported,
++    .Reserved62 = unsupported,
++    .Reserved63 = unsupported,
++    .Reserved64 = unsupported,
++    .Reserved65 = unsupported,
++    .Reserved66 = unsupported,
++    .Reserved67 = unregister_unsupported,
++    .Reserved68 = unsupported,
++    .Reserved69 = unregister_unsupported,
++    .Reserved70 = false_handle,
++    .Reserved71 = unsupported,
++    .Reserved72 = unsupported,
++    .XStoreShowAssociatedProductsUIAsync = associated_ui,
++    .XStoreShowAssociatedProductsUIResult = associated_result,
++    .Reserved75 = unsupported,
++    .Reserved76 = unsupported,
++    .Reserved77 = unsupported,
++    .Reserved78 = unsupported,
++    .Reserved79 = unsupported,
++    .Reserved80 = unsupported,
++    .Reserved81 = unsupported,
++    .Reserved82 = unsupported,
++    .Reserved83 = unsupported,
++};
++static IXStoreImpl store_singleton = { &store_vtable };
++IXStoreImpl *x_store = &store_singleton;
+diff --git a/dlls/xgameruntime/GDKComponent/System/XStore.h b/dlls/xgameruntime/GDKComponent/System/XStore.h
+new file mode 100644
+index 0000000..7f322ae
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/System/XStore.h
+@@ -0,0 +1,105 @@
++/* Win64 XStore ABI observed in the installed runtime, vtable RVA 0x308ea8.
++ * Only account context and server-issued license tokens are implemented.
++ */
++#ifndef WINEGDK_XSTORE_H
++#define WINEGDK_XSTORE_H
++#include <windows.h>
++#include <unknwn.h>
++#include <xasyncprovider.h>
++#include <xuser.h>
++DEFINE_GUID(CLSID_XStoreImpl,0x0dd112ac,0x7c24,0x448c,0xb9,0x2b,0x39,0x60,0xfb,0x5b,0xd3,0x0c);
++DEFINE_GUID(IID_IXStoreImpl,0xb09d803c,0x2414,0x4a05,0x82,0xc6,0x66,0xdf,0xdc,0x9e,0x9a,0x44);
++typedef void *XStoreContextHandle;
++typedef void *XStoreProductQueryHandle;
++typedef struct IXStoreImpl IXStoreImpl;
++typedef BOOLEAN WINAPI XStoreProductQueryCallback(const void *, void *);
++typedef struct IXStoreImplVtbl {
++    HRESULT (WINAPI *QueryInterface)(IXStoreImpl *, REFIID, void **); /* 0 */
++    ULONG (WINAPI *AddRef)(IXStoreImpl *); /* 1 */
++    ULONG (WINAPI *Release)(IXStoreImpl *); /* 2 */
++    HRESULT (WINAPI *XStoreCreateContext)(IXStoreImpl *, XUserHandle, XStoreContextHandle *); /* 3 */
++    void (WINAPI *XStoreCloseContextHandle)(IXStoreImpl *, XStoreContextHandle); /* 4 */
++    HRESULT (WINAPI *XStoreQueryAssociatedProductsAsync)(IXStoreImpl *, XStoreContextHandle, UINT32, UINT32, XAsyncBlock *); /* 5 */
++    HRESULT (WINAPI *XStoreQueryAssociatedProductsResult)(IXStoreImpl *, XAsyncBlock *, XStoreProductQueryHandle *); /* 6 */
++    HRESULT (WINAPI *Reserved7)(IXStoreImpl *); /* 7 */
++    HRESULT (WINAPI *Reserved8)(IXStoreImpl *); /* 8 */
++    HRESULT (WINAPI *Reserved9)(IXStoreImpl *); /* 9 */
++    HRESULT (WINAPI *Reserved10)(IXStoreImpl *); /* 10 */
++    HRESULT (WINAPI *Reserved11)(IXStoreImpl *); /* 11 */
++    HRESULT (WINAPI *Reserved12)(IXStoreImpl *); /* 12 */
++    HRESULT (WINAPI *Reserved13)(IXStoreImpl *); /* 13 */
++    HRESULT (WINAPI *Reserved14)(IXStoreImpl *); /* 14 */
++    HRESULT (WINAPI *XStoreEnumerateProductsQuery)(IXStoreImpl *, XStoreProductQueryHandle, void *, XStoreProductQueryCallback *); /* 15 */
++    BOOLEAN (WINAPI *XStoreProductsQueryHasMorePages)(IXStoreImpl *, XStoreProductQueryHandle); /* 16 */
++    HRESULT (WINAPI *XStoreProductsQueryNextPageAsync)(IXStoreImpl *, XStoreProductQueryHandle, XAsyncBlock *); /* 17 */
++    HRESULT (WINAPI *XStoreProductsQueryNextPageResult)(IXStoreImpl *, XAsyncBlock *, XStoreProductQueryHandle *); /* 18 */
++    void (WINAPI *XStoreCloseProductsQueryHandle)(IXStoreImpl *, XStoreProductQueryHandle); /* 19 */
++    HRESULT (WINAPI *Reserved20)(IXStoreImpl *); /* 20 */
++    HRESULT (WINAPI *Reserved21)(IXStoreImpl *); /* 21 */
++    BOOLEAN (WINAPI *XStoreIsLicenseValid)(IXStoreImpl *, void *); /* 22 */
++    void (WINAPI *XStoreCloseLicenseHandle)(IXStoreImpl *, void *); /* 23 */
++    HRESULT (WINAPI *Reserved24)(IXStoreImpl *); /* 24 */
++    HRESULT (WINAPI *Reserved25)(IXStoreImpl *); /* 25 */
++    HRESULT (WINAPI *Reserved26)(IXStoreImpl *); /* 26 */
++    HRESULT (WINAPI *Reserved27)(IXStoreImpl *); /* 27 */
++    HRESULT (WINAPI *Reserved28)(IXStoreImpl *); /* 28 */
++    HRESULT (WINAPI *Reserved29)(IXStoreImpl *); /* 29 */
++    HRESULT (WINAPI *Reserved30)(IXStoreImpl *); /* 30 */
++    HRESULT (WINAPI *Reserved31)(IXStoreImpl *); /* 31 */
++    HRESULT (WINAPI *Reserved32)(IXStoreImpl *); /* 32 */
++    HRESULT (WINAPI *Reserved33)(IXStoreImpl *); /* 33 */
++    HRESULT (WINAPI *Reserved34)(IXStoreImpl *); /* 34 */
++    HRESULT (WINAPI *Reserved35)(IXStoreImpl *); /* 35 */
++    HRESULT (WINAPI *Reserved36)(IXStoreImpl *); /* 36 */
++    HRESULT (WINAPI *XStoreGetUserCollectionsIdAsync)(IXStoreImpl *, XStoreContextHandle, const char *, const char *, XAsyncBlock *); /* 37 */
++    HRESULT (WINAPI *XStoreGetUserCollectionsIdResultSize)(IXStoreImpl *, XAsyncBlock *, SIZE_T *); /* 38 */
++    HRESULT (WINAPI *XStoreGetUserCollectionsIdResult)(IXStoreImpl *, XAsyncBlock *, SIZE_T, char *); /* 39 */
++    HRESULT (WINAPI *Reserved40)(IXStoreImpl *); /* 40 */
++    HRESULT (WINAPI *Reserved41)(IXStoreImpl *); /* 41 */
++    HRESULT (WINAPI *Reserved42)(IXStoreImpl *); /* 42 */
++    HRESULT (WINAPI *XStoreQueryLicenseTokenAsync)(IXStoreImpl *, XStoreContextHandle, const char **, SIZE_T, const char *, XAsyncBlock *); /* 43 */
++    HRESULT (WINAPI *XStoreQueryLicenseTokenResultSize)(IXStoreImpl *, XAsyncBlock *, SIZE_T *); /* 44 */
++    HRESULT (WINAPI *XStoreQueryLicenseTokenResult)(IXStoreImpl *, XAsyncBlock *, SIZE_T, char *); /* 45 */
++    HRESULT (WINAPI *Reserved46)(IXStoreImpl *); /* 46 */
++    HRESULT (WINAPI *Reserved47)(IXStoreImpl *); /* 47 */
++    HRESULT (WINAPI *Reserved48)(IXStoreImpl *); /* 48 */
++    HRESULT (WINAPI *XStoreShowPurchaseUIAsync)(IXStoreImpl *, XStoreContextHandle, const char *, const char *, const char *, XAsyncBlock *); /* 49 */
++    HRESULT (WINAPI *XStoreShowPurchaseUIResult)(IXStoreImpl *, XAsyncBlock *); /* 50 */
++    HRESULT (WINAPI *Reserved51)(IXStoreImpl *); /* 51 */
++    HRESULT (WINAPI *Reserved52)(IXStoreImpl *); /* 52 */
++    HRESULT (WINAPI *Reserved53)(IXStoreImpl *); /* 53 */
++    HRESULT (WINAPI *Reserved54)(IXStoreImpl *); /* 54 */
++    HRESULT (WINAPI *Reserved55)(IXStoreImpl *); /* 55 */
++    HRESULT (WINAPI *Reserved56)(IXStoreImpl *); /* 56 */
++    HRESULT (WINAPI *Reserved57)(IXStoreImpl *); /* 57 */
++    HRESULT (WINAPI *Reserved58)(IXStoreImpl *); /* 58 */
++    HRESULT (WINAPI *Reserved59)(IXStoreImpl *); /* 59 */
++    HRESULT (WINAPI *Reserved60)(IXStoreImpl *); /* 60 */
++    HRESULT (WINAPI *Reserved61)(IXStoreImpl *); /* 61 */
++    HRESULT (WINAPI *Reserved62)(IXStoreImpl *); /* 62 */
++    HRESULT (WINAPI *Reserved63)(IXStoreImpl *); /* 63 */
++    HRESULT (WINAPI *Reserved64)(IXStoreImpl *); /* 64 */
++    HRESULT (WINAPI *Reserved65)(IXStoreImpl *); /* 65 */
++    HRESULT (WINAPI *Reserved66)(IXStoreImpl *); /* 66 */
++    void (WINAPI *Reserved67)(IXStoreImpl *, void *, UINT64, BOOLEAN); /* 67 */
++    HRESULT (WINAPI *Reserved68)(IXStoreImpl *); /* 68 */
++    void (WINAPI *Reserved69)(IXStoreImpl *, void *, UINT64, BOOLEAN); /* 69 */
++    BOOLEAN (WINAPI *Reserved70)(IXStoreImpl *, void *); /* 70 */
++    HRESULT (WINAPI *Reserved71)(IXStoreImpl *); /* 71 */
++    HRESULT (WINAPI *Reserved72)(IXStoreImpl *); /* 72 */
++    HRESULT (WINAPI *XStoreShowAssociatedProductsUIAsync)(IXStoreImpl *, XStoreContextHandle, const char *, UINT32, XAsyncBlock *); /* 73 */
++    HRESULT (WINAPI *XStoreShowAssociatedProductsUIResult)(IXStoreImpl *, XAsyncBlock *); /* 74 */
++    HRESULT (WINAPI *Reserved75)(IXStoreImpl *); /* 75 */
++    HRESULT (WINAPI *Reserved76)(IXStoreImpl *); /* 76 */
++    HRESULT (WINAPI *Reserved77)(IXStoreImpl *); /* 77 */
++    HRESULT (WINAPI *Reserved78)(IXStoreImpl *); /* 78 */
++    HRESULT (WINAPI *Reserved79)(IXStoreImpl *); /* 79 */
++    HRESULT (WINAPI *Reserved80)(IXStoreImpl *); /* 80 */
++    HRESULT (WINAPI *Reserved81)(IXStoreImpl *); /* 81 */
++    HRESULT (WINAPI *Reserved82)(IXStoreImpl *); /* 82 */
++    HRESULT (WINAPI *Reserved83)(IXStoreImpl *); /* 83 */
++} IXStoreImplVtbl;
++struct IXStoreImpl { const IXStoreImplVtbl *lpVtbl; };
++extern IXStoreImpl *x_store;
++extern char gdkStoreId[13];
++#endif
+diff --git a/dlls/xgameruntime/GDKComponent/Xodus/Unix/store.h b/dlls/xgameruntime/GDKComponent/Xodus/Unix/store.h
+new file mode 100644
+index 0000000..02ed28e
+--- /dev/null
++++ b/dlls/xgameruntime/GDKComponent/Xodus/Unix/store.h
+@@ -0,0 +1,14 @@
++#ifndef WINEGDK_STORE_UNIX_H
++#define WINEGDK_STORE_UNIX_H
++#define STORE_UNIX_REQUEST 3
++#define STORE_XML_MAGIC 0x58445358u
++struct store_unix_request {
++    const BYTE *request;
++    BYTE *response;
++    UINT32 request_size;
++    UINT32 response_capacity;
++    UINT32 response_size;
++    UINT16 request_type;
++    UINT16 response_type;
++};
++#endif

@@ -1,0 +1,30 @@
+--- a/crates/xodus-cli/Cargo.toml
++++ b/crates/xodus-cli/Cargo.toml
+@@ -4,11 +4,17 @@
+ edition = "2024"
+ default-run = "xodus-cli"
+ 
++[[bin]]
++name = "xodus-cli"
++path = "src/main.rs"
++required-features = ["legacy-eappx"]
++
+ [dependencies]
+ xodus = { path = "../xodus" }
+ xodus-service = { path = "../xodus-service" }
+ msixvc = { path = "../msixvc" }
++rsa = { version = "=0.9.10", features = ["sha2"] }
+-eappx = { git = "https://github.com/tuxuser/eappx-rs" }
++eappx = { git = "https://github.com/tuxuser/eappx-rs", optional = true }
+ base64 = { workspace = true }
+ tokio = { workspace = true }
+ reqwest = { workspace = true }
+@@ -32,6 +38,8 @@
+ nix = "0.31.3"
+ 
+ [features]
++default = ["legacy-eappx"]
++legacy-eappx = ["dep:eappx"]
+ tokio_console = ["dep:console-subscriber"]
+ 
+ [target.'cfg(target_os = "macos")'.dependencies]

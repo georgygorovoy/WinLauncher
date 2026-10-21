@@ -1,0 +1,11 @@
+/* See below for information about the original code this module was
+   based upon. Additional work performed by:
+
+   Andrew Kuchling (amk@amk.ca)
+   Greg Stein (gstein@lyra.org)
+   Trevor Perrin (trevp@trevp.net)
+
+   Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
+   Licensed to PSF under a Contributor Agreement.
+
+*/

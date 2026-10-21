@@ -49,6 +49,8 @@ enum AppOperation: Equatable {
     case preparingAndroid
     case installingAndroidApp
     case installingAndroidSupport
+    case preparingXboxSupport
+    case downloadingXboxGame
 
     var message: String? {
         switch self {
@@ -60,6 +62,8 @@ enum AppOperation: Equatable {
         case .preparingAndroid: "Starting Android…"
         case .installingAndroidApp: "Installing Android app…"
         case .installingAndroidSupport: "Installing Android Support…"
+        case .preparingXboxSupport: "Preparing Xbox Games Support…"
+        case .downloadingXboxGame: "Downloading your Windows game…"
         }
     }
 }
@@ -102,6 +106,11 @@ enum WinLauncherError: LocalizedError {
     case androidDownloadFailed(String)
     case androidIntegrityFailed
     case androidInstallationFailed(URL)
+    case xboxHelperNotInstalled
+    case xboxHelperInvalid
+    case xboxGameDownloadFailed(URL)
+    case xboxRuntimeNotInstalled
+    case xboxLaunchFailed(URL)
 
     var errorDescription: String? {
         switch self {
@@ -143,6 +152,16 @@ enum WinLauncherError: LocalizedError {
             "The Android Support download did not pass its integrity check."
         case .androidInstallationFailed:
             "Android Support could not be installed completely. Open the diagnostic log for details."
+        case .xboxHelperNotInstalled:
+            "The separate Xbox account helper is not installed in this build yet. It must be built and distributed with its GPL source and notices."
+        case .xboxHelperInvalid:
+            "Xbox Games Support contains an invalid or non-executable helper."
+        case .xboxGameDownloadFailed:
+            "Minecraft for Windows could not be prepared. Open the diagnostic log for details."
+        case .xboxRuntimeNotInstalled:
+            "The Minecraft player runtime is missing from this build. Reinstall WinLauncher from the complete DMG."
+        case .xboxLaunchFailed:
+            "Minecraft could not start. Open the diagnostic log for details."
         }
     }
 }

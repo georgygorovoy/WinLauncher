@@ -14,7 +14,12 @@ final class AppModel: ObservableObject {
     @Published var compatibilityHelp: CompatibilityHelp?
     @Published var showingEngineSetup = false
     @Published var showingAndroidSetup = false
+    @Published var showingXboxSetup = false
     @Published private(set) var androidSetupMessage = "Only the Android emulator, adb, and one compact ARM64 system image will be installed."
+    @Published private(set) var xboxSetupMessage = "Sign in with the Microsoft account that owns Minecraft for Windows."
+    @Published private(set) var xboxHelperAvailable = false
+    @Published private(set) var xboxGamePrepared = false
+    @Published private(set) var xboxRuntimeAvailable = false
     @Published var advancedMode = false
 
     @Published var graphicsMode: String {
@@ -40,6 +45,8 @@ final class AppModel: ObservableObject {
     private lazy var prefixManager = PrefixManager(paths: paths, runner: runner)
     private lazy var runtimeManager = RuntimeManager(paths: paths, runner: runner, prefixManager: prefixManager)
     private lazy var androidRuntimeManager = AndroidRuntimeManager(paths: paths, runner: runner)
+    private lazy var xboxHelperManager = XboxHelperManager(paths: paths, runner: runner)
+    private lazy var xboxRuntimeManager = XboxRuntimeManager(paths: paths, runner: runner)
     private lazy var detector = InstalledApplicationDetector(paths: paths)
     private var engine: WineEngineInstallation?
     private var pendingAndroidApplication: LibraryApplication?
@@ -61,6 +68,8 @@ final class AppModel: ObservableObject {
             await refreshInstalledApplications()
             await prepareEngineAutomatically()
             await refreshAndroidSupport()
+            await refreshXboxSupport()
+            try await ensureMinecraftLibraryItemIfReady()
         } catch { present(error) }
     }
 
@@ -135,6 +144,10 @@ final class AppModel: ObservableObject {
             await importAndLaunchAndroid(url)
             return
         }
+        if !bypassCompatibilityCheck, isMinecraftBootstrapper(url) {
+            compatibilityHelp = makeWindowsRuntimeHelp(for: url, canTryAnyway: false, logURL: nil)
+            return
+        }
         if !bypassCompatibilityCheck, WindowsExecutableInspector.requiresWindowsRuntime(url) {
             compatibilityHelp = makeWindowsRuntimeHelp(for: url, canTryAnyway: true, logURL: nil)
             return
@@ -169,6 +182,10 @@ final class AppModel: ObservableObject {
 
     func launch(_ application: LibraryApplication) async {
         guard operation == .idle || operation == .preparingEnvironment else { return }
+        if application.packageIdentifier == "org.minecraft.windows.gdk" {
+            await launchMinecraft(applicationID: application.id)
+            return
+        }
         if application.effectivePlatform == .android {
             await launchAndroid(application)
             return
@@ -325,7 +342,9 @@ final class AppModel: ObservableObject {
     }
 
     func revealFiles(for application: LibraryApplication) {
-        if application.effectivePlatform == .android, let sourcePath = application.sourcePath {
+        if application.packageIdentifier == "org.minecraft.windows.gdk" {
+            revealMinecraftFiles()
+        } else if application.effectivePlatform == .android, let sourcePath = application.sourcePath {
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: sourcePath)])
         } else {
             revealWindowsFiles()
@@ -348,6 +367,10 @@ final class AppModel: ObservableObject {
 
     func showAndroidSetup() {
         showingAndroidSetup = true
+    }
+
+    func showXboxSetup() {
+        showingXboxSetup = true
     }
 
     func dismissAndroidSetup() {
@@ -377,6 +400,37 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func installMinecraftSupport() async {
+        guard operation == .idle else { return }
+        operation = .preparingXboxSupport
+        do {
+            _ = try await xboxHelperManager.installBundledHelperIfAvailable()
+            await refreshXboxSupport()
+            guard xboxHelperAvailable else { throw WinLauncherError.xboxHelperNotInstalled }
+            guard xboxRuntimeAvailable else { throw WinLauncherError.xboxRuntimeNotInstalled }
+            operation = xboxGamePrepared ? .preparingXboxSupport : .downloadingXboxGame
+            xboxSetupMessage = xboxGamePrepared
+                ? "Preparing the player and starting Minecraft… The first launch installs one Microsoft component and can take several minutes."
+                : "Signing in, downloading, and preparing Minecraft… Keep WinLauncher open."
+            let result = try await xboxRuntimeManager.installAndLaunch()
+            guard result.terminationStatus == 0 else {
+                throw WinLauncherError.xboxLaunchFailed(result.logURL)
+            }
+            operation = .idle
+            await refreshXboxSupport()
+            try await ensureMinecraftLibraryItemIfReady()
+        } catch {
+            operation = .idle
+            xboxSetupMessage = error.localizedDescription
+            present(error)
+        }
+    }
+
+    func revealMinecraftFiles() {
+        guard xboxGamePrepared else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([paths.minecraftGame])
+    }
+
     func revealLogs() {
         NSWorkspace.shared.activateFileViewerSelecting([paths.logs])
     }
@@ -391,6 +445,7 @@ final class AppModel: ObservableObject {
         Synchronization: \(synchronizationEnabled ? "Enabled" : "Disabled")
         macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)
         Android support: \(androidSupportDescription)
+        Xbox Games Support: \(xboxSetupMessage)
         """
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
@@ -403,7 +458,10 @@ final class AppModel: ObservableObject {
     func useRecommendedAlternative() {
         guard let help = compatibilityHelp else { return }
         compatibilityHelp = nil
-        if let url = help.recommendedURL {
+        if help.recommendedURL?.scheme == "winlauncher",
+           help.recommendedURL?.host == "xbox-support" {
+            showingXboxSetup = true
+        } else if let url = help.recommendedURL {
             NSWorkspace.shared.open(url)
         } else {
             DispatchQueue.main.async { self.chooseWindowsFile() }
@@ -435,6 +493,9 @@ final class AppModel: ObservableObject {
              WinLauncherError.androidPackageUnknown(let url),
              WinLauncherError.androidInstallationFailed(let url):
             logURL = url
+        case WinLauncherError.xboxGameDownloadFailed(let url),
+             WinLauncherError.xboxLaunchFailed(let url):
+            logURL = url
         default:
             logURL = nil
         }
@@ -452,8 +513,20 @@ final class AppModel: ObservableObject {
         default:
             androidError = false
         }
+        let xboxError: Bool
+        switch error {
+        case WinLauncherError.xboxHelperNotInstalled,
+             WinLauncherError.xboxHelperInvalid,
+             WinLauncherError.xboxGameDownloadFailed,
+             WinLauncherError.xboxRuntimeNotInstalled,
+             WinLauncherError.xboxLaunchFailed:
+            xboxError = true
+        default:
+            xboxError = false
+        }
         failure = PresentedFailure(
-            title: androidError ? "Android app couldn’t start" : "Windows app couldn’t start",
+            title: xboxError ? "Xbox Games Support couldn’t start" :
+                (androidError ? "Android app couldn’t start" : "Windows app couldn’t start"),
             message: error.localizedDescription,
             logURL: logURL
         )
@@ -548,6 +621,51 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private func refreshXboxSupport() async {
+        let status = await xboxHelperManager.status()
+        xboxHelperAvailable = status.helperAvailable
+        xboxGamePrepared = status.gamePrepared
+        xboxRuntimeAvailable = status.runtimeAvailable
+        xboxSetupMessage = status.description
+    }
+
+    private func launchMinecraft(applicationID: UUID? = nil) async {
+        guard operation == .idle else { return }
+        operation = .launching("Minecraft for Windows")
+        xboxSetupMessage = "Starting Minecraft…"
+        do {
+            let result = try await xboxRuntimeManager.launch()
+            guard result.terminationStatus == 0 else {
+                throw WinLauncherError.xboxLaunchFailed(result.logURL)
+            }
+            if let applicationID,
+               let index = applications.firstIndex(where: { $0.id == applicationID }) {
+                applications[index].lastLaunchedAt = Date()
+                try await store.save(applications)
+            }
+            operation = .idle
+            await refreshXboxSupport()
+        } catch {
+            operation = .idle
+            xboxSetupMessage = error.localizedDescription
+            present(error)
+        }
+    }
+
+    private func ensureMinecraftLibraryItemIfReady() async throws {
+        guard xboxGamePrepared, xboxRuntimeAvailable,
+              !applications.contains(where: { $0.packageIdentifier == "org.minecraft.windows.gdk" }) else { return }
+        applications.append(LibraryApplication(
+            name: "Minecraft for Windows",
+            windowsPath: "G:\\Minecraft.Windows.exe",
+            sourceFileName: "Minecraft.Windows.exe",
+            sourcePath: paths.minecraftGame.appendingPathComponent("Minecraft.Windows.exe").path,
+            environmentID: "xbox-games",
+            packageIdentifier: "org.minecraft.windows.gdk"
+        ))
+        try await store.save(applications)
+    }
+
     private func launchArguments(for application: LibraryApplication) -> [String] {
         if (application.sourceFileName as NSString).pathExtension.lowercased() == "msi" {
             return ["msiexec", "/i", application.windowsPath]
@@ -597,18 +715,12 @@ final class AppModel: ObservableObject {
     ) -> CompatibilityHelp {
         let name = (displayName ?? sourceURL?.lastPathComponent ?? "").lowercased()
         if name.contains("minecraftinstaller") || name == "minecraft.exe" {
-            let bedrockApp = URL(fileURLWithPath: "/Applications/Bedrock for Mac.app")
-            let bedrockInstalled = FileManager.default.fileExists(atPath: bedrockApp.path)
             return CompatibilityHelp(
-                title: bedrockInstalled ? "Windows Bedrock is ready" : "Windows Bedrock support is required",
-                message: bedrockInstalled
-                    ? "Open Bedrock using the Microsoft account that owns Minecraft for Windows. This uses the Windows game and does not require a Google Play purchase."
-                    : "The official Store launcher cannot run in Wine. The open-source Windows Bedrock runtime signs in to Microsoft, verifies your Minecraft for Windows purchase, and downloads the owned Windows game without Google Play.",
+                title: "Minecraft for Windows needs Xbox Games Support",
+                message: "The Store bootstrapper cannot run in ordinary Wine. WinLauncher can use a separate open-source account helper to verify your purchase and download the official Windows game.",
                 sourceURL: sourceURL,
-                recommendedURL: bedrockInstalled
-                    ? bedrockApp
-                    : URL(string: "https://github.com/1JRobertson/bedrock-mac"),
-                recommendedTitle: bedrockInstalled ? "Open Windows Bedrock" : "View Windows Bedrock Setup",
+                recommendedURL: URL(string: "winlauncher://xbox-support"),
+                recommendedTitle: "Set Up Xbox Games Support",
                 canTryAnyway: canTryAnyway,
                 logURL: logURL
             )
@@ -647,5 +759,13 @@ final class AppModel: ObservableObject {
     private func isInstallerName(_ name: String) -> Bool {
         let value = name.lowercased()
         return value.contains("setup") || value.contains("installer") || value.contains("install_")
+    }
+
+    private func isMinecraftBootstrapper(_ url: URL) -> Bool {
+        let name = url.deletingPathExtension().lastPathComponent.lowercased()
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+        return name == "minecraftinstaller" || name == "minecraftlauncher" || name == "minecraft"
     }
 }

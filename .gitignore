@@ -1,5 +1,9 @@
 .build/
 dist/
+External/XboxRuntime/bin/
+External/XboxHelper/CorrespondingSource/internal/
+External/XboxHelper/CorrespondingSource/notice-evidence/
+External/XboxRuntime/Source/PythonWorkerNotices/internal/
 .DS_Store
 *.xcuserstate
 xcuserdata/

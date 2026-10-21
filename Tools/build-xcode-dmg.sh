@@ -3,10 +3,11 @@ set -euo pipefail
 setopt NULL_GLOB
 
 project_root="${0:A:h:h}"
+version="1.2.0"
 project="$project_root/WinLauncher.xcodeproj"
-derived_data="$project_root/.build/xcode"
+derived_data="$project_root/.build/release-xcode"
 stage="$project_root/.build/dmg-stage"
-output="$project_root/dist/WinLauncher-1.1.0.dmg"
+output="$project_root/dist/WinLauncher-$version.dmg"
 
 developer_dir=""
 for candidate in /Applications/Xcode.app/Contents/Developer /Applications/Xcode-*.app/Contents/Developer; do
@@ -48,7 +49,7 @@ fi
 /bin/cp "$project_root/Distribution/README.txt" "$stage/README.txt"
 /bin/ln -s /Applications "$stage/Applications"
 /bin/rm -f "$output"
-/usr/bin/hdiutil create -volname "WinLauncher 1.1.0" -srcfolder "$stage" -ov -format UDZO "$output"
+/usr/bin/hdiutil create -volname "WinLauncher $version" -srcfolder "$stage" -ov -format UDZO "$output"
 /usr/bin/hdiutil verify "$output"
 /usr/bin/shasum -a 256 "$output"
 print "Created: $output"

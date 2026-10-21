@@ -1,0 +1,38 @@
+--- a/crates/xodus-service/src/simple_context.rs
++++ b/crates/xodus-service/src/simple_context.rs
+@@ -17,7 +17,10 @@
+         store_session: Arc<xodus::licensing::store::StoreLicenseSession>) -> Self {
+         let client = reqwest::ClientBuilder::new()
+             .user_agent(format!("xodus-service/{}", env!("CARGO_PKG_VERSION")))
+-            .connection_verbose(true)
++            .https_only(true)
++            .redirect(reqwest::redirect::Policy::none())
++            .referer(false)
++            .connection_verbose(false)
+             .build()
+             .unwrap();
+ 
+--- a/crates/xodus-service/src/lib.rs
++++ b/crates/xodus-service/src/lib.rs
+@@ -10,7 +10,10 @@
+ const XML_MAGIC: u32 = 0x58445358;
+ const PROTO_MAGIC: u32 = 0x58445350;
+ pub async fn run(tokens: Arc<TokenManager>) {
+-    xodus::tokens::device::ensure_device_credentials(&reqwest::Client::new(), &tokens).await;
++    let client = reqwest::Client::builder().https_only(true)
++        .redirect(reqwest::redirect::Policy::none()).referer(false)
++        .build().expect("Unable to initialize secure account transport");
++    xodus::tokens::device::ensure_device_credentials(&client, &tokens).await;
+     let xodus::models::secrets::Token::Legacy(device_token) =
+         tokens.get_device_sts_token().unwrap()
+     else {
+--- a/crates/xodus/src/licensing/store.rs
++++ b/crates/xodus/src/licensing/store.rs
+@@ -101,6 +101,7 @@
+             binding: uuid::Uuid::from_bytes(bytes).to_string(),
+             account,
+             client: reqwest::Client::builder()
++                .https_only(true).referer(false)
+                 .connect_timeout(Duration::from_secs(8))
+                 .timeout(Duration::from_secs(20))
+                 .redirect(reqwest::redirect::Policy::none())

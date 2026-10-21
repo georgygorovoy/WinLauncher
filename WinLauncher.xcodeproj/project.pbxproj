@@ -24,6 +24,9 @@
 		A10000000000000000000012 /* AndroidSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* AndroidSetupView.swift */; };
 		A10000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
 		A10000000000000000000014 /* WinLauncher.icon in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* WinLauncher.icon */; };
+		A10000000000000000000015 /* XboxHelperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* XboxHelperManager.swift */; };
+		A10000000000000000000016 /* XboxSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* XboxSetupView.swift */; };
+		A10000000000000000000017 /* XboxRuntimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* XboxRuntimeManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +50,9 @@
 		B10000000000000000000012 /* AndroidSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidSetupView.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000000000000000000014 /* WinLauncher.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer; path = WinLauncher.icon; sourceTree = "<group>"; };
+		B10000000000000000000015 /* XboxHelperManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XboxHelperManager.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* XboxSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XboxSetupView.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* XboxRuntimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XboxRuntimeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +87,9 @@
 				B10000000000000000000010 /* WindowsExecutableInspector.swift */,
 				B10000000000000000000011 /* AndroidRuntimeManager.swift */,
 				B10000000000000000000012 /* AndroidSetupView.swift */,
+				B10000000000000000000015 /* XboxHelperManager.swift */,
+				B10000000000000000000016 /* XboxSetupView.swift */,
+				B10000000000000000000017 /* XboxRuntimeManager.swift */,
 				B10000000000000000000013 /* Assets.xcassets */,
 				B10000000000000000000014 /* WinLauncher.icon */,
 				B1000000000000000000000C /* Info.plist */,
@@ -104,6 +113,7 @@
 				C10000000000000000000003 /* Sources */,
 				C10000000000000000000001 /* Frameworks */,
 				C10000000000000000000002 /* Resources */,
+				C10000000000000000000004 /* Embed Xbox support */,
 			);
 			buildRules = ();
 			dependencies = ();
@@ -135,6 +145,20 @@
 		C10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000013 /* Assets.xcassets in Resources */, A10000000000000000000014 /* WinLauncher.icon in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		C10000000000000000000004 /* Embed Xbox support */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/External/XboxHelper/bin/standalone_helper", "$(SRCROOT)/External/XboxHelper/LICENSE-GPL-3.0.txt", "$(SRCROOT)/External/XboxHelper/README.md", "$(SRCROOT)/External/XboxHelper/THIRD_PARTY-UPSTREAM.md", "$(SRCROOT)/External/XboxHelper/BINARY.sha256", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime",);
+			name = "Embed Xbox support";
+			outputPaths = ("$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/standalone_helper", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/LICENSE-GPL-3.0.txt", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/README.md", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/THIRD_PARTY-UPSTREAM.md", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/BINARY.sha256", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxRuntime",);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "source_root=\"$SRCROOT/External/XboxHelper\"\nsource_helper=\"$source_root/bin/standalone_helper\"\nif [[ -x \"$source_helper\" ]]; then\n  destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxHelper\"\n  /bin/mkdir -p \"$destination\"\n  /usr/bin/install -m 700 \"$source_helper\" \"$destination/standalone_helper\"\n  for notice in LICENSE-GPL-3.0.txt README.md THIRD_PARTY-UPSTREAM.md BINARY.sha256; do\n    /usr/bin/install -m 600 \"$source_root/$notice\" \"$destination/$notice\"\n  done\nfi\nruntime_source=\"$SRCROOT/External/XboxRuntime/bin/XboxRuntime\"\nruntime_destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxRuntime\"\n/bin/rm -rf \"$runtime_destination\"\n/usr/bin/ditto \"$runtime_source\" \"$runtime_destination\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		C10000000000000000000003 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -156,26 +180,29 @@
 				A10000000000000000000010 /* WindowsExecutableInspector.swift in Sources */,
 				A10000000000000000000011 /* AndroidRuntimeManager.swift in Sources */,
 				A10000000000000000000012 /* AndroidSetupView.swift in Sources */,
+				A10000000000000000000015 /* XboxHelperManager.swift in Sources */,
+				A10000000000000000000016 /* XboxSetupView.swift in Sources */,
+				A10000000000000000000017 /* XboxRuntimeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		F10000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Debug; };
-		F10000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+		F10000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 15.0; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Debug; };
+		F10000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 15.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
 		F10000000000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -188,12 +215,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
