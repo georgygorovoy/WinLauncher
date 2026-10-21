@@ -20,7 +20,7 @@ xcodebuild -version
 3. Нажать **Run** (`⌘R`). Для локального запуска платный Apple Developer Program не нужен.
 4. В приложении нажать **Open App** или перетащить `.exe`, `.msi` или `.apk`.
 5. При первом открытии `.exe` WinLauncher сам скачает и проверит Wine 11 (около 460 МБ), установит его в Application Support и создаст общий Windows Environment. Выбирать движок не нужно. Ручной выбор доступен только в Advanced Mode.
-6. Для APK один раз установить Android Emulator, Platform Tools и Build Tools через Android Studio, затем создать ARM64-телефон в Device Manager. После этого WinLauncher запускает устройство и APK автоматически.
+6. Для APK принять лицензию в окне **Add Android Support** и нажать **Download and Install**. WinLauncher скачает только `adb`, нативный Apple Silicon Emulator и один компактный ARM64-образ Android 11; Android Studio и Java не нужны.
 
 Приложение использует один общий каталог:
 

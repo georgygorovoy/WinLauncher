@@ -21,6 +21,9 @@
 		A1000000000000000000000F /* RuntimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* RuntimeManager.swift */; };
 		A10000000000000000000010 /* WindowsExecutableInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* WindowsExecutableInspector.swift */; };
 		A10000000000000000000011 /* AndroidRuntimeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* AndroidRuntimeManager.swift */; };
+		A10000000000000000000012 /* AndroidSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* AndroidSetupView.swift */; };
+		A10000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
+		A10000000000000000000014 /* WinLauncher.icon in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* WinLauncher.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +44,9 @@
 		B1000000000000000000000F /* RuntimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeManager.swift; sourceTree = "<group>"; };
 		B10000000000000000000010 /* WindowsExecutableInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsExecutableInspector.swift; sourceTree = "<group>"; };
 		B10000000000000000000011 /* AndroidRuntimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidRuntimeManager.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* AndroidSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AndroidSetupView.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10000000000000000000014 /* WinLauncher.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer; path = WinLauncher.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +80,9 @@
 				B1000000000000000000000F /* RuntimeManager.swift */,
 				B10000000000000000000010 /* WindowsExecutableInspector.swift */,
 				B10000000000000000000011 /* AndroidRuntimeManager.swift */,
+				B10000000000000000000012 /* AndroidSetupView.swift */,
+				B10000000000000000000013 /* Assets.xcassets */,
+				B10000000000000000000014 /* WinLauncher.icon */,
 				B1000000000000000000000C /* Info.plist */,
 			);
 			path = WinLauncher;
@@ -123,7 +132,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000013 /* Assets.xcassets in Resources */, A10000000000000000000014 /* WinLauncher.icon in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -146,6 +155,7 @@
 				A1000000000000000000000F /* RuntimeManager.swift in Sources */,
 				A10000000000000000000010 /* WindowsExecutableInspector.swift in Sources */,
 				A10000000000000000000011 /* AndroidRuntimeManager.swift in Sources */,
+				A10000000000000000000012 /* AndroidSetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,6 +167,7 @@
 		F10000000000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
@@ -174,6 +185,7 @@
 		F10000000000000000000006 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;

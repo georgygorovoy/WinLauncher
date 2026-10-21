@@ -31,6 +31,10 @@ struct LibraryView: View {
             EngineSetupView()
                 .environmentObject(model)
         }
+        .sheet(isPresented: $model.showingAndroidSetup) {
+            AndroidSetupView()
+                .environmentObject(model)
+        }
         .sheet(item: $model.compatibilityHelp) { help in
             CompatibilityHelpView(help: help)
                 .environmentObject(model)

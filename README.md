@@ -2,7 +2,7 @@
 
 Native macOS application that runs Windows applications through independently updatable Wine engines and launches Android APKs through an installed Android Emulator.
 
-**Status: WinLauncher 1.1.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support discovers an installed Android SDK and ARM64 virtual device, then starts the emulator, installs the selected APK and opens its launcher activity.
+**Current release: WinLauncher 1.1.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java, then starts the emulator, installs the selected APK and opens its launcher activity.
 
 The first engineering gate is deliberately small: install current Ubisoft Connect on Apple Silicon and display its responsive login UI without CrossOver binaries or D3DMetal. Product implementation follows that result.
 
@@ -50,10 +50,10 @@ Implemented in the MVP:
 - automatic, checksum-verified Wine Mono installation when a managed .NET executable is opened.
 - preflight detection for Microsoft Store/WinRT bootstrap installers, with a clear compatible path instead of a Wine crash; Minecraft routes only to an open-source Windows-entitlement Bedrock runtime and never to a Google Play launcher.
 - Android `.apk` import, drag-and-drop, Finder file association and one-click relaunch from the same library;
-- automatic discovery and startup of an existing Apple Silicon Android Emulator device;
+- automatic installation or discovery and startup of an Apple Silicon Android Emulator device;
 - automatic APK package detection, `adb` installation and launcher activity startup.
 
-Android support intentionally does not redistribute Google SDK packages or system images. Install Android Studio, add **Android Emulator**, **Android SDK Platform-Tools**, **Android SDK Build-Tools**, and create an **ARM64** phone in Device Manager. This keeps SDK license acceptance with the user. APKs that require a physical device, a different CPU ABI, installation from Google Play, or a successful Play Integrity verdict may refuse to run.
+Android Studio is not required. After the user accepts Google's Android SDK License Agreement, WinLauncher downloads `adb`, the native Apple Silicon emulator, and one Android 11 ARM64 AOSP image directly from Google's SDK repository. The download is about 985 MB and uses about 2.5–3 GB after installation. Disk images are stored sparsely and emulator snapshots stay disabled to avoid wasting space. APKs that require a physical device, a different CPU ABI, installation from Google Play, or a successful Play Integrity verdict may refuse to run.
 
 Not yet implemented or validated:
 

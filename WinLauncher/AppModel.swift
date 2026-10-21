@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
     @Published var failure: PresentedFailure?
     @Published var compatibilityHelp: CompatibilityHelp?
     @Published var showingEngineSetup = false
+    @Published var showingAndroidSetup = false
+    @Published private(set) var androidSetupMessage = "Only the Android emulator, adb, and one compact ARM64 system image will be installed."
     @Published var advancedMode = false
 
     @Published var graphicsMode: String {
@@ -40,6 +42,7 @@ final class AppModel: ObservableObject {
     private lazy var androidRuntimeManager = AndroidRuntimeManager(paths: paths, runner: runner)
     private lazy var detector = InstalledApplicationDetector(paths: paths)
     private var engine: WineEngineInstallation?
+    private var pendingAndroidApplication: LibraryApplication?
 
     init() {
         let defaults = UserDefaults.standard
@@ -260,7 +263,7 @@ final class AppModel: ObservableObject {
         }
         guard let url, FileManager.default.fileExists(atPath: url.path) else { return nil }
         let icon = NSWorkspace.shared.icon(forFile: url.path)
-        let generic = NSWorkspace.shared.icon(forFileType: "exe")
+        let generic = NSWorkspace.shared.icon(for: UTType(filenameExtension: "exe") ?? .data)
         if icon.tiffRepresentation == generic.tiffRepresentation { return nil }
         icon.size = NSSize(width: 96, height: 96)
         return icon
@@ -343,11 +346,34 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func openAndroidStudio() {
-        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.google.android.studio") {
-            NSWorkspace.shared.openApplication(at: appURL, configuration: .init())
-        } else if let url = URL(string: "https://developer.android.com/studio") {
-            NSWorkspace.shared.open(url)
+    func showAndroidSetup() {
+        showingAndroidSetup = true
+    }
+
+    func dismissAndroidSetup() {
+        guard operation != .installingAndroidSupport else { return }
+        showingAndroidSetup = false
+        pendingAndroidApplication = nil
+    }
+
+    func installLightweightAndroidSupport() async {
+        guard operation == .idle else { return }
+        operation = .installingAndroidSupport
+        do {
+            _ = try await androidRuntimeManager.installManagedSupport { [weak self] message in
+                self?.androidSetupMessage = message
+            }
+            await refreshAndroidSupport()
+            operation = .idle
+            showingAndroidSetup = false
+            if let pending = pendingAndroidApplication {
+                pendingAndroidApplication = nil
+                await launchAndroid(pending)
+            }
+        } catch {
+            operation = .idle
+            androidSetupMessage = error.localizedDescription
+            present(error)
         }
     }
 
@@ -406,7 +432,8 @@ final class AppModel: ObservableObject {
             logURL = url
         case WinLauncherError.androidEmulatorDidNotStart(let url),
              WinLauncherError.androidInstallFailed(let url),
-             WinLauncherError.androidPackageUnknown(let url):
+             WinLauncherError.androidPackageUnknown(let url),
+             WinLauncherError.androidInstallationFailed(let url):
             logURL = url
         default:
             logURL = nil
@@ -417,7 +444,10 @@ final class AppModel: ObservableObject {
              WinLauncherError.androidVirtualDeviceMissing,
              WinLauncherError.androidEmulatorDidNotStart,
              WinLauncherError.androidInstallFailed,
-             WinLauncherError.androidPackageUnknown:
+             WinLauncherError.androidPackageUnknown,
+             WinLauncherError.androidDownloadFailed,
+             WinLauncherError.androidIntegrityFailed,
+             WinLauncherError.androidInstallationFailed:
             androidError = true
         default:
             androidError = false
@@ -493,6 +523,16 @@ final class AppModel: ObservableObject {
         } catch {
             operation = .idle
             await refreshAndroidSupport()
+            if case WinLauncherError.androidSDKNotInstalled = error {
+                pendingAndroidApplication = application
+                showingAndroidSetup = true
+                return
+            }
+            if case WinLauncherError.androidVirtualDeviceMissing = error {
+                pendingAndroidApplication = application
+                showingAndroidSetup = true
+                return
+            }
             present(error)
         }
     }

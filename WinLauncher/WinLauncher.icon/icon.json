@@ -1,0 +1,47 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.27338,0.54561,0.92018,1.00000",
+      "display-p3:0.26139,0.47928,0.96783,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "linear-gradient" : [
+              "extended-gray:1.00000,1.00000",
+              "display-p3:0.60622,0.69166,1.00000,1.00000"
+            ]
+          },
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "menu_tune_fork_stick_svg_000.svg",
+          "name" : "menu_tune_fork_stick_svg_000",
+          "position" : {
+            "scale" : 1.5,
+            "translation-in-points" : [
+              -0.13838469258848818,
+              -2.8573575811949468
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

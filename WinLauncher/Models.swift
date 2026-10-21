@@ -48,6 +48,7 @@ enum AppOperation: Equatable {
     case launching(String)
     case preparingAndroid
     case installingAndroidApp
+    case installingAndroidSupport
 
     var message: String? {
         switch self {
@@ -58,6 +59,7 @@ enum AppOperation: Equatable {
         case .launching(let name): "Opening \(name)…"
         case .preparingAndroid: "Starting Android…"
         case .installingAndroidApp: "Installing Android app…"
+        case .installingAndroidSupport: "Installing Android Support…"
         }
     }
 }
@@ -97,6 +99,9 @@ enum WinLauncherError: LocalizedError {
     case androidEmulatorDidNotStart(URL)
     case androidInstallFailed(URL)
     case androidPackageUnknown(URL)
+    case androidDownloadFailed(String)
+    case androidIntegrityFailed
+    case androidInstallationFailed(URL)
 
     var errorDescription: String? {
         switch self {
@@ -123,15 +128,21 @@ enum WinLauncherError: LocalizedError {
         case .processFailed(let name, let status, _):
             "\(name) stopped with status \(status)."
         case .androidSDKNotInstalled:
-            "Android Support is not installed. Install Android Studio with the Android Emulator and an ARM64 virtual device, or choose an existing Android SDK in Settings."
+            "Android Support is not installed. WinLauncher can download the lightweight components automatically, or you can choose an existing Android SDK in Settings."
         case .androidVirtualDeviceMissing:
-            "No compatible Android virtual device was found. Create an ARM64 phone in Android Studio’s Device Manager, then try again."
+            "No compatible Android environment was found. Reinstall the lightweight Android Support or choose an existing SDK with an ARM64 virtual device."
         case .androidEmulatorDidNotStart:
             "The Android virtual device did not finish starting. Open the diagnostic log for details."
         case .androidInstallFailed:
             "The APK could not be installed. It may target an unsupported Android version or processor architecture."
         case .androidPackageUnknown:
             "The APK was installed, but its launchable application could not be identified."
+        case .androidDownloadFailed(let reason):
+            "Android Support could not be downloaded. \(reason)"
+        case .androidIntegrityFailed:
+            "The Android Support download did not pass its integrity check."
+        case .androidInstallationFailed:
+            "Android Support could not be installed completely. Open the diagnostic log for details."
         }
     }
 }

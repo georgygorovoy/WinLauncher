@@ -7,10 +7,10 @@ WinLauncher 1.1.0
 5. To open supported files from Finder, open WinLauncher Settings > General and click
    “Make WinLauncher Default for .exe, .msi, and .apk”.
 
-Android APKs require Android Studio with Android Emulator, Platform Tools, Build
-Tools and an ARM64 virtual phone created in Device Manager. WinLauncher discovers
-the SDK and device automatically. Android SDK packages remain subject to Google's
-license and are not included in this DMG.
+For Android APKs, click “Download and Install” when prompted and accept Google's
+Android SDK license. WinLauncher downloads only adb, the native Apple Silicon
+emulator and one Android 11 ARM64 image (about 985 MB download / 2.5–3 GB installed).
+Android Studio and Java are not required.
 
 The Wine engine is downloaded separately and verified with SHA-256. WinLauncher
 does not disable macOS security or silently expose your entire Home folder.

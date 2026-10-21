@@ -12,6 +12,10 @@ struct SettingsView: View {
             compatibility.tabItem { Label("Compatibility", systemImage: "wrench.and.screwdriver") }
             diagnostics.tabItem { Label("Diagnostics", systemImage: "stethoscope") }
         }
+        .sheet(isPresented: $model.showingAndroidSetup) {
+            AndroidSetupView()
+                .environmentObject(model)
+        }
     }
 
     private var general: some View {
@@ -47,9 +51,10 @@ struct SettingsView: View {
         Form {
             Section("Android Support") {
                 LabeledContent("Status", value: model.androidSupportDescription)
-                Button("Open Android Studio", action: model.openAndroidStudio)
+                Button("Install Lightweight Android Support", action: model.showAndroidSetup)
+                    .disabled(model.operation != .idle)
                 Button("Choose Existing Android SDK…", action: model.chooseAndroidSDK)
-                Text("Install the Android Emulator, Platform Tools, and an ARM64 phone image in Android Studio. WinLauncher then starts the device, installs the APK, and opens it automatically.")
+                Text("Downloads only adb, the Apple Silicon emulator, and one compact Android 11 ARM64 image. Android Studio and Java are not required.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
