@@ -151,11 +151,11 @@ retains that feature by default.
 `patches/standalone-account-transport.patch` retains Xodus's GPLv3 license; it
 restricts helper service clients to HTTPS and disables account redirects.
 
-The frozen worker additionally needs its actual CPython version, PyInstaller
-inputs/TOC and bundled extension libraries recorded. The [PyInstaller exception](https://pyinstaller.org/en/stable/license.html)
-does not waive other bundled software's terms. Preserve the [Python license and
-incorporated notices](https://docs.python.org/3/license.html) from the actual
-embedded version.
+The launcher worker uses the pinned `python-build-standalone` 20261021
+`install_only_stripped` distribution containing CPython 3.13.17 for arm64 macOS.
+Its archive URL and SHA-256 are recorded in `portable-python.lock`; the staged
+runtime retains CPython's complete `LICENSE.txt` and the build project's MPL-2.0
+license. PyInstaller and the developer Mac's Homebrew libraries are not used.
 
 For the final candidate, every binary and data file needs a component/version,
 hash, notice and exact source/build-material mapping. The corresponding source
@@ -208,11 +208,8 @@ Earlier candidates built with the default legacy feature retain their separate
 notice inventory and unresolved xmlserde notice gap. Generated bulk archives
 and local machine evidence do not enter the source allowlist or app automatically.
 
-`collect-python-notices.py` records the frozen worker's actual PyInstaller inputs,
-CPython source and license texts, bundled native extensions, and source mappings.
-The reviewed local worker uses CPython 3.14.5 and PyInstaller 6.22.3; 73 notice
-texts cover its selected Python/native inputs. All 49 packaged native code
-sections matched the build inputs, and the candidate's 73 packaged notices
-matched the generated texts. These checks do not establish a complete rebuild
-of Homebrew's original dependencies. Preserve the matching source archives,
-build evidence and per-candidate index separately from app notice texts.
+The portable worker launcher is built from `launcher/worker-launcher.c` with a
+macOS 11 deployment target. It starts the unmodified pinned CPython executable
+in isolated mode and then runs `launcher/setup.py`. Development headers, pip,
+Tk and other unused build/GUI files are removed during staging. The resulting
+worker has no dependency on a system or Homebrew Python installation.

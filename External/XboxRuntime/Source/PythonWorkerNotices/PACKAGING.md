@@ -1,4 +1,9 @@
-# Frozen Python worker license input
+# Historical frozen Python worker license input
+
+This inventory applies only to the PyInstaller worker shipped in WinLauncher
+1.2.0. Version 1.2.1 and later use the pinned portable CPython distribution in
+`../portable-python.lock`; this directory is retained as historical build
+evidence and is not copied into the current application runtime.
 
 Copy only `licenses/` into the candidate's license resources, and retain `index.json`
 as component/source evidence. Do not copy `internal/`, source archives, build receipts,

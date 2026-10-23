@@ -11,7 +11,8 @@ import shutil
 import subprocess
 import sys
 import runpy
-# Included explicitly for the frozen worker's dynamically loaded scripts.
+# Imported here so both the portable worker and dynamically loaded scripts use
+# the same complete standard-library modules.
 import xml.etree.ElementTree
 import zipfile
 import zlib
@@ -27,8 +28,8 @@ BUNDLE = Path(os.environ['BEDROCK_BUNDLE']) if os.environ.get('BEDROCK_BUNDLE') 
 if BUNDLE and not os.environ.get('BEDROCK_HOME'):
     os.environ['BEDROCK_HOME'] = str(Path.home() / 'Library/Application Support/Bedrock for Mac')
 
-# The frozen executable also runs the shipped Python scripts. No system Python
-# or developer tools are required on the user's Mac.
+# Compatibility path for the older frozen executable. The portable worker runs
+# these scripts directly with its bundled interpreter.
 if FROZEN and len(sys.argv) > 1 and sys.argv[1].endswith('.py'):
     script = Path(sys.argv[1]).resolve()
     allowed = {'standalone.py', 'standalone-setup.py', 'standalone-gameinput.py'}
