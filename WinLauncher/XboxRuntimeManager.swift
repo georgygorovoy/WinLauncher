@@ -1,5 +1,12 @@
 import Foundation
 
+struct XboxRuntimeProgress: Decodable, Sendable {
+    let state: String
+    let title: String
+    let detail: String
+    let progress: Double?
+}
+
 actor XboxRuntimeManager {
     private let paths: AppPaths
     private let runner: ProcessRunner
@@ -11,15 +18,22 @@ actor XboxRuntimeManager {
         self.fileManager = fileManager
     }
 
-    func installAndLaunch() async throws -> ProcessResult {
-        try await run(logPrefix: "minecraft-setup")
+    func installAndLaunch(
+        progress: (@Sendable (XboxRuntimeProgress) async -> Void)? = nil
+    ) async throws -> ProcessResult {
+        try await run(logPrefix: "minecraft-setup", progress: progress)
     }
 
-    func launch() async throws -> ProcessResult {
-        try await run(logPrefix: "minecraft")
+    func launch(
+        progress: (@Sendable (XboxRuntimeProgress) async -> Void)? = nil
+    ) async throws -> ProcessResult {
+        try await run(logPrefix: "minecraft", progress: progress)
     }
 
-    private func run(logPrefix: String) async throws -> ProcessResult {
+    private func run(
+        logPrefix: String,
+        progress: (@Sendable (XboxRuntimeProgress) async -> Void)?
+    ) async throws -> ProcessResult {
         guard let bundle = bundledRuntime(),
               let worker = executable(bundle.appendingPathComponent("worker/BedrockWorker")) else {
             throw WinLauncherError.xboxRuntimeNotInstalled
@@ -27,19 +41,63 @@ actor XboxRuntimeManager {
         let log = paths.logs.appendingPathComponent(
             "\(logPrefix)-\(Int(Date().timeIntervalSince1970)).log"
         )
-        return try await runner.run(
-            executable: worker,
-            arguments: [],
-            environment: [
-                "HOME": fileManager.homeDirectoryForCurrentUser.path,
-                "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
-                "BEDROCK_BUNDLE": bundle.path,
-                "BEDROCK_HOME": paths.xboxSupport.path,
-                "XODUS_LOG": "off",
-                "RUST_LOG": "off"
-            ],
-            logURL: log
-        )
+        let monitor = Task {
+            var offset = 0
+            var pending = Data()
+            while !Task.isCancelled {
+                (offset, pending) = await Self.publishProgress(
+                    from: log,
+                    after: offset,
+                    pending: pending,
+                    handler: progress
+                )
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+        do {
+            let result = try await runner.run(
+                executable: worker,
+                arguments: [],
+                environment: [
+                    "HOME": fileManager.homeDirectoryForCurrentUser.path,
+                    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+                    "BEDROCK_BUNDLE": bundle.path,
+                    "BEDROCK_HOME": paths.xboxSupport.path,
+                    "XODUS_LOG": "off",
+                    "RUST_LOG": "off"
+                ],
+                logURL: log
+            )
+            monitor.cancel()
+            _ = await monitor.result
+            return result
+        } catch {
+            monitor.cancel()
+            _ = await monitor.result
+            throw error
+        }
+    }
+
+    private static func publishProgress(
+        from log: URL,
+        after offset: Int,
+        pending: Data,
+        handler: (@Sendable (XboxRuntimeProgress) async -> Void)?
+    ) async -> (Int, Data) {
+        guard let handler,
+              let contents = try? Data(contentsOf: log),
+              contents.count >= offset else { return (offset, pending) }
+        var buffer = pending
+        buffer.append(contents.suffix(from: offset))
+        var start = buffer.startIndex
+        while let newline = buffer[start...].firstIndex(of: 0x0A) {
+            let line = buffer[start..<newline]
+            if let update = try? JSONDecoder().decode(XboxRuntimeProgress.self, from: Data(line)) {
+                await handler(update)
+            }
+            start = buffer.index(after: newline)
+        }
+        return (contents.count, Data(buffer[start...]))
     }
 
     private func bundledRuntime() -> URL? {

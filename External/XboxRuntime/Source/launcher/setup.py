@@ -145,7 +145,9 @@ def installed():
 
 def account_update(line, updating=False):
     # Only these credential-free status lines reach the user interface.
-    if line.startswith(b'Keychain: requesting saved sign-in entry'):
+    if line.startswith(b'Sign in with the Microsoft account'):
+        event('signin', 'Microsoft sign-in is open', 'Complete sign-in in the separate Microsoft window.', 0.2)
+    elif line.startswith(b'Keychain: requesting saved sign-in entry'):
         event('busy', 'Signing you in', 'If macOS asks, “Always Allow” remembers access to your saved sign-in.', 0.2)
     elif line.startswith((b'Finding the Windows package', b"Checking this account's Minecraft ownership.")):
         event('busy', 'Checking your Minecraft purchase', '', 0.3)

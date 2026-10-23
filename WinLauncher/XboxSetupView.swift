@@ -3,6 +3,7 @@ import SwiftUI
 struct XboxSetupView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var setupTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 22) {
@@ -46,8 +47,16 @@ struct XboxSetupView: View {
                 ProgressView().controlSize(.small)
             }
             HStack {
-                Button("Close") { dismiss() }
+                if model.operation == .preparingXboxSupport || model.operation == .downloadingXboxGame {
+                    Button("Stop Setup") {
+                        setupTask?.cancel()
+                        setupTask = nil
+                    }
                     .keyboardShortcut(.cancelAction)
+                } else {
+                    Button("Close") { dismiss() }
+                        .keyboardShortcut(.cancelAction)
+                }
                 Spacer()
                 if model.xboxGamePrepared && model.xboxRuntimeAvailable {
                     Button("Play Minecraft") { Task { await model.installMinecraftSupport() } }
@@ -57,7 +66,7 @@ struct XboxSetupView: View {
                     Button("Show Game Files", action: model.revealMinecraftFiles)
                         .buttonStyle(.borderedProminent)
                 } else {
-                    Button("Set Up and Download") { Task { await model.installMinecraftSupport() } }
+                    Button("Set Up and Download") { startSetup() }
                         .buttonStyle(.borderedProminent)
                         .disabled(model.operation != .idle || !model.xboxHelperAvailable)
                 }
@@ -67,9 +76,20 @@ struct XboxSetupView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Text("WinLauncher \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding(30)
         .frame(width: 590)
         .interactiveDismissDisabled(model.operation != .idle)
+    }
+
+    private func startSetup() {
+        setupTask?.cancel()
+        setupTask = Task {
+            await model.installMinecraftSupport()
+            setupTask = nil
+        }
     }
 }

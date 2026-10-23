@@ -412,7 +412,14 @@ final class AppModel: ObservableObject {
             xboxSetupMessage = xboxGamePrepared
                 ? "Preparing the player and starting Minecraft… The first launch installs one Microsoft component and can take several minutes."
                 : "Signing in, downloading, and preparing Minecraft… Keep WinLauncher open."
-            let result = try await xboxRuntimeManager.installAndLaunch()
+            let result = try await xboxRuntimeManager.installAndLaunch { [weak self] update in
+                await self?.applyXboxProgress(update)
+            }
+            if Task.isCancelled {
+                operation = .idle
+                xboxSetupMessage = "Setup was stopped. Choose Set Up and Download to continue."
+                return
+            }
             guard result.terminationStatus == 0 else {
                 throw WinLauncherError.xboxLaunchFailed(result.logURL)
             }
@@ -634,7 +641,14 @@ final class AppModel: ObservableObject {
         operation = .launching("Minecraft for Windows")
         xboxSetupMessage = "Starting Minecraft…"
         do {
-            let result = try await xboxRuntimeManager.launch()
+            let result = try await xboxRuntimeManager.launch { [weak self] update in
+                await self?.applyXboxProgress(update)
+            }
+            if Task.isCancelled {
+                operation = .idle
+                xboxSetupMessage = "Launch was stopped."
+                return
+            }
             guard result.terminationStatus == 0 else {
                 throw WinLauncherError.xboxLaunchFailed(result.logURL)
             }
@@ -664,6 +678,30 @@ final class AppModel: ObservableObject {
             packageIdentifier: "org.minecraft.windows.gdk"
         ))
         try await store.save(applications)
+    }
+
+    private func applyXboxProgress(_ update: XboxRuntimeProgress) async {
+        xboxSetupMessage = update.detail.isEmpty
+            ? update.title
+            : "\(update.title)\n\(update.detail)"
+        if update.state == "signin" {
+            await activateMicrosoftSignIn()
+        }
+    }
+
+    private func activateMicrosoftSignIn() async {
+        guard let helper = Bundle.main.resourceURL?
+            .appendingPathComponent("XboxRuntime/standalone_helper")
+            .resolvingSymlinksInPath().standardizedFileURL else { return }
+        for delay in [200, 700, 1_500, 3_000] {
+            try? await Task.sleep(for: .milliseconds(delay))
+            guard !Task.isCancelled else { return }
+            if let running = NSWorkspace.shared.runningApplications.first(where: {
+                $0.executableURL?.resolvingSymlinksInPath().standardizedFileURL == helper
+            }) {
+                running.activate(options: [.activateAllWindows])
+            }
+        }
     }
 
     private func launchArguments(for application: LibraryApplication) -> [String] {
