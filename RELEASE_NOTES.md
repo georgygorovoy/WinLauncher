@@ -16,6 +16,8 @@ bootstrapper files directly from Finder.
   local Minecraft files.
 - Routes Minecraft-named `.exe` files opened from Finder to Xbox Games Support
   even while the Windows engine is still starting.
+- Keeps Set Up and Download available on a clean installation and accepts the
+  verified bundled account helper when the app is installed system-wide.
 - Adds Run as Regular Windows App for users who want to bypass Xbox Games
   Support and launch the selected bootstrapper through the normal Wine path.
 - Keeps the live setup progress, foreground Microsoft sign-in window, retry,

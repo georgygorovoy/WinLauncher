@@ -87,7 +87,7 @@ struct XboxSetupView: View {
                 } else {
                     Button("Set Up and Download") { startSetup() }
                         .buttonStyle(.borderedProminent)
-                        .disabled(model.operation != .idle || !model.xboxHelperAvailable)
+                        .disabled(model.operation != .idle)
                 }
             }
             if model.canRunMinecraftBootstrapperAsWindowsApp {

@@ -18,7 +18,7 @@ struct XboxSupportStatus: Sendable {
 /// Adapter for the separately distributed GPL account/download helper.
 /// The helper is never linked into WinLauncher and receives no Wine environment.
 actor XboxHelperManager {
-    private static let approvedHelperSHA256 = "cce9d9cc3cf72b9acf03eaae413be6f16bf838c1141ffcfa9ab182e416580ff4"
+    private static let approvedHelperSHA256 = "0b2925341bd49d35776d2d3fb4879969ea78d4abfbf45ce8fa8797d5b7e69c61"
     private let paths: AppPaths
     private let runner: ProcessRunner
     private let fileManager: FileManager
@@ -88,12 +88,13 @@ actor XboxHelperManager {
     }
 
     private func validatedHelper() -> URL? {
-        let candidates = [
+        let candidates: [(url: URL, requireCurrentUserOwner: Bool)] = [
             Bundle.main.url(forResource: "standalone_helper", withExtension: nil,
-                            subdirectory: "XboxHelper"),
-            paths.xboxHelper
+                            subdirectory: "XboxHelper").map { ($0, false) },
+            (paths.xboxHelper, true)
         ].compactMap { $0 }
-        return candidates.first { url in
+        return candidates.first { candidate in
+            let url = candidate.url
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory)
                 && !isDirectory.boolValue
@@ -101,13 +102,16 @@ actor XboxHelperManager {
                 && !url.pathExtension.lowercased().contains("app"),
                   let attributes = try? fileManager.attributesOfItem(atPath: url.path),
                   (attributes[.type] as? FileAttributeType) == .typeRegular,
-                  (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
                   let permissions = (attributes[.posixPermissions] as? NSNumber)?.uint16Value,
                   permissions & 0o022 == 0 else { return false }
+            if candidate.requireCurrentUserOwner,
+               (attributes[.ownerAccountID] as? NSNumber)?.uint32Value != getuid() {
+                return false
+            }
             guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return false }
             let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             return digest == Self.approvedHelperSHA256
-        }
+        }?.url
     }
 
     private func isPreparedGame(at directory: URL) -> Bool {
