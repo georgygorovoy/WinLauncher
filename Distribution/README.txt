@@ -1,4 +1,4 @@
-WinLauncher 1.2.3
+WinLauncher 1.2.4
 
 1. Drag WinLauncher to Applications.
 2. Open WinLauncher and choose a Windows .exe/.msi or Android .apk file.

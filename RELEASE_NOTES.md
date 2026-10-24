@@ -1,31 +1,19 @@
-# WinLauncher 1.2.3
+# WinLauncher 1.2.4
 
-This patch fixes Minecraft setup, sign-in recovery, and launching Minecraft
-bootstrapper files directly from Finder.
+This patch makes the initial Minecraft for Windows setup work on a clean Mac
+with no existing XboxSupport data.
 
 ## Fixed
 
-- Accepts Microsoft's compact JWE ticket at the content-license boundary while
-  leaving the saved Xbox and Store sign-in unchanged.
-- Converts rejected, missing, or malformed license responses into controlled
-  setup errors instead of terminating the account helper.
-- Detects whether Microsoft account setup previously completed and shows Set Up,
-  Repair, or Play instead of offering Play before the account is ready.
-- Adds Repair Microsoft Sign-In. It clears only WinLauncher's saved Microsoft
-  session, opens sign-in again, and keeps the downloaded game, worlds, and other
-  local Minecraft files.
-- Routes Minecraft-named `.exe` files opened from Finder to Xbox Games Support
-  even while the Windows engine is still starting.
-- Keeps Set Up and Download available on a clean installation and accepts the
-  verified bundled account helper when the app is installed system-wide.
-- Adds Run as Regular Windows App for users who want to bypass Xbox Games
-  Support and launch the selected bootstrapper through the normal Wine path.
-- Keeps the live setup progress, foreground Microsoft sign-in window, retry,
-  and Stop Setup controls introduced in 1.2.2.
-- Rebuilds and checksum-binds the separate GPL account helper and its exact
-  corresponding source package.
-- Fixes the Xcode packaging dependency so a changed Xbox setup worker is always
-  copied into release builds.
+- Keeps Set Up and Download enabled when XboxSupport is completely empty.
+- Recognizes the current bundled Microsoft account helper using its correct
+  SHA-256 checksum.
+- Accepts the verified bundled helper when WinLauncher is installed system-wide
+  and the app files are owned by macOS rather than the current user.
+- Adds a release-build checksum gate so a mismatched helper cannot be packaged
+  again.
+- Includes the Microsoft sign-in repair, compact JWE license handling, Finder
+  routing, and regular Wine launch option introduced in 1.2.3.
 
 ## Requirements
 
