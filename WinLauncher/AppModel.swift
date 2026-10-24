@@ -20,6 +20,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var xboxHelperAvailable = false
     @Published private(set) var xboxGamePrepared = false
     @Published private(set) var xboxRuntimeAvailable = false
+    @Published private(set) var xboxAccountConfigured = false
+    @Published private(set) var xboxAccountNeedsRepair = false
     @Published var advancedMode = false
 
     @Published var graphicsMode: String {
@@ -50,6 +52,7 @@ final class AppModel: ObservableObject {
     private lazy var detector = InstalledApplicationDetector(paths: paths)
     private var engine: WineEngineInstallation?
     private var pendingAndroidApplication: LibraryApplication?
+    private var pendingMinecraftBootstrapper: URL?
 
     init() {
         let defaults = UserDefaults.standard
@@ -103,6 +106,10 @@ final class AppModel: ObservableObject {
     func receiveDrop(_ urls: [URL]) {
         let accepted = urls.filter { ["exe", "msi", "apk"].contains($0.pathExtension.lowercased()) }
         guard !accepted.isEmpty else { return }
+        if let minecraft = accepted.first(where: isMinecraftBootstrapper) {
+            openMinecraftSetup(for: minecraft)
+            return
+        }
         Task {
             for url in accepted { await importAndLaunch(url) }
         }
@@ -139,13 +146,13 @@ final class AppModel: ObservableObject {
     }
 
     func importAndLaunch(_ url: URL, bypassCompatibilityCheck: Bool = false) async {
+        if !bypassCompatibilityCheck, isMinecraftBootstrapper(url) {
+            openMinecraftSetup(for: url)
+            return
+        }
         guard operation == .idle else { return }
         if url.pathExtension.lowercased() == "apk" {
             await importAndLaunchAndroid(url)
-            return
-        }
-        if !bypassCompatibilityCheck, isMinecraftBootstrapper(url) {
-            compatibilityHelp = makeWindowsRuntimeHelp(for: url, canTryAnyway: false, logURL: nil)
             return
         }
         if !bypassCompatibilityCheck, WindowsExecutableInspector.requiresWindowsRuntime(url) {
@@ -370,7 +377,39 @@ final class AppModel: ObservableObject {
     }
 
     func showXboxSetup() {
-        showingXboxSetup = true
+        openMinecraftSetup()
+    }
+
+    func repairMinecraftAccount() async {
+        guard operation == .idle else { return }
+        operation = .preparingXboxSupport
+        xboxSetupMessage = "Repairing Microsoft sign-in… A login window will open next."
+        do {
+            let result = try await xboxRuntimeManager.repairAccountAndLaunch { [weak self] update in
+                await self?.applyXboxProgress(update)
+            }
+            guard result.terminationStatus == 0 else {
+                throw WinLauncherError.xboxLaunchFailed(result.logURL)
+            }
+            operation = .idle
+            await refreshXboxSupport()
+            try await ensureMinecraftLibraryItemIfReady()
+        } catch {
+            operation = .idle
+            xboxAccountNeedsRepair = true
+            xboxSetupMessage = error.localizedDescription
+            present(error)
+        }
+    }
+
+    func runMinecraftBootstrapperAsWindowsApp() {
+        guard let url = pendingMinecraftBootstrapper else { return }
+        showingXboxSetup = false
+        Task { await importAndLaunch(url, bypassCompatibilityCheck: true) }
+    }
+
+    var canRunMinecraftBootstrapperAsWindowsApp: Bool {
+        pendingMinecraftBootstrapper != nil
     }
 
     func dismissAndroidSetup() {
@@ -428,6 +467,7 @@ final class AppModel: ObservableObject {
             try await ensureMinecraftLibraryItemIfReady()
         } catch {
             operation = .idle
+            xboxAccountNeedsRepair = true
             xboxSetupMessage = error.localizedDescription
             present(error)
         }
@@ -634,6 +674,12 @@ final class AppModel: ObservableObject {
         xboxGamePrepared = status.gamePrepared
         xboxRuntimeAvailable = status.runtimeAvailable
         xboxSetupMessage = status.description
+        refreshXboxAccountStateFromLogs()
+        if xboxAccountNeedsRepair {
+            xboxSetupMessage = "Microsoft sign-in needs repair. Your downloaded game and local files are safe."
+        } else if xboxGamePrepared && xboxRuntimeAvailable && !xboxAccountConfigured {
+            xboxSetupMessage = "Set up your Microsoft account to play Minecraft for Windows."
+        }
     }
 
     private func launchMinecraft(applicationID: UUID? = nil) async {
@@ -661,6 +707,7 @@ final class AppModel: ObservableObject {
             await refreshXboxSupport()
         } catch {
             operation = .idle
+            xboxAccountNeedsRepair = true
             xboxSetupMessage = error.localizedDescription
             present(error)
         }
@@ -686,6 +733,11 @@ final class AppModel: ObservableObject {
             : "\(update.title)\n\(update.detail)"
         if update.state == "signin" {
             await activateMicrosoftSignIn()
+        } else if update.state == "playing" || update.state == "ready" {
+            xboxAccountConfigured = true
+            xboxAccountNeedsRepair = false
+        } else if update.state == "error" {
+            xboxAccountNeedsRepair = true
         }
     }
 
@@ -774,6 +826,44 @@ final class AppModel: ObservableObject {
         )
     }
 
+    private func openMinecraftSetup(for sourceURL: URL? = nil) {
+        pendingMinecraftBootstrapper = sourceURL
+        failure = nil
+        compatibilityHelp = nil
+        showingEngineSetup = false
+        showingAndroidSetup = false
+        showingXboxSetup = true
+    }
+
+    private func refreshXboxAccountStateFromLogs() {
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: paths.logs,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+        let latest = files.filter {
+            $0.pathExtension == "log" && $0.lastPathComponent.hasPrefix("minecraft")
+        }.max {
+            let left = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let right = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return left < right
+        }
+        guard let latest, let data = try? Data(contentsOf: latest),
+              let text = String(data: data.suffix(128_000), encoding: .utf8) else { return }
+        let states = text.split(separator: "\n").compactMap { line -> String? in
+            guard let lineData = String(line).data(using: .utf8),
+                  let progress = try? JSONDecoder().decode(XboxRuntimeProgress.self, from: lineData) else { return nil }
+            return progress.state
+        }
+        guard let state = states.last else { return }
+        if state == "error" {
+            xboxAccountNeedsRepair = true
+        } else if state == "playing" || state == "ready" {
+            xboxAccountConfigured = true
+            xboxAccountNeedsRepair = false
+        }
+    }
+
     private func refreshInstalledApplications() async {
         let detected = await detector.detect()
         var changed = false
@@ -800,6 +890,7 @@ final class AppModel: ObservableObject {
     }
 
     private func isMinecraftBootstrapper(_ url: URL) -> Bool {
+        guard url.pathExtension.caseInsensitiveCompare("exe") == .orderedSame else { return false }
         let name = url.deletingPathExtension().lastPathComponent.lowercased()
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "_", with: "")

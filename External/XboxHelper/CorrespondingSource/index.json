@@ -13,12 +13,12 @@
   "build_flags": [
     "--no-default-features"
   ],
-  "helper_sha256": "cce9d9cc3cf72b9acf03eaae413be6f16bf838c1141ffcfa9ab182e416580ff4",
+  "helper_sha256": "0b2925341bd49d35776d2d3fb4879969ea78d4abfbf45ce8fa8797d5b7e69c61",
   "lock_sha256": "a880eef79c4a21625eee41ab01b2d8939ac9bbdc1113bc9bea8ba14e4282bddc",
   "xodus_source": {
     "path": "source/xodus-patched-source.tar.gz",
-    "sha256": "40261ea333a82ea0be58c08bd57e6d00b938ddcaf27cf82352666a7a7c37c60e",
-    "bytes": 3005278,
+    "sha256": "c0242fb4c1d5ebab3513d1bd8046164d5057210aade11d5f8c6f30904a96226b",
+    "bytes": 3006338,
     "upstream": "https://codeload.github.com/xodus-gaming/xodus/tar.gz/0670e25aeb0e0e9f800f8f2f4968ae3b681842a7",
     "upstream_archive_sha256": "276faa5d98a73d5810d8c3f5a4081c897ebf09f000a29014bd38473abec2527f",
     "upstream_commit": "0670e25aeb0e0e9f800f8f2f4968ae3b681842a7",
@@ -329,7 +329,7 @@
       },
       {
         "path": "crates/xodus-cli/src/license.rs",
-        "sha256": "df2be19658e7356e633a21969e01ea29458442edb0b4108bf2098dd819c4b0ef"
+        "sha256": "4c0c29410e23e3470500ae453cd7286ab29a852e82b482f3874494a62b9dfc49"
       },
       {
         "path": "crates/xodus-cli/src/main.rs",
@@ -469,7 +469,7 @@
       },
       {
         "path": "crates/xodus/src/licensing/content.rs",
-        "sha256": "b71f1c0ae258fc0b4e72a5aa605ea450567c5f9046795d6783b4427028816196"
+        "sha256": "04db1166a981e130942a4bd4e2fc4e52a01fb55e6706497f2e04190dda7573a4"
       },
       {
         "path": "crates/xodus/src/licensing/splicense.rs",
@@ -513,7 +513,7 @@
       },
       {
         "path": "crates/xodus/src/models/secrets.rs",
-        "sha256": "f0a54ffaa1265ca81076faa5de2243a9ad2607110263bcdcbbc796349a5c8929"
+        "sha256": "0b7459d9709af133f823d8423f384311ee1540f8139550a5dde96bf9e3694138"
       },
       {
         "path": "crates/xodus/src/models/soap/base.rs",
@@ -4605,8 +4605,8 @@
     },
     {
       "path": "source/project-build-materials/THIRD_PARTY.md",
-      "sha256": "08808bfe301fa0d95fa482529a1e3c382de107c3c6a4eee34dd8fd5178d32bdb",
-      "bytes": 15856,
+      "sha256": "5c8bbaec426bdb4c2ec3eea53e4a4a777c967a554612f289874855cab589d99f",
+      "bytes": 16122,
       "kind": "local-project"
     },
     {
@@ -4661,6 +4661,12 @@
       "path": "source/project-build-materials/patches/standalone-helper-dependencies.patch",
       "sha256": "cd85a5ffd74d3a48aab5abb025bc0b85a0effe0122fd3ddb47c18a2accc2640c",
       "bytes": 829,
+      "kind": "local-project"
+    },
+    {
+      "path": "source/project-build-materials/patches/xodus-licensing-jwe-safe.patch",
+      "sha256": "5ea30096ab55743a38511369d235263ff96460091d717f0e17d145da49710458",
+      "bytes": 8207,
       "kind": "local-project"
     }
   ],

@@ -15,7 +15,10 @@ The helper's narrow responsibilities are:
 The checked-in `Sources/standalone-helper.rs` and `standalone-xvd.rs` are
 unchanged copies from `1JRobertson/bedrock-mac` commit
 `4b42c46131fd5b53cae7588773cac2d601471c2f`. They extend Xodus and remain GPL-3.0.
-The complete corresponding build inputs are fetched and pinned by `build.sh`.
+The GPL-3.0 `Sources/xodus-licensing-jwe-safe.patch` accepts Microsoft's compact
+JWE form only at the content-license boundary and turns malformed or rejected
+license responses into ordinary errors instead of process crashes. The complete
+corresponding build inputs are fetched and pinned by `build.sh`.
 
 No Minecraft files, Microsoft credentials, Microsoft runtime binaries, or game
 licenses are included in this repository.
@@ -35,8 +38,8 @@ and ship the exact GPL source archive and notices beside the release download.
 The locally verified ARM64 candidate has SHA-256:
 
 ```text
-cce9d9cc3cf72b9acf03eaae413be6f16bf838c1141ffcfa9ab182e416580ff4
+0b2925341bd49d35776d2d3fb4879969ea78d4abfbf45ce8fa8797d5b7e69c61
 ```
 
 `CorrespondingSource/` is bound to that exact binary hash. It records 436 Rust
-packages, 796 notice texts, and 450 source inputs with no unresolved notices.
+packages, 796 notice texts, and 451 source inputs with no unresolved notices.

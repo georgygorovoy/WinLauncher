@@ -1,20 +1,29 @@
-# WinLauncher 1.2.2
+# WinLauncher 1.2.3
 
-This patch fixes Microsoft sign-in appearing to do nothing during Minecraft
-setup, especially on macOS Sequoia.
+This patch fixes Minecraft setup, sign-in recovery, and launching Minecraft
+bootstrapper files directly from Finder.
 
 ## Fixed
 
-- Reads Xbox setup events while setup is running instead of waiting for the
-  entire download or game session to finish.
-- Brings the separate Microsoft sign-in window to the front when it opens.
-- Shows whether WinLauncher is signing in, checking ownership, downloading, or
-  preparing Minecraft.
-- Adds Stop Setup so an unfinished attempt can be cancelled and retried without
-  restarting WinLauncher.
-- Shows the installed WinLauncher version in the Minecraft setup window.
-- Retains the checksum-pinned portable Python runtime introduced in 1.2.1 for
-  compatibility with supported macOS releases.
+- Accepts Microsoft's compact JWE ticket at the content-license boundary while
+  leaving the saved Xbox and Store sign-in unchanged.
+- Converts rejected, missing, or malformed license responses into controlled
+  setup errors instead of terminating the account helper.
+- Detects whether Microsoft account setup previously completed and shows Set Up,
+  Repair, or Play instead of offering Play before the account is ready.
+- Adds Repair Microsoft Sign-In. It clears only WinLauncher's saved Microsoft
+  session, opens sign-in again, and keeps the downloaded game, worlds, and other
+  local Minecraft files.
+- Routes Minecraft-named `.exe` files opened from Finder to Xbox Games Support
+  even while the Windows engine is still starting.
+- Adds Run as Regular Windows App for users who want to bypass Xbox Games
+  Support and launch the selected bootstrapper through the normal Wine path.
+- Keeps the live setup progress, foreground Microsoft sign-in window, retry,
+  and Stop Setup controls introduced in 1.2.2.
+- Rebuilds and checksum-binds the separate GPL account helper and its exact
+  corresponding source package.
+- Fixes the Xcode packaging dependency so a changed Xbox setup worker is always
+  copied into release builds.
 
 ## Requirements
 

@@ -25,11 +25,23 @@ struct XboxSetupView: View {
                         Label("Official game downloaded and verified", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                         if model.xboxRuntimeAvailable {
-                            Label("Player runtime installed — ready to play", systemImage: "checkmark.circle.fill")
+                            Label("Player runtime installed", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                         } else {
                             Label("Player runtime is not installed in this build", systemImage: "clock")
                             Text("Your download and Microsoft sign-in are saved. You do not need to repeat them. A compatible WineGDK/DXMT runtime is still required before the game can launch.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if model.xboxAccountNeedsRepair {
+                            Label("Microsoft sign-in needs repair", systemImage: "person.crop.circle.badge.exclamationmark")
+                                .foregroundStyle(.orange)
+                            Text("Repair opens Microsoft sign-in again. The downloaded game and your local Minecraft files are kept.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if !model.xboxAccountConfigured {
+                            Label("Microsoft account setup required", systemImage: "person.crop.circle.badge.questionmark")
+                            Text("Sign in with the Microsoft account that owns Minecraft for Windows.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -58,10 +70,17 @@ struct XboxSetupView: View {
                         .keyboardShortcut(.cancelAction)
                 }
                 Spacer()
-                if model.xboxGamePrepared && model.xboxRuntimeAvailable {
+                if model.xboxGamePrepared && model.xboxRuntimeAvailable &&
+                    model.xboxAccountConfigured && !model.xboxAccountNeedsRepair {
                     Button("Play Minecraft") { Task { await model.installMinecraftSupport() } }
                         .buttonStyle(.borderedProminent)
                         .disabled(model.operation != .idle)
+                } else if model.xboxGamePrepared && model.xboxRuntimeAvailable {
+                    Button(model.xboxAccountNeedsRepair ? "Repair Microsoft Sign-In" : "Set Up Microsoft Account") {
+                        startAccountRepair()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.operation != .idle)
                 } else if model.xboxGamePrepared {
                     Button("Show Game Files", action: model.revealMinecraftFiles)
                         .buttonStyle(.borderedProminent)
@@ -70,6 +89,14 @@ struct XboxSetupView: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(model.operation != .idle || !model.xboxHelperAvailable)
                 }
+            }
+            if model.canRunMinecraftBootstrapperAsWindowsApp {
+                Button("Run as Regular Windows App") {
+                    dismiss()
+                    model.runMinecraftBootstrapperAsWindowsApp()
+                }
+                .buttonStyle(.link)
+                .disabled(model.operation != .idle)
             }
             if !model.xboxHelperAvailable {
                 Text("This development build does not yet contain the separately built GPL helper binary.")
@@ -89,6 +116,14 @@ struct XboxSetupView: View {
         setupTask?.cancel()
         setupTask = Task {
             await model.installMinecraftSupport()
+            setupTask = nil
+        }
+    }
+
+    private func startAccountRepair() {
+        setupTask?.cancel()
+        setupTask = Task {
+            await model.repairMinecraftAccount()
             setupTask = nil
         }
     }

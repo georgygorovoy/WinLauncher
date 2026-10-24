@@ -30,8 +30,19 @@ actor XboxRuntimeManager {
         try await run(logPrefix: "minecraft", progress: progress)
     }
 
+    func repairAccountAndLaunch(
+        progress: (@Sendable (XboxRuntimeProgress) async -> Void)? = nil
+    ) async throws -> ProcessResult {
+        try await run(
+            logPrefix: "minecraft-account-repair",
+            arguments: ["--repair-account"],
+            progress: progress
+        )
+    }
+
     private func run(
         logPrefix: String,
+        arguments: [String] = [],
         progress: (@Sendable (XboxRuntimeProgress) async -> Void)?
     ) async throws -> ProcessResult {
         guard let bundle = bundledRuntime(),
@@ -57,7 +68,7 @@ actor XboxRuntimeManager {
         do {
             let result = try await runner.run(
                 executable: worker,
-                arguments: [],
+                arguments: arguments,
                 environment: [
                     "HOME": fileManager.homeDirectoryForCurrentUser.path,
                     "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",

@@ -363,6 +363,20 @@ def initialize_session_bundle():
         initialize_bundle()
 
 
+def repair_account(log):
+    event('busy', 'Repairing Microsoft sign-in',
+          'Removing the inaccessible saved session. Your game and local files are kept.', 0.1)
+    result = subprocess.run(
+        ['/usr/bin/security', 'delete-generic-password',
+         '-s', 'Minecraft Bedrock Standalone', '-a', 'account-v1'],
+        stdout=log, stderr=subprocess.STDOUT)
+    # security(1) returns 44 for an item that does not exist. That is already
+    # the desired state for a fresh login.
+    if result.returncode not in (0, 44):
+        raise RuntimeError('Could not reset the saved Microsoft sign-in. Allow Keychain access, then try Repair again.')
+    event('busy', 'Microsoft sign-in reset', 'A new Microsoft login window will open.', 0.15)
+
+
 @contextlib.contextmanager
 def update_account(runtime, destination):
     # The helper arms its own parent-lifetime guardian before sign-in. It waits
@@ -484,6 +498,8 @@ def main():
                         return
         initialize_session_bundle()
         with (folder / 'onboarding.log').open('ab') as log:
+            if '--repair-account' in sys.argv:
+                repair_account(log)
             ready = installed()
             if '--sign-out' in sys.argv:
                 helper = ROOT / 'sources/xodus/target/release/examples/standalone_helper'

@@ -42,6 +42,11 @@ pinned `security-framework` 3.7.0 crate for Keychain updates that do not reread
 secrets. The patch retains GPLv3; security-framework retains its MIT/Apache-2.0
 licensing.
 
+`patches/xodus-licensing-jwe-safe.patch` adapts the compact-JWE content-license
+ticket formatting approach from Xodus Nexus commit
+`183e2154e1563cb2f9a199e67e338cc14d0ee4fe` and adds checked license-response
+errors for this pinned Xodus revision. It retains GPLv3.
+
 `standalone-xvd.rs` is original GPLv3 verification code using the already pinned
 `rsa` 0.9.10 crate (MIT/Apache-2.0) with its SHA-256 feature. The build includes
 only the 539-byte production verification public key documented in

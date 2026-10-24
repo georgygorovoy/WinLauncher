@@ -16,6 +16,11 @@ separately. Cargo may fetch dependencies using the original pinned lockfile;
 these archives are source materials, **not a configured offline Cargo vendor tree**.
 A clean isolated reconstruction/build remains required before a reproducibility claim.
 
+This candidate includes `xodus-licensing-jwe-safe.patch`, adapted under GPLv3
+from Xodus Nexus commit `183e2154e1563cb2f9a199e67e338cc14d0ee4fe` for
+the pinned Xodus revision. It changes only content-license ticket formatting and
+checked error handling; saved account tokens are not rewritten.
+
 The generator replays the pinned upstream Xodus patches in a temporary directory
 and compares every supplied source file, excluding only `.git` and `target`.
 Unknown source files, symlinks, changed files and missing files cause failure.
