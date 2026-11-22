@@ -2,7 +2,7 @@
 
 Native macOS application that runs Windows applications through independently updatable Wine engines and launches Android APKs through an installed Android Emulator.
 
-**Current release: WinLauncher 1.2.4.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java. Version 1.2 adds Xbox Games Support for Minecraft for Windows: a separately built GPL worker handles Microsoft sign-in, ownership verification, the official owned-game download, WineGDK/DXMT setup, and launch. Version 1.2.4 fixes first-time Minecraft setup on a clean Mac and includes the sign-in repair, compact JWE license handling, Finder routing, and regular Wine launch option introduced in 1.2.3.
+**Current release: WinLauncher 1.3.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java. Version 1.2 adds Xbox Games Support for Minecraft for Windows: a separately built GPL worker handles Microsoft sign-in, ownership verification, the official owned-game download, WineGDK/DXMT setup, and launch. Version 1.2.5 removes repeated macOS password prompts during Minecraft setup by keeping the Microsoft session in WinLauncher’s private account file.
 
 The first engineering gate is deliberately small: install current Ubisoft Connect on Apple Silicon and display its responsive login UI without CrossOver binaries or D3DMetal. Product implementation follows that result.
 
@@ -37,6 +37,10 @@ Research included direct inspection of Sikarugir's published Configure source. N
 
 Implemented in the MVP:
 
+- a Store home screen with combined live Steam and GOG results, search, store
+  filters and official game links; Epic and Ubisoft open official sites;
+- a Profile view for installed apps and launch history recorded by WinLauncher;
+- a separate Android tab with a pinned, verified F-Droid app store installer;
 - native SwiftUI library and drag-and-drop for `.exe` and `.msi` files;
 - one shared Default Windows Environment;
 - controlled import of selected executables into that environment instead of a host-root Wine drive;
@@ -53,7 +57,7 @@ Implemented in the MVP:
 - automatic installation or discovery and startup of an Apple Silicon Android Emulator device;
 - automatic APK package detection, `adb` installation and launcher activity startup.
 - native Minecraft installer detection and Microsoft sign-in through a pinned, separately executed Xodus helper;
-- SHA-256 verification of the helper, macOS Keychain token storage and corresponding GPL source materials;
+- SHA-256 verification of the helper, mode-0600 private account storage and corresponding GPL source materials;
 - a bundled, replaceable WineGDK 11.8 and DXMT 0.80 player runtime for one-click Minecraft for Windows launch;
 - a dedicated Xbox Games environment, automatic GameInput setup, and source-built WinRT file-picker compatibility.
 
