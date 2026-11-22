@@ -37,7 +37,7 @@ actor PrefixManager {
             logURL: paths.logs.appendingPathComponent("environment-init.log")
         )
         guard result.terminationStatus == 0 else {
-            throw WinLauncherError.processFailed("Windows Environment setup", result.terminationStatus, result.logURL)
+            throw WinLauncherError.processFailed(String(localized: "Windows Environment setup"), result.terminationStatus, result.logURL)
         }
         try? FileManager.default.removeItem(at: paths.prefix.appendingPathComponent("dosdevices/z:"))
         let systemDirectory = paths.prefix.appendingPathComponent("drive_c/windows/system32", isDirectory: true)
@@ -74,6 +74,24 @@ actor PrefixManager {
         return "X:\\\(source.lastPathComponent)"
     }
 
+    func mapSteamGameFolder(_ source: URL, appID: String) throws -> String {
+        guard !appID.isEmpty, appID.allSatisfy(\.isNumber),
+              FileManager.default.fileExists(atPath: source.path) else {
+            throw WinLauncherError.applicationFilesMissing
+        }
+        let parent = paths.imports.appendingPathComponent("SteamGames", isDirectory: true)
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let link = parent.appendingPathComponent(appID)
+        if let destination = try? FileManager.default.destinationOfSymbolicLink(atPath: link.path) {
+            if destination == source.path { return "C:\\users\\Public\\WinLauncher\\SteamGames\\\(appID)" }
+            try FileManager.default.removeItem(at: link)
+        } else if FileManager.default.fileExists(atPath: link.path) {
+            throw WinLauncherError.applicationFilesMissing
+        }
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: source)
+        return "C:\\users\\Public\\WinLauncher\\SteamGames\\\(appID)"
+    }
+
     func repair(engine: WineEngineInstallation) async throws {
         try? FileManager.default.removeItem(at: paths.prefix.appendingPathComponent(".winlauncher-ready"))
         try await prepareIfNeeded(engine: engine)
@@ -96,7 +114,7 @@ actor PrefixManager {
             logURL: paths.logs.appendingPathComponent("tool-\(Int(Date().timeIntervalSince1970)).log")
         )
         guard result.terminationStatus == 0 else {
-            throw WinLauncherError.processFailed(arguments.first ?? "Windows tool", result.terminationStatus, result.logURL)
+            throw WinLauncherError.processFailed(arguments.first ?? String(localized: "Windows tool"), result.terminationStatus, result.logURL)
         }
     }
 

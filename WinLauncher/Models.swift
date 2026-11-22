@@ -1,5 +1,11 @@
 import Foundation
 
+enum L10n {
+    static func text(_ key: String) -> String {
+        NSLocalizedString(key, comment: "")
+    }
+}
+
 enum ApplicationPlatform: String, Codable, Hashable {
     case windows
     case android
@@ -48,6 +54,7 @@ enum AppOperation: Equatable {
     case launching(String)
     case preparingAndroid
     case installingAndroidApp
+    case downloadingAndroidStore
     case installingAndroidSupport
     case preparingXboxSupport
     case downloadingXboxGame
@@ -55,15 +62,16 @@ enum AppOperation: Equatable {
     var message: String? {
         switch self {
         case .idle: nil
-        case .installingEngine: "Installing the Windows engine…"
-        case .installingRuntime: "Adding .NET support…"
-        case .preparingEnvironment: "Preparing the Windows Environment…"
-        case .launching(let name): "Opening \(name)…"
-        case .preparingAndroid: "Starting Android…"
-        case .installingAndroidApp: "Installing Android app…"
-        case .installingAndroidSupport: "Installing Android Support…"
-        case .preparingXboxSupport: "Preparing Xbox Games Support…"
-        case .downloadingXboxGame: "Downloading your Windows game…"
+        case .installingEngine: String(localized: "Installing the Windows engine…")
+        case .installingRuntime: String(localized: "Adding .NET support…")
+        case .preparingEnvironment: String(localized: "Preparing the Windows Environment…")
+        case .launching(let name): String(localized: "Opening \(name)…")
+        case .preparingAndroid: String(localized: "Starting Android…")
+        case .installingAndroidApp: String(localized: "Installing Android app…")
+        case .downloadingAndroidStore: String(localized: "Downloading and verifying F-Droid…")
+        case .installingAndroidSupport: String(localized: "Installing Android Support…")
+        case .preparingXboxSupport: String(localized: "Preparing Xbox Games Support…")
+        case .downloadingXboxGame: String(localized: "Downloading your Windows game…")
         }
     }
 }
@@ -115,53 +123,53 @@ enum WinLauncherError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .engineNotInstalled:
-            "A Windows engine must be installed before opening an app."
+            String(localized: "A Windows engine must be installed before opening an app.")
         case .environmentInitializationFailed:
-            "The Windows Environment was not created completely. Open the diagnostic log for details."
+            String(localized: "The Windows Environment was not created completely. Open the diagnostic log for details.")
         case .noApprovedEngine:
-            "Wine is not installed. Choose an existing Wine application or executable."
+            String(localized: "Wine is not installed. Choose an existing Wine application or executable.")
         case .invalidEngine:
-            "The selected item does not contain a working Wine engine."
+            String(localized: "The selected item does not contain a working Wine engine.")
         case .engineDownloadFailed(let reason):
-            "Windows Support could not be downloaded. \(reason)"
+            String(localized: "Windows Support could not be downloaded. \(reason)")
         case .engineIntegrityFailed:
-            "The Windows Support download did not pass its integrity check."
+            String(localized: "The Windows Support download did not pass its integrity check.")
         case .engineInstallationFailed:
-            "Windows Support could not be installed completely. Open the diagnostic log for details."
+            String(localized: "Windows Support could not be installed completely. Open the diagnostic log for details.")
         case .engineFilesBlocked:
-            "Windows Support was downloaded and verified, but its runtime files could not be installed completely. Open the diagnostic log for details."
+            String(localized: "Windows Support was downloaded and verified, but its runtime files could not be installed completely. Open the diagnostic log for details.")
         case .applicationFilesMissing:
-            "This game was imported as a single .exe by an older build. Choose the original .exe again so its neighboring game files remain available."
+            String(localized: "This game was imported as a single .exe by an older build. Choose the original .exe again so its neighboring game files remain available.")
         case .compatibilityIssue(let message, _):
             message
         case .processFailed(let name, let status, _):
-            "\(name) stopped with status \(status)."
+            String(localized: "\(name) stopped with status \(status).")
         case .androidSDKNotInstalled:
-            "Android Support is not installed. WinLauncher can download the lightweight components automatically, or you can choose an existing Android SDK in Settings."
+            String(localized: "Android Support is not installed. WinLauncher can download the lightweight components automatically, or you can choose an existing Android SDK in Settings.")
         case .androidVirtualDeviceMissing:
-            "No compatible Android environment was found. Reinstall the lightweight Android Support or choose an existing SDK with an ARM64 virtual device."
+            String(localized: "No compatible Android environment was found. Reinstall the lightweight Android Support or choose an existing SDK with an ARM64 virtual device.")
         case .androidEmulatorDidNotStart:
-            "The Android virtual device did not finish starting. Open the diagnostic log for details."
+            String(localized: "The Android virtual device did not finish starting. Open the diagnostic log for details.")
         case .androidInstallFailed:
-            "The APK could not be installed. It may target an unsupported Android version or processor architecture."
+            String(localized: "The APK could not be installed. It may target an unsupported Android version or processor architecture.")
         case .androidPackageUnknown:
-            "The APK was installed, but its launchable application could not be identified."
+            String(localized: "The APK was installed, but its launchable application could not be identified.")
         case .androidDownloadFailed(let reason):
-            "Android Support could not be downloaded. \(reason)"
+            String(localized: "Android Support could not be downloaded. \(reason)")
         case .androidIntegrityFailed:
-            "The Android Support download did not pass its integrity check."
+            String(localized: "The Android Support download did not pass its integrity check.")
         case .androidInstallationFailed:
-            "Android Support could not be installed completely. Open the diagnostic log for details."
+            String(localized: "Android Support could not be installed completely. Open the diagnostic log for details.")
         case .xboxHelperNotInstalled:
-            "The separate Xbox account helper is not installed in this build yet. It must be built and distributed with its GPL source and notices."
+            String(localized: "The separate Xbox account helper is not installed in this build yet. It must be built and distributed with its GPL source and notices.")
         case .xboxHelperInvalid:
-            "Xbox Games Support contains an invalid or non-executable helper."
+            String(localized: "Xbox Games Support contains an invalid or non-executable helper.")
         case .xboxGameDownloadFailed:
-            "Minecraft for Windows could not be prepared. Open the diagnostic log for details."
+            String(localized: "Minecraft for Windows could not be prepared. Open the diagnostic log for details.")
         case .xboxRuntimeNotInstalled:
-            "The Minecraft player runtime is missing from this build. Reinstall WinLauncher from the complete DMG."
+            String(localized: "The Minecraft player runtime is missing from this build. Reinstall WinLauncher from the complete DMG.")
         case .xboxLaunchFailed:
-            "Minecraft could not start. Open the diagnostic log for details."
+            String(localized: "Minecraft could not start. Open the diagnostic log for details.")
         }
     }
 }

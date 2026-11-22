@@ -1,5 +1,5 @@
 //! One stable executable owns sign-in, licensed download, and Xbox IPC.
-//! Credentials stay in Keychain. Never log raw service errors or panic payloads.
+//! Credentials stay in the selected private account store. Never log raw service errors or panic payloads.
 use std::{collections::{HashMap, HashSet}, path::{Component, Path, PathBuf}, process::ExitCode, sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}}};
 use std::os::unix::{ffi::OsStrExt, fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt}};
 use futures_util::{stream, StreamExt, TryStreamExt};
@@ -333,7 +333,11 @@ impl TokenBackend for AccountKeychain {
         KeychainBackend.get(key)
     }
     fn set(&self, key: &str, value: &[u8]) -> Result<(), TokenStoreError> {
-        #[cfg(target_os = "macos")]
+        #[cfg(feature = "account-file")]
+        {
+            return KeychainBackend.set(key, value);
+        }
+        #[cfg(all(not(feature = "account-file"), target_os = "macos"))]
         {
             eprintln!("Keychain: saving sign-in entry ({key}) without rereading it");
             // The legacy keyring setter calls find_generic_password, reading
@@ -344,13 +348,13 @@ impl TokenBackend for AccountKeychain {
                 .map_err(|error| report_account_error("vault_write", std::io::Error::other(error).into()))?;
             Ok(())
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(all(not(feature = "account-file"), not(target_os = "macos")))]
         { KeychainBackend.set(key, value) }
     }
     fn remove(&self, key: &str) -> Result<(), TokenStoreError> { KeychainBackend.remove(key) }
 }
 
-/// One Keychain read per process instead of one per token. Do not
+/// One account-store read per process instead of one per token. Do not
 /// read legacy entries automatically: that itself triggers several prompts.
 /// The first run signs in again; previous entries remain untouched.
 struct AccountBackend<B> {
@@ -698,7 +702,7 @@ async fn run_owned() -> Outcome<()> {
     let mut args = std::env::args().skip(1);
     let mode = args.next().ok_or("Use --download GAME_DIR or --serve GAME_DIR [--market CA].")?;
     if mode == "--help" {
-        println!("standalone_helper --download GAME_DIR [--market CA] [--serve-after]\nstandalone_helper --check-download GAME_DIR [--market CA]\nstandalone_helper --serve GAME_DIR [--market CA]\nstandalone_helper --sign-out GAME_DIR\nCredentials: macOS Keychain, Minecraft Bedrock Standalone. Stop any existing Xbox helper first.");
+        println!("standalone_helper --download GAME_DIR [--market CA] [--serve-after]\nstandalone_helper --check-download GAME_DIR [--market CA]\nstandalone_helper --serve GAME_DIR [--market CA]\nstandalone_helper --sign-out GAME_DIR\nCredentials: private WinLauncher account store. Stop any existing Xbox helper first.");
         return Ok(());
     }
     if mode != "--download" && mode != "--check-download" && mode != "--serve" && mode != "--sign-out" { return Err("Unknown helper mode.".into()); }
@@ -728,7 +732,7 @@ async fn run_owned() -> Outcome<()> {
     let account_lock = std::fs::OpenOptions::new().read(true).write(true).create(true).truncate(false).mode(0o600).open(lock_path)?;
     fs2::FileExt::try_lock_exclusive(&account_lock).map_err(|_| "Another standalone account helper is already running.")?;
     xodus::secrets::init_named_secrets("Minecraft Bedrock Standalone")
-        .map_err(|_| "Could not initialize macOS Keychain.")?;
+        .map_err(|_| "Could not initialize the private account store.")?;
     let account = Arc::new(AccountBackend::new(AccountKeychain));
     if mode == "--sign-out" {
         account.sign_out().map_err(|_| failure("keychain_access"))?;

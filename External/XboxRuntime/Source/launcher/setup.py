@@ -22,6 +22,7 @@ import contextlib
 import uuid
 import tempfile
 import time
+import stat
 
 FROZEN = getattr(sys, 'frozen', False)
 BUNDLE = Path(os.environ['BEDROCK_BUNDLE']) if os.environ.get('BEDROCK_BUNDLE') else None
@@ -48,7 +49,7 @@ ACCOUNT_ERRORS = {
     'signin_cancelled': 'Sign-in was closed. Try again when you’re ready.',
     'signin_failed': 'Microsoft sign-in did not finish. Check your connection and try again.',
     'device_auth': 'Could not connect to Microsoft sign-in. Check your connection and retry.',
-    'keychain_access': 'Could not access your saved sign-in. Respond to any macOS Keychain prompt, then retry.',
+    'keychain_access': 'Could not access your saved sign-in. Choose Repair Microsoft Sign-In, then retry.',
     'helper_stopped': 'The sign-in helper stopped unexpectedly. Open the setup log for details.',
     'helper_parent_lost': 'The setup session stopped. Try again.',
     'helper_session_missing': 'Setup could not start safely. Close and reopen the app, then try again.',
@@ -74,6 +75,8 @@ BUNDLE_LINKS = {
     'runtime/standalone/dxmt': 'runtime/dxmt',
     'sources/xodus/target/release/examples/standalone_helper': 'standalone_helper',
 }
+
+ACCOUNT_STORE = ROOT / 'account/account-v2.ron'
 
 
 def event(state, title, detail='', progress=None):
@@ -147,8 +150,9 @@ def account_update(line, updating=False):
     # Only these credential-free status lines reach the user interface.
     if line.startswith(b'Sign in with the Microsoft account'):
         event('signin', 'Microsoft sign-in is open', 'Complete sign-in in the separate Microsoft window.', 0.2)
-    elif line.startswith(b'Keychain: requesting saved sign-in entry'):
-        event('busy', 'Signing you in', 'If macOS asks, “Always Allow” remembers access to your saved sign-in.', 0.2)
+    elif line.startswith((b'Account store: loading saved sign-in entry',
+                          b'Keychain: requesting saved sign-in entry')):
+        event('busy', 'Signing you in', 'Your saved Microsoft session stays private on this Mac.', 0.2)
     elif line.startswith((b'Finding the Windows package', b"Checking this account's Minecraft ownership.")):
         event('busy', 'Checking your Minecraft purchase', '', 0.3)
     elif line.startswith(b'Checking the signed Minecraft package header.'):
@@ -363,17 +367,41 @@ def initialize_session_bundle():
         initialize_bundle()
 
 
+def prepare_account_store():
+    """Use a private local account store without macOS Keychain prompts."""
+    directory = ACCOUNT_STORE.parent
+    if directory.is_symlink():
+        raise RuntimeError('An unexpected link blocks the saved Microsoft sign-in.')
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    directory.chmod(0o700)
+    metadata = directory.stat()
+    if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != os.getuid() or metadata.st_mode & 0o077:
+        raise RuntimeError('The saved Microsoft sign-in folder is not private.')
+    if ACCOUNT_STORE.is_symlink():
+        raise RuntimeError('An unexpected link blocks the saved Microsoft sign-in.')
+    if not ACCOUNT_STORE.exists():
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, 'O_NOFOLLOW'):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(ACCOUNT_STORE, flags, 0o600)
+        try:
+            os.write(descriptor, b'{}\n')
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    metadata = ACCOUNT_STORE.stat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+        raise RuntimeError('The saved Microsoft sign-in file is invalid.')
+    ACCOUNT_STORE.chmod(0o600)
+    os.environ['XODUS_KEYRING_FILE'] = str(ACCOUNT_STORE)
+
+
 def repair_account(log):
     event('busy', 'Repairing Microsoft sign-in',
           'Removing the inaccessible saved session. Your game and local files are kept.', 0.1)
-    result = subprocess.run(
-        ['/usr/bin/security', 'delete-generic-password',
-         '-s', 'Minecraft Bedrock Standalone', '-a', 'account-v1'],
-        stdout=log, stderr=subprocess.STDOUT)
-    # security(1) returns 44 for an item that does not exist. That is already
-    # the desired state for a fresh login.
-    if result.returncode not in (0, 44):
-        raise RuntimeError('Could not reset the saved Microsoft sign-in. Allow Keychain access, then try Repair again.')
+    prepare_account_store()
+    ACCOUNT_STORE.unlink(missing_ok=True)
+    prepare_account_store()
     event('busy', 'Microsoft sign-in reset', 'A new Microsoft login window will open.', 0.15)
 
 
@@ -497,6 +525,7 @@ def main():
                             raise RuntimeError(ACCOUNT_ERRORS.get(error.code, str(error))) from error
                         return
         initialize_session_bundle()
+        prepare_account_store()
         with (folder / 'onboarding.log').open('ab') as log:
             if '--repair-account' in sys.argv:
                 repair_account(log)

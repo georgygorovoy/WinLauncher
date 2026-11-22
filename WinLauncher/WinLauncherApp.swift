@@ -10,7 +10,7 @@ struct WinLauncherApp: App {
                 .environmentObject(model)
                 .frame(minWidth: 760, minHeight: 520)
                 .task { await model.start() }
-                .onOpenURL { model.receiveDrop([$0]) }
+                .onOpenURL { model.handleIncomingURL($0) }
         }
         .windowStyle(.hiddenTitleBar)
         .commands {

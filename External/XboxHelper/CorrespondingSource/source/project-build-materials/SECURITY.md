@@ -19,9 +19,11 @@ signed download URL. Review logs before sharing excerpts.
 
 ## Current boundaries and known gaps
 
-- Microsoft user/device credentials are kept in macOS Keychain. The account
-  helper caches one saved item per process and uses direct Keychain writes.
-  No plaintext credential fallback is intended.
+- Microsoft user/device credentials are serialized by Xodus in one account entry
+  under WinLauncher’s private support folder. The worker creates the containing
+  directory as mode 0700 and the file as mode 0600, rejects links and foreign
+  ownership, and never logs the stored value. The format is not encrypted at rest;
+  software running as the same macOS user can read it.
 - The worker forwards only known progress messages and safe error codes to the
   UI. Logs stay on the local Mac; upstream/runtime output still needs review
   before anyone shares it. No automatic bug-report upload is implemented.
@@ -84,7 +86,7 @@ signed download URL. Review logs before sharing excerpts.
   Signing/notarization and clean-Mac checks are separate distribution work.
 
 Do not work around failures by disabling Gatekeeper, skipping hash checks,
-trusting all TLS certificates, widening Keychain access, or deleting another
+trusting all TLS certificates, widening account-file access, or deleting another
 process's socket. Report the failed boundary with redacted evidence instead.
 
 ## Source and binary distribution

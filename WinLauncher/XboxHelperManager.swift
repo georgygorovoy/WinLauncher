@@ -8,17 +8,17 @@ struct XboxSupportStatus: Sendable {
     let runtimeAvailable: Bool
 
     var description: String {
-        if gamePrepared && runtimeAvailable { return "Ready to play" }
-        if gamePrepared { return "Game downloaded · Player runtime required" }
-        if helperAvailable { return "Microsoft account helper is ready" }
-        return "Account helper is not installed"
+        if gamePrepared && runtimeAvailable { return String(localized: "Ready to play") }
+        if gamePrepared { return String(localized: "Game downloaded · Player runtime required") }
+        if helperAvailable { return String(localized: "Microsoft account helper is ready") }
+        return String(localized: "Account helper is not installed")
     }
 }
 
 /// Adapter for the separately distributed GPL account/download helper.
 /// The helper is never linked into WinLauncher and receives no Wine environment.
 actor XboxHelperManager {
-    private static let approvedHelperSHA256 = "0b2925341bd49d35776d2d3fb4879969ea78d4abfbf45ce8fa8797d5b7e69c61"
+    private static let approvedHelperSHA256 = "12309424b4e6459c1b427beb64f14f83352dc625d9de684e1a7c5705c3828d6d"
     private let paths: AppPaths
     private let runner: ProcessRunner
     private let fileManager: FileManager

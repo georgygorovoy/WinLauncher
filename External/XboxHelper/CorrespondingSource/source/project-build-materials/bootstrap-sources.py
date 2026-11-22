@@ -16,7 +16,7 @@ PROJECTS = {
     "xodus": {
         "url": "https://github.com/xodus-gaming/xodus.git",
         "commit": "0670e25aeb0e0e9f800f8f2f4968ae3b681842a7",
-        "patches": ("xodus-real-store-license.patch", "keychain-cache.patch", "unified-helper.patch", "standalone-signin-window.patch", "standalone-keychain-write.patch", "standalone-account-transport.patch", "standalone-helper-dependencies.patch"),
+        "patches": ("xodus-real-store-license.patch", "keychain-cache.patch", "unified-helper.patch", "standalone-signin-window.patch", "standalone-keychain-write.patch", "standalone-account-transport.patch", "standalone-helper-dependencies.patch", "xodus-private-account-store.patch"),
     },
     "winegdk": {
         "url": "https://github.com/Sightem/WineGDK.git",

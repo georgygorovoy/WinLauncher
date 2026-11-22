@@ -25,19 +25,19 @@ actor AndroidRuntimeManager {
     private static let managedDeviceName = "WinLauncher_API_30"
     private static let packages = [
         ManagedPackage(
-            name: "Android platform tools",
+            name: String(localized: "Android platform tools"),
             url: URL(string: "https://dl.google.com/android/repository/platform-tools_r37.0.1-darwin.zip")!,
             sha1: "6ae73f4de6452dc57e62ec02b68eed92a4c21661",
             fileName: "platform-tools_r37.0.1-darwin.zip"
         ),
         ManagedPackage(
-            name: "Android emulator",
+            name: String(localized: "Android emulator"),
             url: URL(string: "https://dl.google.com/android/repository/emulator-darwin_aarch64-16555280.zip")!,
             sha1: "4cd3b6f14336a0085b8992eeffe637864839b4ce",
             fileName: "emulator-darwin_aarch64-16555280.zip"
         ),
         ManagedPackage(
-            name: "Android 11 ARM64 image",
+            name: String(localized: "Android 11 ARM64 image"),
             url: URL(string: "https://dl.google.com/android/repository/sys-img/android/arm64-v8a-30_r02.zip")!,
             sha1: "e96298145a5e0bfd6da4816f51b06c520d8dba72",
             fileName: "arm64-v8a-30_r02.zip"
@@ -101,15 +101,17 @@ actor AndroidRuntimeManager {
             try await waitUntilReady(runtime: runtime, stamp: stamp)
         }
         let packagesBefore = try? await thirdPartyPackages(runtime: runtime, stamp: stamp)
-
-        let install = try await runner.run(
-            executable: runtime.adbURL,
-            arguments: ["-e", "install", "-r", "-d", apkURL.path],
-            environment: toolEnvironment(sdkRoot: runtime.sdkRoot),
-            logURL: log
-        )
-        guard install.terminationStatus == 0, install.output.contains("Success") else {
-            throw WinLauncherError.androidInstallFailed(log)
+        let alreadyInstalled = packageFromAPK.map { packagesBefore?.contains($0) == true } == true
+        if !alreadyInstalled {
+            let install = try await runner.run(
+                executable: runtime.adbURL,
+                arguments: ["-e", "install", "-r", "-d", apkURL.path],
+                environment: toolEnvironment(sdkRoot: runtime.sdkRoot),
+                logURL: log
+            )
+            guard install.terminationStatus == 0, install.output.contains("Success") else {
+                throw WinLauncherError.androidInstallFailed(log)
+            }
         }
 
         var package = packageFromAPK
@@ -145,11 +147,11 @@ actor AndroidRuntimeManager {
 
         var archives: [URL] = []
         for (index, package) in Self.packages.enumerated() {
-            await progress("Downloading \(package.name)… \(index + 1) of \(Self.packages.count)")
+            await progress(String(localized: "Downloading \(package.name)… \(index + 1) of \(Self.packages.count)"))
             archives.append(try await download(package))
         }
 
-        await progress("Installing the lightweight Android runtime…")
+        await progress(String(localized: "Installing the lightweight Android runtime…"))
         try await extract(archives[0], to: staging, logName: "android-extract-platform-tools.log")
         try await extract(archives[1], to: staging, logName: "android-extract-emulator.log")
         let imageParent = staging.appendingPathComponent("system-images/android-30/default", isDirectory: true)
@@ -189,7 +191,7 @@ actor AndroidRuntimeManager {
         for archive in archives {
             try? FileManager.default.removeItem(at: archive)
         }
-        await progress("Android Support is ready.")
+        await progress(String(localized: "Android Support is ready."))
         return installation
     }
 
@@ -355,7 +357,7 @@ actor AndroidRuntimeManager {
         do {
             let (temporary, response) = try await URLSession.shared.download(from: package.url)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                throw WinLauncherError.androidDownloadFailed("The server returned HTTP \(http.statusCode).")
+                throw WinLauncherError.androidDownloadFailed(String(localized: "The server returned HTTP \(http.statusCode)."))
             }
             try FileManager.default.moveItem(at: temporary, to: destination)
         } catch let error as WinLauncherError {

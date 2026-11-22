@@ -5,7 +5,7 @@ Verify/reconstruct into a new directory using Python 3.11+:
 ```sh
 python3 reconstruct.py /absolute/path/to/new-source-directory
 cd /absolute/path/to/new-source-directory/xodus
-cargo +1.98.0 build --release --locked --no-default-features -j 4 -p xodus-cli --example standalone_helper
+cargo +1.98.0 build --release --locked --no-default-features --features account-file -j 4 -p xodus-cli --example standalone_helper
 ```
 
 `reconstruct.py` checks every recorded source/archive hash before extraction. It
@@ -46,5 +46,5 @@ This is a bounded evidence inventory, not a blanket license assurance.
 `internal/` contains local machine paths and is private build evidence. Bulk
 notices/source archives are generated build output; never add these directories
 recursively to the public source allowlist or the app bundle. No game, account,
-Keychain, save or compiled target data is collected. This is preparation evidence,
+saved sign-in, save or compiled target data is collected. This is preparation evidence,
 not blanket legal assurance or permission to publish.

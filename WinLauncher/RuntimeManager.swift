@@ -33,7 +33,7 @@ actor RuntimeManager {
             try? FileManager.default.removeItem(at: cached)
             let (temporary, response) = try await URLSession.shared.download(from: Self.monoURL)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                throw WinLauncherError.engineDownloadFailed("Wine Mono download returned an invalid response.")
+                throw WinLauncherError.engineDownloadFailed(String(localized: "Wine Mono download returned an invalid response."))
             }
             guard valid(temporary) else { throw WinLauncherError.engineIntegrityFailed }
             try FileManager.default.copyItem(at: temporary, to: cached)

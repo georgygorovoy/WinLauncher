@@ -13,7 +13,7 @@ struct EngineSetupView: View {
                 Text("Windows Support")
                     .font(.title2.weight(.semibold))
                 Text(model.operation == .installingEngine
-                     ? "Downloading and preparing Windows Support…"
+                     ? String(localized: "Downloading and preparing Windows Support…")
                      : model.engineSetupMessage)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

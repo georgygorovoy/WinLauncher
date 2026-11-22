@@ -39,7 +39,7 @@ GAMING_UNPACKED_SIZE = 198332601
 GAMING_SHA256 = 'f8d5f3ebe7339d9d65ebf4b4d68cb7a5281c0f944acafd613ccc68d7d908baed'
 THREADING_SHA256 = "aa611155057ebd01cf315ad702a4b5725aa9d5e6fad87732c956fe0a1e5fcfba"
 THREADING = ROOT / "runtime/xgameruntime.dll.threading"
-PATCHES = ("xodus-real-store-license.patch", "keychain-cache.patch", "unified-helper.patch", "standalone-signin-window.patch", "standalone-keychain-write.patch", "standalone-account-transport.patch", "standalone-helper-dependencies.patch")
+PATCHES = ("xodus-real-store-license.patch", "keychain-cache.patch", "unified-helper.patch", "standalone-signin-window.patch", "standalone-keychain-write.patch", "standalone-account-transport.patch", "standalone-helper-dependencies.patch", "xodus-private-account-store.patch")
 
 
 def sha256(path):
@@ -248,7 +248,8 @@ def build_helper(jobs):
     # Only this new example is built; the running bedrock_helper binary is untouched.
     env = dict(os.environ, XODUS_LOG="off", RUST_LOG="off")
     subprocess.run(["cargo", "+1.98.0", "build", "--manifest-path", str(XODUS / "Cargo.toml"),
-                    "--release", "--locked", "--no-default-features", "-j", str(jobs), "-p", "xodus-cli", "--example", "standalone_helper"],
+                    "--release", "--locked", "--no-default-features", "--features", "account-file",
+                    "-j", str(jobs), "-p", "xodus-cli", "--example", "standalone_helper"],
                    cwd=ROOT, env=env, check=True)
     print("Built standalone account helper: " + str(HELPER))
 

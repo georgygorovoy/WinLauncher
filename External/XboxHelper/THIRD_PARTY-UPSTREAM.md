@@ -42,6 +42,11 @@ pinned `security-framework` 3.7.0 crate for Keychain updates that do not reread
 secrets. The patch retains GPLv3; security-framework retains its MIT/Apache-2.0
 licensing.
 
+`Sources/xodus-private-account-store.patch` enables Xodus's existing file-backed
+credential store for the standalone helper and lets WinLauncher select its private
+mode-0600 account file. This avoids macOS Keychain authorization dialogs for the
+ad-hoc-signed helper. The patch and helper changes retain GPLv3.
+
 `Sources/xodus-licensing-jwe-safe.patch` incorporates the narrow compact-JWE
 ticket formatting approach published by Xodus Nexus contributors in commit
 `183e2154e1563cb2f9a199e67e338cc14d0ee4fe` under GPLv3,

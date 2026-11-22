@@ -1,0 +1,36 @@
+diff --git a/crates/xodus-cli/Cargo.toml b/crates/xodus-cli/Cargo.toml
+--- a/crates/xodus-cli/Cargo.toml
++++ b/crates/xodus-cli/Cargo.toml
+@@ -42,6 +42,7 @@
+ default = ["legacy-eappx"]
+ legacy-eappx = ["dep:eappx"]
+ tokio_console = ["dep:console-subscriber"]
++account-file = ["xodus/key-chain-file"]
+ 
+ [target.'cfg(target_os = "macos")'.dependencies]
+ security-framework = "=3.7.0"
+diff --git a/crates/xodus/src/secrets.rs b/crates/xodus/src/secrets.rs
+--- a/crates/xodus/src/secrets.rs
++++ b/crates/xodus/src/secrets.rs
+@@ -52,6 +52,9 @@ pub fn destroy_secrets() {
+ 
+ #[cfg(feature = "key-chain-file")]
+ fn secrets_backing_file() -> std::path::PathBuf {
++    if let Some(path) = std::env::var_os("XODUS_KEYRING_FILE") {
++        return std::path::PathBuf::from(path);
++    }
+     std::env::var_os("HOME")
+         .or_else(|| std::env::var_os("USERPROFILE"))
+         .map(std::path::PathBuf::from)
+diff --git a/crates/xodus/src/tokens/backend/keychain.rs b/crates/xodus/src/tokens/backend/keychain.rs
+--- a/crates/xodus/src/tokens/backend/keychain.rs
++++ b/crates/xodus/src/tokens/backend/keychain.rs
+@@ -5,7 +5,7 @@ pub struct KeychainBackend;
+ impl TokenBackend for KeychainBackend {
+     fn get(&self, key: &str) -> Result<Option<Vec<u8>>, TokenStoreError> {
+         let entry = crate::secrets::get_entry(key)?;
+-        eprintln!("Keychain: requesting saved sign-in entry ({key})");
++        eprintln!("Account store: loading saved sign-in entry ({key})");
+         match entry.get_secret() {
+             Ok(bytes) => Ok(Some(bytes)),
+             Err(keyring_core::Error::NoEntry) => Ok(None),

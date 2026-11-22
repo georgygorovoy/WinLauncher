@@ -127,7 +127,7 @@ actor EngineManager {
             do {
                 let (temporary, response) = try await URLSession.shared.download(from: Self.managedArchiveURL)
                 if let http = response as? HTTPURLResponse, !(200 ... 299).contains(http.statusCode) {
-                    throw WinLauncherError.engineDownloadFailed("The server returned HTTP \(http.statusCode).")
+                    throw WinLauncherError.engineDownloadFailed(String(localized: "The server returned HTTP \(http.statusCode)."))
                 }
                 try FileManager.default.moveItem(at: temporary, to: archive)
             } catch let error as WinLauncherError {
