@@ -1,7 +1,7 @@
 diff --git a/crates/xodus-cli/Cargo.toml b/crates/xodus-cli/Cargo.toml
 --- a/crates/xodus-cli/Cargo.toml
 +++ b/crates/xodus-cli/Cargo.toml
-@@ -42,6 +42,7 @@
+@@ -41,6 +41,7 @@ nix = "0.31.3"
  default = ["legacy-eappx"]
  legacy-eappx = ["dep:eappx"]
  tokio_console = ["dep:console-subscriber"]
@@ -12,7 +12,44 @@ diff --git a/crates/xodus-cli/Cargo.toml b/crates/xodus-cli/Cargo.toml
 diff --git a/crates/xodus/src/secrets.rs b/crates/xodus/src/secrets.rs
 --- a/crates/xodus/src/secrets.rs
 +++ b/crates/xodus/src/secrets.rs
-@@ -52,6 +52,9 @@ pub fn destroy_secrets() {
+@@ -1,5 +1,8 @@
+ pub static SERVICE_NAME: &str = "Xodus Service";
+ static CUSTOM_SERVICE: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
++#[cfg(feature = "key-chain-file")]
++static FILE_STORE: std::sync::OnceLock<std::sync::Arc<keyring_core::sample::Store>> =
++    std::sync::OnceLock::new();
+ 
+ /// Select an application-specific Keychain namespace before initializing it.
+ pub fn init_named_secrets(name: &'static str) -> Result<(), keyring_core::Error> {
+@@ -15,6 +18,10 @@ pub fn init_secrets() -> Result<(), keyring_core::Error> {
+                 .to_str()
+                 .expect("Invalid secrets backing path"),
+         )?;
++        // The sample store writes its backing file only on save() or when the
++        // last reference drops. The default store is process-global and is
++        // never dropped, so keep a handle for explicit saves after each write.
++        let _ = FILE_STORE.set(store.clone());
+         keyring_core::set_default_store(store);
+     }
+ 
+@@ -42,6 +49,16 @@ pub fn init_secrets() -> Result<(), keyring_core::Error> {
+     Ok(())
+ }
+ 
++/// Write the file-backed store to disk. A no-op for platform keychains,
++/// which persist each write themselves.
++pub fn persist_secrets() -> Result<(), keyring_core::Error> {
++    #[cfg(feature = "key-chain-file")]
++    if let Some(store) = FILE_STORE.get() {
++        store.save()?;
++    }
++    Ok(())
++}
++
+ pub fn get_entry(user: &str) -> Result<keyring_core::Entry, keyring_core::Error> {
+     keyring_core::Entry::new(CUSTOM_SERVICE.get().copied().unwrap_or(SERVICE_NAME), user)
+ }
+@@ -52,6 +69,9 @@ pub fn destroy_secrets() {
  
  #[cfg(feature = "key-chain-file")]
  fn secrets_backing_file() -> std::path::PathBuf {

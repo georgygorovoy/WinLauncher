@@ -148,11 +148,34 @@ async fn quarantine_package(client: &reqwest::Client, url: reqwest::Url, out: &P
     }));
     quarantine_stream(chunks, out, filename, expected_size, expected_content_id, |content_id| async move {
         let (device_key, owned_license) = license::get_license(account_client, tokens, content_id.to_string(), market.into()).await
-            .map_err(|_| failure("content_license"))?;
+            .map_err(|error| { eprintln!("BEDROCK_LICENSE_DIAGNOSTIC:stage={}", license_stage(&error)); failure("content_license") })?;
         if owned_license.content_keys.len() != 1 { return Err(failure("content_license")); }
         let content_key = owned_license.content_keys.into_values().next().ok_or_else(|| failure("content_license"))?;
         content_key.unpack(&device_key).map_err(|_| failure("content_license"))
     }).await
+}
+
+/// Map a license failure to a fixed stage name. Never print the message itself:
+/// service errors can contain response text.
+fn license_stage(message: &str) -> &'static str {
+    const FIXED: &[(&str, &str)] = &[
+        ("Device sign-in is unavailable", "device_token"),
+        ("Microsoft account profile is unavailable", "user_profile"),
+        ("Microsoft sign-in is unavailable", "user_token"),
+        ("Microsoft device-ticket exchange failed", "device_ticket"),
+        ("Microsoft user-ticket exchange failed", "user_ticket"),
+        ("Failed to get exchange MS token", "user_ticket_fault"),
+        ("Microsoft returned no user ticket", "user_ticket_empty"),
+        ("Microsoft returned an invalid game license", "game_license_invalid"),
+        ("Saved device license is unavailable", "device_license_missing"),
+        ("Saved device license is invalid", "device_license_invalid"),
+        ("Saved device license has no key", "device_license_key"),
+    ];
+    if let Some((_, stage)) = FIXED.iter().find(|(text, _)| *text == message) { return stage; }
+    if message.starts_with("not entitled to this content") { return "not_entitled"; }
+    if message.starts_with("request error") { return "license_request"; }
+    if message == "invalid content license response" { return "license_response"; }
+    "other"
 }
 
 fn received_within_bound(received: u64, chunk: usize, expected_size: u64) -> Outcome<u64> {
@@ -335,7 +358,8 @@ impl TokenBackend for AccountKeychain {
     fn set(&self, key: &str, value: &[u8]) -> Result<(), TokenStoreError> {
         #[cfg(feature = "account-file")]
         {
-            return KeychainBackend.set(key, value);
+            KeychainBackend.set(key, value)?;
+            return persist_account_file();
         }
         #[cfg(all(not(feature = "account-file"), target_os = "macos"))]
         {
@@ -351,7 +375,20 @@ impl TokenBackend for AccountKeychain {
         #[cfg(all(not(feature = "account-file"), not(target_os = "macos")))]
         { KeychainBackend.set(key, value) }
     }
-    fn remove(&self, key: &str) -> Result<(), TokenStoreError> { KeychainBackend.remove(key) }
+    fn remove(&self, key: &str) -> Result<(), TokenStoreError> {
+        KeychainBackend.remove(key)?;
+        #[cfg(feature = "account-file")]
+        persist_account_file()?;
+        Ok(())
+    }
+}
+
+/// The file store only changes in memory until saved. Without this every
+/// sign-in was lost when the helper exited and the next launch asked again.
+#[cfg(feature = "account-file")]
+fn persist_account_file() -> Result<(), TokenStoreError> {
+    xodus::secrets::persist_secrets()
+        .map_err(|error| report_account_error("vault_write", std::io::Error::other(error).into()))
 }
 
 /// One account-store read per process instead of one per token. Do not
@@ -604,6 +641,7 @@ async fn download(client: &reqwest::Client, tokens: &TokenManager, directory: &P
         let quarantine = &quarantine;
         let completed = &completed;
         async move {
+            let result: Outcome<()> = async {
             let relative = safe_relative(name)?;
             let target = out.join(&relative);
             std::fs::create_dir_all(target.parent().ok_or("Missing output parent.")?)?;
@@ -612,7 +650,12 @@ async fn download(client: &reqwest::Client, tokens: &TokenManager, directory: &P
             tokio::time::timeout(std::time::Duration::from_secs(900),
                 xvd.extract_file(&mut source, &mut output, info, **key, |_, _| {})).await
                 .map_err(|_| "A game file download timed out; retry setup.")?
-                .map_err(|_| "A game file download failed; retry setup.")?;
+                .map_err(|error| {
+                    let io = error.downcast_ref::<std::io::Error>();
+                    eprintln!("BEDROCK_EXTRACT_DIAGNOSTIC:stage=extract;path={name};encrypted={};kind={:?};os={:?};message={}",
+                        info.keep_encrypted, io.map(|value| value.kind()), io.and_then(|value| value.raw_os_error()), error);
+                    "A game file download failed; retry setup."
+                })?;
             output.sync_all().await?;
             drop(output);
             // Encrypted files preserve complete 4 KiB cipher blocks until preparation.
@@ -623,8 +666,27 @@ async fn download(client: &reqwest::Client, tokens: &TokenManager, directory: &P
                 let prepared = target.with_extension("standalone-preparing");
                 let mut output = OpenOptions::new().write(true).create_new(true).open(&prepared).await?;
                 xvd.mount_mem_fd(&mut input, &mut output, info, **key, |_, _| {}).await
-                    .map_err(|_| "Licensed executable preparation failed.")?;
+                    .map_err(|error| {
+                        let io = error.downcast_ref::<std::io::Error>();
+                        eprintln!("BEDROCK_EXTRACT_DIAGNOSTIC:stage=prepare;path={name};kind={:?};os={:?};message={}",
+                            io.map(|value| value.kind()), io.and_then(|value| value.raw_os_error()), error);
+                        "Licensed executable preparation failed."
+                    })?;
                 output.sync_all().await?;
+                let prepared_length = output.metadata().await?.len();
+                let padded_length = info.length.div_ceil(4096) * 4096;
+                if prepared_length == padded_length && prepared_length > info.length {
+                    // An EXE in an unencrypted XVD section is still marked
+                    // keep_encrypted by upstream NTFS metadata. mount_mem_fd
+                    // then copies its final full cipher page even though the
+                    // signed file length ends inside that page.
+                    output.set_len(info.length).await?;
+                    output.sync_all().await?;
+                    eprintln!("BEDROCK_EXTRACT_DIAGNOSTIC:stage=trim_padding;path={name};expected={};actual={prepared_length}", info.length);
+                } else if prepared_length != info.length {
+                    eprintln!("BEDROCK_EXTRACT_DIAGNOSTIC:stage=prepared_size;path={name};expected={};actual={prepared_length}", info.length);
+                    return Err("The prepared executable has an unexpected size.".into());
+                }
                 drop(output);
                 if prepared.metadata()?.len() != info.length { return Err("The prepared executable has an unexpected size.".into()); }
                 let mut check = File::open(&prepared).await?;
@@ -638,6 +700,13 @@ async fn download(client: &reqwest::Client, tokens: &TokenManager, directory: &P
             let count = completed.fetch_add(1, Ordering::Relaxed) + 1;
             if count % 500 == 0 || count == total { eprintln!("Downloaded {count}/{total} files."); }
             Ok::<(), Box<dyn std::error::Error>>(())
+            }.await;
+            if let Err(ref error) = result {
+                let io = error.downcast_ref::<std::io::Error>();
+                eprintln!("BEDROCK_EXTRACT_DIAGNOSTIC:stage=file;path={name};encrypted={};kind={:?};os={:?};message={}",
+                    info.keep_encrypted, io.map(|value| value.kind()), io.and_then(|value| value.raw_os_error()), error);
+            }
+            result
         }
     }).buffer_unordered(4).try_collect::<Vec<_>>().await?;
     drop(metadata);
@@ -795,6 +864,14 @@ async fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn license_stage_never_echoes_service_text() {
+        assert_eq!(license_stage("not entitled to this content: secret detail"), "not_entitled");
+        assert_eq!(license_stage("request error: https://example.invalid/?t=secret"), "license_request");
+        assert_eq!(license_stage("Saved device license is unavailable"), "device_license_missing");
+        assert_eq!(license_stage("anything else with secret"), "other");
+    }
 
     #[test]
     fn parent_receipt_requires_matching_process_and_resolved_executable() {

@@ -39,7 +39,7 @@ and ship the exact GPL source archive and notices beside the release download.
 The locally verified ARM64 candidate has SHA-256:
 
 ```text
-12309424b4e6459c1b427beb64f14f83352dc625d9de684e1a7c5705c3828d6d
+d9ba56bdbe39c6aafcfc050118430cf2e0839bcb2a8131fdb243cbd9b7a8e0af
 ```
 
 `CorrespondingSource/` is bound to that exact binary hash. It records 436 Rust

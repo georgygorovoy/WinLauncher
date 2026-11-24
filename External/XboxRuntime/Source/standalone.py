@@ -246,7 +246,7 @@ def verified_refmove_activation(game):
 def wine_run(args, game, *, log=None, timeout=None, network_diagnostics=False):
     require(WINE / 'bin/wine')
     env = environment(network_diagnostics=network_diagnostics)
-    if args == ['G:\\Minecraft.Windows.exe']:
+    if args == ['Q:\\Minecraft.Windows.exe']:
         if not apply_frame_slab(env, game) and verified_refmove_activation(game):
             env['BEDROCK_PRIVATE_REFMOVE_15203'] = '1'
         apply_frame_pacing(env, game)
@@ -325,6 +325,13 @@ def map_drive(letter, directory):
     link = PREFIX / 'dosdevices' / (letter + ':')
     if link.is_symlink() and link.resolve() == directory.resolve():
         return
+    if link.is_symlink() and letter in ('q', 'r'):
+        # Wine maps mounted volumes to available letters during wineboot. A
+        # mounted WinLauncher installer can claim our private Q:/R: letters
+        # before we map the game and support directory on first setup.
+        previous = Path(os.readlink(link))
+        if previous.parent == Path('/Volumes') and previous.name.startswith('WinLauncher '):
+            link.unlink()
     if link.exists() or link.is_symlink():
         raise RuntimeError('Unexpected existing drive mapping: ' + str(link))
     link.symlink_to(directory.resolve(), target_is_directory=True)
@@ -461,7 +468,7 @@ def prepare(game):
     desired = setup_signature(game)
     pickers = picker_bridge()
     if setup_matches(desired) and pickers.installed(PREFIX, WINE):
-        map_drive('g', game)
+        map_drive('q', game)
         map_drive('r', ROOT)
         return
     wait_for_idle_prefix()
@@ -470,7 +477,7 @@ def prepare(game):
         with (logs / 'prefix-setup.log').open('ab') as log:
             # Wine must create its own C: mapping before additional drives are added.
             wine_run(['wineboot', '-u'], game, log=log, timeout=180)
-            map_drive('g', game)
+            map_drive('q', game)
             map_drive('r', ROOT)
             system32 = PREFIX / 'drive_c/windows/system32'
             system32.mkdir(parents=True, exist_ok=True)
@@ -579,7 +586,7 @@ def main():
         log_path = ROOT / 'logs/standalone' / ('minecraft-' + stamp + '.log')
         print('Starting standalone Minecraft. Log: ' + str(log_path), flush=True)
         with account(game, args.market), log_path.open('wb') as log:
-            wine_run(['G:\\Minecraft.Windows.exe'], game, log=log, network_diagnostics=args.network_diagnostics)
+            wine_run(['Q:\\Minecraft.Windows.exe'], game, log=log, network_diagnostics=args.network_diagnostics)
     return 0
 
 

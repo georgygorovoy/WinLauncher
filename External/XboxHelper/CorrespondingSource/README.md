@@ -5,7 +5,7 @@ Verify/reconstruct into a new directory using Python 3.11+:
 ```sh
 python3 reconstruct.py /absolute/path/to/new-source-directory
 cd /absolute/path/to/new-source-directory/xodus
-cargo +1.98.0 build --release --locked --no-default-features --features account-file -j 4 -p xodus-cli --example standalone_helper
+cargo +1.98.0 rustc --release --locked --no-default-features --features account-file -j 4 -p xodus-cli --example standalone_helper -- -C "link-arg=-Wl,-sectcreate,__TEXT,__info_plist,../project-build-materials/standalone-helper-Info.plist"
 ```
 
 `reconstruct.py` checks every recorded source/archive hash before extraction. It
@@ -15,11 +15,15 @@ Rust toolchain, protoc, macOS SDK/command-line tools, and native build prerequis
 separately. Cargo may fetch dependencies using the original pinned lockfile;
 these archives are source materials, **not a configured offline Cargo vendor tree**.
 A clean isolated reconstruction/build remains required before a reproducibility claim.
+The embedded helper Info.plist lets macOS display the Microsoft sign-in window.
 
 This candidate includes `xodus-licensing-jwe-safe.patch`, adapted under GPLv3
 from Xodus Nexus commit `183e2154e1563cb2f9a199e67e338cc14d0ee4fe` for
 the pinned Xodus revision. It changes only content-license ticket formatting and
 checked error handling; saved account tokens are not rewritten.
+It also includes `xodus-xbox-jwe-ticket-retry.patch`. Only a compact JWE
+delegation ticket gets one `t=` retry after Xbox user authentication returns
+HTTP 400; opaque tickets and saved account data are unchanged.
 
 The generator replays the pinned upstream Xodus patches in a temporary directory
 and compares every supplied source file, excluding only `.git` and `target`.

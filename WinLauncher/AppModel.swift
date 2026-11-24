@@ -1016,7 +1016,7 @@ final class AppModel: ObservableObject {
         guard !applications.contains(where: { $0.packageIdentifier == minecraftPackageIdentifier }) else { return }
         applications.append(LibraryApplication(
             name: "Minecraft for Windows",
-            windowsPath: "G:\\Minecraft.Windows.exe",
+            windowsPath: "Q:\\Minecraft.Windows.exe",
             sourceFileName: "Minecraft.Windows.exe",
             sourcePath: paths.minecraftGame.appendingPathComponent("Minecraft.Windows.exe").path,
             environmentID: "xbox-games",
@@ -1075,7 +1075,7 @@ final class AppModel: ObservableObject {
             if minecraft == nil {
                 var canonical = application
                 canonical.name = "Minecraft for Windows"
-                canonical.windowsPath = "G:\\Minecraft.Windows.exe"
+                canonical.windowsPath = "Q:\\Minecraft.Windows.exe"
                 canonical.sourceFileName = "Minecraft.Windows.exe"
                 canonical.sourcePath = paths.minecraftGame.appendingPathComponent("Minecraft.Windows.exe").path
                 canonical.environmentID = "xbox-games"

@@ -74,6 +74,7 @@ actor XboxRuntimeManager {
                     "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
                     "BEDROCK_BUNDLE": bundle.path,
                     "BEDROCK_HOME": paths.xboxSupport.path,
+                    "PYTHONDONTWRITEBYTECODE": "1",
                     "XODUS_LOG": "off",
                     "RUST_LOG": "off"
                 ],

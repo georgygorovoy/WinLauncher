@@ -15,12 +15,12 @@
     "--features",
     "account-file"
   ],
-  "helper_sha256": "12309424b4e6459c1b427beb64f14f83352dc625d9de684e1a7c5705c3828d6d",
+  "helper_sha256": "d9ba56bdbe39c6aafcfc050118430cf2e0839bcb2a8131fdb243cbd9b7a8e0af",
   "lock_sha256": "a880eef79c4a21625eee41ab01b2d8939ac9bbdc1113bc9bea8ba14e4282bddc",
   "xodus_source": {
     "path": "source/xodus-patched-source.tar.gz",
-    "sha256": "b5798c2071b6a14e13adabda5ca326315651ef5f68bc5d1c9cbe698fc79cc974",
-    "bytes": 3026562,
+    "sha256": "7a88ef00444e22231ab1a519f82e56e2155ec343dfd4286d8330887b56e6f88a",
+    "bytes": 3023353,
     "upstream": "https://codeload.github.com/xodus-gaming/xodus/tar.gz/0670e25aeb0e0e9f800f8f2f4968ae3b681842a7",
     "upstream_archive_sha256": "276faa5d98a73d5810d8c3f5a4081c897ebf09f000a29014bd38473abec2527f",
     "upstream_commit": "0670e25aeb0e0e9f800f8f2f4968ae3b681842a7",
@@ -275,7 +275,7 @@
       },
       {
         "path": "crates/xodus-cli/examples/standalone_helper.rs",
-        "sha256": "1b17f714dc643b17b56133feff7eac392c2689435299017c8b85bc9f00d7a129"
+        "sha256": "74ea0dd7b934a43244364bcdc6eb55563d9fd6b832c8ac3f3eae805ca0e8d051"
       },
       {
         "path": "crates/xodus-cli/examples/standalone_xvd.rs",
@@ -435,7 +435,7 @@
       },
       {
         "path": "crates/xodus/src/api/xbox/auth.rs",
-        "sha256": "5f5650e1a9c449c06342eb6551bb457709678d52058dc7e9fcbb23838788da80"
+        "sha256": "80b0e82fe9c9334818ef9175e0525daaa0df93dd872848153819cbead773a689"
       },
       {
         "path": "crates/xodus/src/api/xbox/mod.rs",
@@ -515,7 +515,7 @@
       },
       {
         "path": "crates/xodus/src/models/secrets.rs",
-        "sha256": "0b7459d9709af133f823d8423f384311ee1540f8139550a5dde96bf9e3694138"
+        "sha256": "9b834a7b7131306495e2a9e139b06ef073a298f066e416d050fd8304715c954b"
       },
       {
         "path": "crates/xodus/src/models/soap/base.rs",
@@ -571,7 +571,7 @@
       },
       {
         "path": "crates/xodus/src/secrets.rs",
-        "sha256": "b75fdef4a75ca8e21fca8a2397d00ae052ec6e9685b9e71c61f52b018a044bf5"
+        "sha256": "d9a5e5b002ea19cc723387f2936a68a9f970e69315e42cfc392ee0008011f97b"
       },
       {
         "path": "crates/xodus/src/tokens.rs",
@@ -4559,8 +4559,14 @@
     },
     {
       "path": "source/project-build-materials/standalone-helper.rs",
-      "sha256": "1b17f714dc643b17b56133feff7eac392c2689435299017c8b85bc9f00d7a129",
-      "bytes": 68822,
+      "sha256": "74ea0dd7b934a43244364bcdc6eb55563d9fd6b832c8ac3f3eae805ca0e8d051",
+      "bytes": 73454,
+      "kind": "local-project"
+    },
+    {
+      "path": "source/project-build-materials/standalone-helper-Info.plist",
+      "sha256": "bb663152d92ea71d4d376e99b294a098ba4bef50795d1a279578aede5bd92d35",
+      "bytes": 767,
       "kind": "local-project"
     },
     {
@@ -4673,8 +4679,14 @@
     },
     {
       "path": "source/project-build-materials/patches/xodus-private-account-store.patch",
-      "sha256": "a3d8d85f13166c83863b7e5465b9a4be28887c78f8ceee62487c1252375f6baf",
-      "bytes": 1604,
+      "sha256": "f99b2b5bfe60d3deeda088ef8cdc3a5a2bc43bd992c8dd32d0cf79ee3401daa6",
+      "bytes": 3199,
+      "kind": "local-project"
+    },
+    {
+      "path": "source/project-build-materials/patches/xodus-xbox-jwe-ticket-retry.patch",
+      "sha256": "be2b748ac2e4f28222880c41b8a587006a783d5880f4f1c18b49f49363eb663b",
+      "bytes": 3809,
       "kind": "local-project"
     }
   ],

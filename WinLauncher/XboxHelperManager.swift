@@ -18,7 +18,7 @@ struct XboxSupportStatus: Sendable {
 /// Adapter for the separately distributed GPL account/download helper.
 /// The helper is never linked into WinLauncher and receives no Wine environment.
 actor XboxHelperManager {
-    private static let approvedHelperSHA256 = "12309424b4e6459c1b427beb64f14f83352dc625d9de684e1a7c5705c3828d6d"
+    private static let approvedHelperSHA256 = "d9ba56bdbe39c6aafcfc050118430cf2e0839bcb2a8131fdb243cbd9b7a8e0af"
     private let paths: AppPaths
     private let runner: ProcessRunner
     private let fileManager: FileManager

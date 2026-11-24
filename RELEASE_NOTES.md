@@ -1,3 +1,23 @@
+# WinLauncher 1.3.1
+
+- Runs Minecraft from a dedicated Q: drive so Wine can assign a mounted
+  WinLauncher installer to G: without hiding the game executable. Also
+  reclaims Q:/R: when Wine maps the installer there during setup.
+- Trims the signed Minecraft executable to its declared length when the XVD
+  reader copies a padded final page from an unencrypted package section.
+- Records the exact Minecraft extraction stage, package path, and system error
+  in the setup log when file preparation fails.
+- Retries Xbox user authentication with the ticket format required for compact
+  JWE delegation tickets when the original request receives HTTP 400. A live
+  account check reached the Minecraft package header after the retry.
+- Prevents the Minecraft Python worker from writing cache files into the signed
+  WinLauncher application bundle.
+- Saves the Minecraft for Windows account file immediately after Xbox sign-in
+  changes, so the next helper process can reuse the session.
+- Updates the bundled Xbox helper and its corresponding source archive.
+- Embeds an Info.plist in the Xbox helper so macOS displays the Microsoft
+  sign-in window, and stages that helper in the Minecraft player runtime.
+
 # WinLauncher 1.3.0
 
 - Checks installed Windows Steam games every 10 seconds, including while Steam

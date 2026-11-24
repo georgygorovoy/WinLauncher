@@ -1,0 +1,94 @@
+diff --git a/crates/xodus/src/api/xbox/auth.rs b/crates/xodus/src/api/xbox/auth.rs
+--- a/crates/xodus/src/api/xbox/auth.rs
++++ b/crates/xodus/src/api/xbox/auth.rs
+@@ -6,26 +6,36 @@
+     client: &reqwest::Client,
+     rps_ticket: String,
+ ) -> reqwest::Result<XstsResponse> {
+-    let body = UserAuthRequest {
+-        relying_party: "http://auth.xboxlive.com".to_string(),
+-        token_type: "JWT".to_string(),
+-        properties: UserAuthProperties {
+-            auth_method: "RPS".to_string(),
+-            site_name: "user.auth.xboxlive.com".to_string(),
+-            rps_ticket,
+-        },
+-    };
++    async fn request(client: &reqwest::Client, ticket: String) -> reqwest::Result<reqwest::Response> {
++        let body = UserAuthRequest {
++            relying_party: "http://auth.xboxlive.com".to_string(),
++            token_type: "JWT".to_string(),
++            properties: UserAuthProperties {
++                auth_method: "RPS".to_string(),
++                site_name: "user.auth.xboxlive.com".to_string(),
++                rps_ticket: ticket,
++            },
++        };
++        client
++            .post("https://user.auth.xboxlive.com/user/authenticate")
++            .header("Content-Type", "application/json")
++            .header("x-xbl-contract-version", "1")
++            .json(&body)
++            .send()
++            .await
++    }
+ 
+-    let resp = client
+-        .post("https://user.auth.xboxlive.com/user/authenticate")
+-        .header("Content-Type", "application/json")
+-        .header("x-xbl-contract-version", "1")
+-        .json(&body)
+-        .send()
+-        .await?
+-        .error_for_status()?;
+-
+-    resp.json().await
++    let retry_ticket = crate::models::secrets::xbox_user_auth_retry_ticket(&rps_ticket);
++    let response = request(client, rps_ticket).await?;
++    if response.status() == reqwest::StatusCode::BAD_REQUEST {
++        eprintln!("BEDROCK_XBOX_AUTH_DIAGNOSTIC:stage=user_auth;status=400;retry_eligible={}", retry_ticket.is_some());
++        if let Some(ticket) = retry_ticket {
++            let response = request(client, ticket).await?;
++            eprintln!("BEDROCK_XBOX_AUTH_DIAGNOSTIC:stage=user_auth_retry;status={}", response.status().as_u16());
++            return response.error_for_status()?.json().await;
++        }
++    }
++    response.error_for_status()?.json().await
+ }
+ 
+ pub async fn request_xsts_token(
+diff --git a/crates/xodus/src/models/secrets.rs b/crates/xodus/src/models/secrets.rs
+--- a/crates/xodus/src/models/secrets.rs
++++ b/crates/xodus/src/models/secrets.rs
+@@ -88,6 +88,14 @@
+     }
+ }
+ 
++/// Xbox user authentication accepts a t= ticket for a compact JWE when the
++/// original d= delegation ticket receives HTTP 400. Do not change opaque
++/// tickets or stored credentials.
++pub fn xbox_user_auth_retry_ticket(ticket: &str) -> Option<String> {
++    let bare = ticket.strip_prefix("d=")?;
++    is_compact_jwe(bare).then(|| format!("t={bare}"))
++}
++
+ // This recognizes wire encoding, not authenticity or entitlement. Microsoft
+ // still validates the complete encrypted ticket. Its payload is never decoded.
+ fn is_compact_jwe(value: &str) -> bool {
+@@ -117,7 +125,15 @@
+ 
+ #[cfg(test)]
+ mod licensing_ticket_tests {
+-    use super::licensing_ticket;
++    use super::{licensing_ticket, xbox_user_auth_retry_ticket};
++
++    #[test]
++    fn retries_only_compact_jwe_delegation_tickets() {
++        let jwe = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..aXY.Y2lwaGVy.dGFn";
++        assert_eq!(xbox_user_auth_retry_ticket(&format!("d={jwe}")), Some(format!("t={jwe}")));
++        assert_eq!(xbox_user_auth_retry_ticket("d=opaque"), None);
++        assert_eq!(xbox_user_auth_retry_ticket(&format!("t={jwe}")), None);
++    }
+ 
+     #[test]
+     fn formats_jwe_and_opaque_delegation_tickets_for_content_licensing() {

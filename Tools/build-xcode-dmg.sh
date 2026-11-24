@@ -3,7 +3,7 @@ set -euo pipefail
 setopt NULL_GLOB
 
 project_root="${0:A:h:h}"
-version="1.3.0"
+version="1.3.1"
 project="$project_root/WinLauncher.xcodeproj"
 derived_data="$project_root/.build/release-xcode"
 stage="$project_root/.build/dmg-stage"

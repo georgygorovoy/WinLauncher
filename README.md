@@ -2,7 +2,7 @@
 
 Native macOS application that runs Windows applications through independently updatable Wine engines and launches Android APKs through an installed Android Emulator.
 
-**Current release: WinLauncher 1.3.0.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java. Version 1.2 adds Xbox Games Support for Minecraft for Windows: a separately built GPL worker handles Microsoft sign-in, ownership verification, the official owned-game download, WineGDK/DXMT setup, and launch. Version 1.2.5 removes repeated macOS password prompts during Minecraft setup by keeping the Microsoft session in WinLauncher’s private account file.
+**Current release: WinLauncher 1.3.1.** Windows support automatically installs an integrity-checked WineForge 11.18 engine. Android support can install a minimal, checksum-verified runtime without Android Studio or Java. Version 1.2 adds Xbox Games Support for Minecraft for Windows: a separately built GPL worker handles Microsoft sign-in, ownership verification, the official owned-game download, WineGDK/DXMT setup, and launch. Version 1.2.5 removes repeated macOS password prompts during Minecraft setup by keeping the Microsoft session in WinLauncher’s private account file.
 
 The first engineering gate is deliberately small: install current Ubisoft Connect on Apple Silicon and display its responsive login UI without CrossOver binaries or D3DMetal. Product implementation follows that result.
 

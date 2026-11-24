@@ -171,12 +171,12 @@
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
-			inputPaths = ("$(SRCROOT)/External/XboxHelper/bin/standalone_helper", "$(SRCROOT)/External/XboxHelper/LICENSE-GPL-3.0.txt", "$(SRCROOT)/External/XboxHelper/README.md", "$(SRCROOT)/External/XboxHelper/THIRD_PARTY-UPSTREAM.md", "$(SRCROOT)/External/XboxHelper/BINARY.sha256", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime/worker/setup.py",);
+			inputPaths = ("$(SRCROOT)/External/XboxHelper/bin/standalone_helper", "$(SRCROOT)/External/XboxHelper/LICENSE-GPL-3.0.txt", "$(SRCROOT)/External/XboxHelper/README.md", "$(SRCROOT)/External/XboxHelper/THIRD_PARTY-UPSTREAM.md", "$(SRCROOT)/External/XboxHelper/BINARY.sha256", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime/worker/setup.py", "$(SRCROOT)/External/XboxRuntime/bin/XboxRuntime/scripts/standalone.py",);
 			name = "Embed Xbox support";
 			outputPaths = ("$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/standalone_helper", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/LICENSE-GPL-3.0.txt", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/README.md", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/THIRD_PARTY-UPSTREAM.md", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxHelper/BINARY.sha256", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/XboxRuntime",);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "source_root=\"$SRCROOT/External/XboxHelper\"\nsource_helper=\"$source_root/bin/standalone_helper\"\nif [[ -x \"$source_helper\" ]]; then\n  expected_hash=$(/usr/bin/awk 'NR == 1 { print $1 }' \"$source_root/BINARY.sha256\")\n  actual_hash=$(/usr/bin/shasum -a 256 \"$source_helper\" | /usr/bin/awk '{ print $1 }')\n  source_hash=$(/usr/bin/sed -n 's/.*approvedHelperSHA256 = \"\\([0-9a-f]*\\)\".*/\\1/p' \"$SRCROOT/WinLauncher/XboxHelperManager.swift\")\n  if [[ \"$expected_hash\" != \"$actual_hash\" || \"$expected_hash\" != \"$source_hash\" ]]; then\n    echo \"error: Xbox helper checksum does not match BINARY.sha256 and XboxHelperManager.swift\" >&2\n    exit 1\n  fi\n  destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxHelper\"\n  /bin/mkdir -p \"$destination\"\n  /usr/bin/install -m 700 \"$source_helper\" \"$destination/standalone_helper\"\n  for notice in LICENSE-GPL-3.0.txt README.md THIRD_PARTY-UPSTREAM.md BINARY.sha256; do\n    /usr/bin/install -m 600 \"$source_root/$notice\" \"$destination/$notice\"\n  done\nfi\nruntime_source=\"$SRCROOT/External/XboxRuntime/bin/XboxRuntime\"\nruntime_destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxRuntime\"\n/bin/rm -rf \"$runtime_destination\"\n/usr/bin/ditto \"$runtime_source\" \"$runtime_destination\"\n";
+			shellScript = "source_root=\"$SRCROOT/External/XboxHelper\"\nsource_helper=\"$source_root/bin/standalone_helper\"\nif [[ -x \"$source_helper\" ]]; then\n  expected_hash=$(/usr/bin/awk 'NR == 1 { print $1 }' \"$source_root/BINARY.sha256\")\n  actual_hash=$(/usr/bin/shasum -a 256 \"$source_helper\" | /usr/bin/awk '{ print $1 }')\n  source_hash=$(/usr/bin/sed -n 's/.*approvedHelperSHA256 = \"\\([0-9a-f]*\\)\".*/\\1/p' \"$SRCROOT/WinLauncher/XboxHelperManager.swift\")\n  if [[ \"$expected_hash\" != \"$actual_hash\" || \"$expected_hash\" != \"$source_hash\" ]]; then\n    echo \"error: Xbox helper checksum does not match BINARY.sha256 and XboxHelperManager.swift\" >&2\n    exit 1\n  fi\n  destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxHelper\"\n  /bin/mkdir -p \"$destination\"\n  /usr/bin/install -m 700 \"$source_helper\" \"$destination/standalone_helper\"\n  for notice in LICENSE-GPL-3.0.txt README.md THIRD_PARTY-UPSTREAM.md BINARY.sha256; do\n    /usr/bin/install -m 600 \"$source_root/$notice\" \"$destination/$notice\"\n  done\nfi\nruntime_source=\"$SRCROOT/External/XboxRuntime/bin/XboxRuntime\"\nruntime_destination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/XboxRuntime\"\n/bin/rm -rf \"$runtime_destination\"\n/usr/bin/ditto \"$runtime_source\" \"$runtime_destination\"\n# The Minecraft worker runs XboxRuntime/standalone_helper. Always ship the verified helper there,\n# so a previously staged runtime can never carry an older helper.\nif [[ -x \"$source_helper\" ]]; then\n  /usr/bin/install -m 700 \"$source_helper\" \"$runtime_destination/standalone_helper\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -222,12 +222,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 21;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -240,12 +240,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WinLauncher;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 21;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WinLauncher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.winlauncher.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
